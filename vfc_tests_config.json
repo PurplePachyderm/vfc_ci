@@ -2,8 +2,8 @@
     "make_command": "make tests",
     "tests": [
         {
-            "name": "Dummy test",
-            "executable": "./bin/test",
+            "name": "Simple C test",
+            "executable": "test",
             "repetitions": 20,
             "vfc_backends": [
                 "libinterflop_mca.so --precision-binary64=53"
