@@ -7,10 +7,8 @@ name: "Generate Verificarlo report"
 on:
   # Triggers the workflow when new Verificarlo tests have been executed
   # (indirectly triggered by a push on {{dev_branch}})
-  workflow_run:
-    workflows: ["Run and commit Verificarlo tests"]
-    types:
-      - completed
+  push:
+    branches: [ {{dev_branch}} ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -25,19 +23,27 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+            fetch-depth:0
 
       - name: Install requirements
         run: sudo pip install numpy pandas bokeh jinja2
 
-      # This will generate the HTML report
+      # The dummy test is used for now
+      - name: Run tests
+        run: python dummy_test.py
+
       - name: Generate report
         run: python gen_report.py
 
-      - name: Commit new report
+      - name: Commit test reslts and report
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "action@github.com"
 
-          git add report.html
-          git commit -m "[auto] Update Verificarlo report"
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+
+          git checkout {{ci_branch}}
+          git add *.vfc.txt report.html
+          git commit -m "[auto] New test results and updated report for commit ${git_hash}"
           git push
