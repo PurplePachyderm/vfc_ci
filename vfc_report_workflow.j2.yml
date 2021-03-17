@@ -1,0 +1,43 @@
+# This workflow will indirectly be executed when {{dev_branch}} is updated:
+# it will generate the new Verificarlo report and commit it to {{ci_branch}}.
+
+name: "Generate Verificarlo report"
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow when new Verificarlo tests have been executed
+  # (indirectly triggered by a push on {{dev_branch}})
+  workflow_run:
+    workflows: ["Run and commit Verificarlo tests"]
+    types:
+      - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  gen-report:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Install requirements
+        run: sudo pip install numpy pandas bokeh jinja2
+
+      # This will generate the HTML report
+      - name: Generate report
+        run: python gen_report.py
+
+      - name: Commit new report
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "action@github.com"
+
+          git add report.html
+          git commit -m "[auto] Update Verificarlo report"
+          git push
