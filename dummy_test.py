@@ -13,4 +13,4 @@ samples = np.random.normal(mu, sigma, 20)
 
 timestamp = str(calendar.timegm(time.gmtime()))
 
-np.savetxt(timestamp + ".vfc.txt", samples, delimiter='.', newline='\n')
+np.savetxt(timestamp + ".vfcrun.json", samples, delimiter='.', newline='\n')
