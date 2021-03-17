@@ -78,7 +78,7 @@ def genBoxPlot():
 
     # Init template loader
 env = Environment(loader=FileSystemLoader('.'))
-template = env.get_template('report.j2')
+template = env.get_template('dummy_report.j2')
 
 
     # Data processing, plot generation

@@ -6,7 +6,11 @@ test reports.
 
 This is the `master` (or "dev") branch : everytime changes are pushed to this
 branch, Verificarlo test results will be pushed to the Verificarlo CI branch
-(`vfc_ci_master`) by the "test" workflow (executed on this branch).
+(`vfc_ci_master`) by the test workflow (executed on this branch). A new
+HTML report will also be generated.
 
-Then, the "report" workflow on the CI branch will generate/update an HTML
-report that can be visualized anytime.
+### Setup
+
+Run the `vfc_ci_setup.sh` script. If you are on the `dev` branch, this will
+create a test workflow on it (`.github/workflows/vfc_test_workflow.yml`),
+as well as a `dev_vfc_ci` branch.

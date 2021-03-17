@@ -1,0 +1,19 @@
+{
+    "timestamp": 1615978187,
+    "is_git_commit": true,
+    "commit_data": {
+        "hash": "testrun",
+        "author": "John Doe <john@doe.com>",
+        "message": "This is a fake test commit",
+        "description": "This a veeeeery looooong description for the fake commit... Lorem ipsum dolor sit amet..."
+    },
+
+    "tests": [
+        {
+            "name": "Test 1",
+            "results": [
+                42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0,42.0
+            ]
+        }
+    ]
+}

@@ -13,8 +13,8 @@ mkdir -p .github/workflows
 python setup_test_workflow.py $dev_branch $ci_branch
 
 git add .github/workflows/vfc_test_workflow.yml
-echo "Pushing changes to remote : you might have to enter your Github credentials..."
 git commit -m "[auto] Set up Verificarlo CI on this branch"
+echo "Pushing changes to remote : you might have to enter your Github credentials..."
 git push origin $dev_branch
 
 
@@ -30,8 +30,8 @@ python setup_ci_readme.py $dev_branch $ci_branch
 echo "Creating the Verificarlo CI branch (${ci_branch})..."
 git checkout --orphan $ci_branch
 git rm --cached -r -f .
-git add README.md gen_report.py report.j2
-git commit  -m "[auto] Create the Verificarlo CI branch for ${dev_branch}"
+git add README.md gen_dummy_report.py report.j2
+git commit -m "[auto] Create the Verificarlo CI branch for ${dev_branch}"
 echo "Pushing changes to remote : you might have to enter your Github credentials..."
 git push -u origin $ci_branch
 
