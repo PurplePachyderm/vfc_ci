@@ -1,12 +1,11 @@
-# This workflow will indirectly be executed when {{dev_branch}} is updated:
+# This workflow will be executed when {{dev_branch}} is updated:
 # it will generate the new Verificarlo report and commit it to {{ci_branch}}.
 
 name: "Generate Verificarlo report"
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow when new Verificarlo tests have been executed
-  # (indirectly triggered by a push on {{dev_branch}})
+  # Triggers the workflow when {{dev_branch}} is updated
   push:
     branches: [ {{dev_branch}} ]
 
@@ -36,7 +35,7 @@ jobs:
       - name: Generate report
         run: python gen_report.py
 
-      - name: Commit test reslts and report
+      - name: Commit test results and report
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "action@github.com"
