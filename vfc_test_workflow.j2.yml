@@ -40,6 +40,9 @@ jobs:
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
 
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
           git checkout {{ci_branch}}
           git add *.vfc.txt report.html
           git commit -m "[auto] New test results and updated report for commit ${git_hash}"
