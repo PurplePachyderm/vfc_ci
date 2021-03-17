@@ -32,9 +32,9 @@ jobs:
       - name: Run tests
         run: python dummy_test.py
 
-      # The dummy report should be used in new CI branches
+      # The dummy report is used for now
       - name: Generate report
-        run: python gen_report.py
+        run: python gen_dummy_report.py
 
       - name: Commit test results and report
         run: |
