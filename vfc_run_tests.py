@@ -63,13 +63,13 @@ vfcrun = {
 }
 
 
-# Run the build command
+    # Run the build command
 
 print("Building tests...")
 os.system(config["make_command"])
 
 
-# Execute all tests and fill the results object
+    # Execute all tests and fill the results object
 
 for test in config["tests"]:
     print("Running test :", test["name"])
@@ -99,7 +99,7 @@ for test in config["tests"]:
         })
 
 
-# Export the results object as a JSON file
+        # Export the results object as a JSON file
 
 if is_git_commit:
     file_name = commit_metadata["hash"] + ".vfcrun.json"
