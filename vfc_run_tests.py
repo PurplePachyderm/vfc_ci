@@ -12,7 +12,7 @@ import calendar
 import time
 
 
-# Open and read the tests config file
+    # Open and read the tests config file
 
 try:
     with open("vfc_tests_config.json", "r") as file:
@@ -25,7 +25,8 @@ except FileNotFoundError as e:
 config = json.loads(data)
 
 
-# Check the "is_git_commit" argument and if detected, get last commit's metadata
+    # Check the "--is-git-commit" argument
+    # (and if detected, get last commit's metadata)
 
 # Default value is the current timestamp. If the run is associated with a git commit,
 # it will be replaced by the commit's timestamp.
@@ -36,7 +37,7 @@ is_git_commit = False
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--is-git-commit":
-        print("Fetching metadata for last commit...")
+        print("Fetching metadata from last commit...")
         is_git_commit = True
 
         repo = Repo(".")
@@ -49,7 +50,7 @@ if len(sys.argv) > 1:
         commit_metadata["message"] = head_commit.message
 
 
-# Initialize the vfcrun object that will be exported
+    # Initialize the vfcrun object that will be exported
 
 vfcrun = {
     "timestamp": timestamp,
@@ -106,7 +107,7 @@ if is_git_commit:
 else:
     file_name = str(timestamp) + ".vfcrun.json"
 
-print("Tests run succesfully, exporting results in", file_name)
+print("\nRun succesful, exporting results in", file_name)
 
 with open(file_name, 'w', encoding='utf8') as f:
     json.dump(vfcrun, f, ensure_ascii=False)
