@@ -1,9 +1,12 @@
 # This script reads the vfc_tests_config.json and executes the tests accordingly
-# It will also generate a ....vfcrun.json file with the results of the run
+# It will also generate a ... .vfcrun.json file with the results of the run
 
 import os
 import subprocess
 import json
+
+import sys
+from git import Repo
 
 import calendar
 import time
@@ -22,19 +25,38 @@ except FileNotFoundError as e:
 config = json.loads(data)
 
 
+# Check the "is_git_commit" argument and if detected, get last commit's metadata
+
+# Default value is the current timestamp. If the run is associated with a git commit,
+# it will be replaced by the commit's timestamp.
+timestamp = calendar.timegm(time.gmtime())
+
+commit_metadata = {}
+is_git_commit = False
+
+if len(sys.argv) > 1:
+    if sys.argv[1] == "--is-git-commit":
+        print("Fetching metadata for last commit...")
+        is_git_commit = True
+
+        repo = Repo(".")
+        head_commit = repo.head.commit
+
+        timestamp = head_commit.authored_date
+
+        commit_metadata["hash"] = str(head_commit)[0:7]
+        commit_metadata["author"] = str(head_commit.author) + " <" + head_commit.author.email + ">"
+        commit_metadata["message"] = head_commit.message
+
+
 # Initialize the vfcrun object that will be exported
 
 vfcrun = {
-    "timestamp": calendar.timegm(time.gmtime()),
+    "timestamp": timestamp,
 
     # Hardcoding git values for now
-    "is_git_commit": True,
-    "commit_data": {
-        "hash": "testrun",
-        "author": "John Doe <john@doe.com>",
-        "message": "This is a fake test commit",
-        "description": "This a veeeeery looooong description for the fake commit... Lorem ipsum dolor sit amet..."
-    },
+    "is_git_commit": is_git_commit,
+    "commit_metadata": commit_metadata,
 
     "tests": []
 }
@@ -57,25 +79,34 @@ for test in config["tests"]:
 
     for backend in test["vfc_backends"]:
         values = []
-        export_backend = 'export VFC_BACKENDS="' + backend + '"'
-        os.system(export_backend)
 
+        export_backend = 'VFC_BACKENDS="' + backend["name"] + '" '
         command = "./" + test["executable"]
 
         # Run test repetitions and save results
-        for i in range(test["repetitions"]):
-            output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        for i in range(backend["repetitions"]):
+            output = subprocess.check_output(export_backend + command, shell=True, encoding="utf-8")
+
             # val is saved as a string because it's gonna be stored in the run file anyway
             val = output.splitlines()[-1]
             values.append(val)
 
         # Append the results for this backend to the test
         vfcrun["tests"][-1]["results"].append({
-            "vfc_backend": backend,
+            "vfc_backend": backend["name"],
             "values": values
         })
 
 
-print(vfcrun)
+# Export the results object as a JSON file
 
-# Export the results object as a json file
+if is_git_commit:
+    file_name = commit_metadata["hash"] + ".vfcrun.json"
+
+else:
+    file_name = str(timestamp) + ".vfcrun.json"
+
+print("Tests run succesfully, exporting results in", file_name)
+
+with open(file_name, 'w', encoding='utf8') as f:
+    json.dump(vfcrun, f, ensure_ascii=False)

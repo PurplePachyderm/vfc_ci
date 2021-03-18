@@ -4,9 +4,18 @@
         {
             "name": "Simple C test",
             "executable": "test",
-            "repetitions": 20,
             "vfc_backends": [
-                "libinterflop_mca.so --precision-binary64=53"
+                {
+                    "name": "libinterflop_ieee.so",
+                    "repetitions": 1
+                },
+                {
+                    "name": "libinterflop_mca.so --precision-binary64=24",
+                    "repetitions": 20
+                }
+
+
+
             ]
         }
     ]

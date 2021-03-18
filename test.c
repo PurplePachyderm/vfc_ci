@@ -5,9 +5,11 @@
 int main(void) {
     double res = 0;
 
-    for(int i=0; i<1000; i++) {
-        res = res + 0.1;
+    for(int i=0; i<10000; i++) {
+        res = res + 0.01;
     }
 
-    printf("%lf\n", res);
+    res -= 100;
+
+    printf("%lf", res);
 }
