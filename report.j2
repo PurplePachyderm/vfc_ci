@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Verificarlo report</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- BOKEH JS -->
+        {{ bokeh_js }}
+
+        <!-- BOKEH CSS -->
+        {{ bokeh_css }}
+
+        <!-- BOKEH SCRIPT -->
+        {{ bokeh_script }}
+
+    </head>
+
+    <body>
+        Hello, {{arg}}!
+
+        <br>
+
+        Here is the first plot :
+        {{ plots['plot1'] }}
+
+    </body>
+
+</html>
