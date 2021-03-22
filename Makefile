@@ -1,5 +1,7 @@
+CC = gcc
+
 tests:
-	verificarlo test.c -o test
+	$(CC) test.c -o test
 
 clean:
 	rm test
