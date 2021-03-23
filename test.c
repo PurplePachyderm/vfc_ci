@@ -17,10 +17,11 @@ int main(void) {
         put_probe(&probes, "test", VAR_NAME(res), res);
     }
 
-    float varf = 42.0f;
+    float varf = 42.4242f;
 
 
     put_probe(&probes, "test", VAR_NAME(varf), varf);
+
 
     dump_probes_ht(&probes, "test.csv");
     free_probes_ht(&probes);

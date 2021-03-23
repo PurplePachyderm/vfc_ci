@@ -4,3 +4,4 @@ README.md.tmp
 test
 *.o
 *.vfcrun.json
+*.csv

@@ -69,11 +69,13 @@ void free_probes_ht(ProbesHT * probes) {
             if(probes->nodes[i]->values != NULL) {
                 free(probes->nodes[i]->values);
             }
+            free(probes->nodes[i]->key);
             free(probes->nodes[i]);
         }
     }
 
     free(probes->nodes);
+    probes->nodes = NULL;
     probes->size = 0;
 }
 
@@ -142,11 +144,15 @@ void validate_probe_key(char * str) {
 * a new value will be added to the existing node's array.
 */
 
-void put_probe(
-    ProbesHT * hashTable,
+int put_probe(
+    ProbesHT * probes,
     char * testName, char * varName,
     double val
 ) {
+
+    if(probes == NULL) {
+        return 1;
+    }
 
     // Make sure testName and varName don't contain any ':' or ',', which would
     // interfere with the key/CSV encoding
@@ -159,49 +165,119 @@ void put_probe(
     strcat(key, ":");
     strcat(key, varName);
 
-    unsigned int index = get_probe_index(key, hashTable->size);
+    unsigned int index = get_probe_index(key, probes->size);
 
 
     // If this is the first insertion with this key, append the new element to
     // the HT ...
-    if(hashTable->nodes[index] == NULL) {
-        hashTable->nodes[index] = (ProbeNode*) malloc(sizeof(ProbeNode));
+    if(probes->nodes[index] == NULL) {
+        probes->nodes[index] = (ProbeNode*) malloc(sizeof(ProbeNode));
 
-        hashTable->nodes[index]->nValues = 1;
-        hashTable->nodes[index]->values = (double*) malloc(sizeof(double));
-        hashTable->nodes[index]->values[0] = val;
+        probes->nodes[index]->nValues = 1;
+        probes->nodes[index]->values = (double*) malloc(sizeof(double));
+        probes->nodes[index]->values[0] = val;
 
         // Also copy the key (which will be used when dumping the HT)
-        hashTable->nodes[index]->key = (char*) malloc(
+        probes->nodes[index]->key = (char*) malloc(
             strlen(key) * sizeof(key) + 1
         );
-        strncpy(hashTable->nodes[index]->key, key, strlen(key));
+        strncpy(probes->nodes[index]->key, key, strlen(key));
     }
 
     // ... otherwise, just add the value to the existing node
     else {
         // Make sure that the new and old keys are the same, otherwise we have a
         // collision
-        if(strcmp(key, hashTable->nodes[index]->key) != 0) {
+        if(strcmp(key, probes->nodes[index]->key) != 0) {
             fprintf(
                 stderr,
                 "ERROR : you have a hashtable collision between two Verificarlo probes(\"%s\" and \"%s\"). Try changing the hashtable size or some of your probe's names.\n",
-                key, hashTable->nodes[index]->key
+                key, probes->nodes[index]->key
             );
             exit(1);
         }
 
-        hashTable->nodes[index]->nValues++;
-        unsigned int nValues = hashTable->nodes[index]->nValues;
+        probes->nodes[index]->nValues++;
+        unsigned int nValues = probes->nodes[index]->nValues;
 
-        hashTable->nodes[index]->values = (double*) realloc(
-            hashTable->nodes[index]->values,
+        probes->nodes[index]->values = (double*) realloc(
+            probes->nodes[index]->values,
             nValues* sizeof(double)
         );
 
-        hashTable->nodes[index]->values[nValues-1] = val;
+        probes->nodes[index]->values[nValues-1] = val;
     }
 
+    return 0;
+}
+
+
+
+/*
+* Return the number of values stored in a probe, and make arr point to
+* those values
+* WARNING: The value previously pointed to by arr (if any) will be lost
+*/
+
+unsigned int get_probe(
+    ProbesHT * probes, char * testName, char * varName, double ** arr
+) {
+
+    if(probes == NULL) {
+        return -1;
+    }
+
+    // Get the key, which is : testName + ":" + varName
+    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
+    strcpy(key, testName);
+    strcat(key, ":");
+    strcat(key, varName);
+
+    unsigned int index = get_probe_index(key, probes->size);
+
+
+    if(probes->nodes[index] != NULL) {
+        *arr = probes->nodes[index]->values;
+        return probes->nodes[index]->nValues;
+    }
+
+    *arr = NULL;
+    return 0;
+}
+
+
+
+/*
+* Remove (free) an element from the hash table
+*/
+
+int remove_probe(ProbesHT * probes, char * testName, char * varName) {
+
+    if(probes == NULL) {
+        return 1;
+    }
+
+    // Get the key, which is : testName + ":" + varName
+    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
+    strcpy(key, testName);
+    strcat(key, ":");
+    strcat(key, varName);
+
+    unsigned int index = get_probe_index(key, probes->size);
+
+    if(probes->nodes[index] != NULL) {
+        if(probes->nodes[index]->values != NULL) {
+            free(probes->nodes[index]->values);
+        }
+        free(probes->nodes[index]->key);
+        free(probes->nodes[index]);
+        probes->nodes[index] = NULL;
+    }
+
+
+    free(key);
+
+    return 0;
 }
 
 
@@ -227,9 +303,7 @@ char* double_to_base64(double val) {
 
     char * in = (char*) malloc(doubleSize + 1);
     in[stringSize] = '\0';
-    printf("in = %s\n", in);
     memcpy(in, &val, doubleSize);
-    printf("in = %s\n", in);
 
 
     char * out = (char*) malloc(stringSize + 1);
@@ -262,18 +336,51 @@ char* double_to_base64(double val) {
         }
     }
 
-    printf("out = %s\n", out);
     free(in);
 
     return out;
-
 }
+
 
 
 /*
 * Dumps a probes HT in a .csv file (the double values are converted to base 64)
 */
 
-void dump_probes_ht(ProbesHT * probes, char * exportPath) {
-    double_to_base64(42);
+int dump_probes_ht(ProbesHT * probes, char * exportPath) {
+
+    if(probes == NULL) {
+        return 1;
+    }
+
+    FILE * fp = fopen(exportPath, "w");
+
+    if(fp == NULL) {
+        fprintf(
+            stderr,
+            "ERROR : impossible to open the CSV file to save your Verificarlo test results (\"%s\")\n",
+            exportPath
+        );
+        exit(1);
+    }
+
+    // For each HT entry
+    for(unsigned int i=0; i<probes->size; i++) {
+
+        if(probes->nodes[i] != NULL) {
+
+            // For each value of an existing probe
+            for(unsigned int j=0; j<probes->nodes[i]->nValues; j++) {
+                fprintf(
+                    fp, "%s,%s\n",
+                    probes->nodes[i]->key,
+                    double_to_base64(probes->nodes[i]->values[j])
+                );
+            }
+        }
+    }
+
+    fclose(fp);
+
+    return 0;
 }
