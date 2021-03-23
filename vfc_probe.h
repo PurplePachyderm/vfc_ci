@@ -364,6 +364,9 @@ int dump_probes_ht(ProbesHT * probes, char * exportPath) {
         exit(1);
     }
 
+    // First line gives the column names
+    fprintf(fp, "key,value\n");
+
     // For each HT entry
     for(unsigned int i=0; i<probes->size; i++) {
 

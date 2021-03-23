@@ -1,4 +1,4 @@
-CC = gcc
+CC = verificarlo-c
 
 tests:
 	$(CC) test.c -o test

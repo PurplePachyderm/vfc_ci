@@ -1,21 +1,20 @@
 {
     "make_command": "make tests",
-    "tests": [
+    "executables": [
         {
-            "name": "Simple C test",
             "executable": "test",
+            "parameters" : "",
+            "output_files": "*.csv",
             "vfc_backends": [
                 {
-                    "name": "libinterflop_ieee.so",
-                    "repetitions": 1
+                    "name": "libinterflop_ieee.so"
                 },
                 {
                     "name": "libinterflop_mca.so --precision-binary64=24",
-                    "repetitions": 20
+                    "repetitions": 1
                 },
                 {
-                    "name": "libinterflop_mca.so --mode=pb --precision-binary64=24",
-                    "repetitions": 5
+                    "name": "libinterflop_mca.so --mode=pb --precision-binary64=24"
                 }
             ]
         }

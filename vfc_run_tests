@@ -4,14 +4,40 @@
 # It will also generate a ... .vfcrun.json file with the results of the run
 
 import os
-import subprocess
 import json
+import glob
 
 import sys
-from git import Repo
 
 import calendar
 import time
+
+import pandas as pd
+import numpy as np
+
+import base64
+import struct
+
+
+    # Helper functions that reads a probes CSV files
+
+def read_probes_csv(filepath, backend):
+
+    results = pd.read_csv(filepath)
+
+    # NOTE The lambda function should probably change depending on if the system
+    # uses little or big endian
+    results["value"] = results["value"].apply(lambda x: struct.unpack('<d'.format(64.0), base64.standard_b64decode(x))[0])
+
+    results = results.groupby("key").value.apply(list).reset_index()
+    results[["test", "variable"]] = results["key"].str.split(':', expand=True)
+
+    del results["key"]
+    results.rename(columns = {"value":"values"}, inplace = True)
+
+    results["backend"] = backend
+
+    return results
 
 
     # Open and read the tests config file
@@ -40,6 +66,8 @@ is_git_commit = False
 if len(sys.argv) > 1:
     if sys.argv[1] == "--is-git-commit":
         print("Fetching metadata from last commit...")
+        from git import Repo
+
         is_git_commit = True
 
         repo = Repo(".")
@@ -57,11 +85,10 @@ if len(sys.argv) > 1:
 vfcrun = {
     "timestamp": timestamp,
 
-    # Hardcoding git values for now
     "is_git_commit": is_git_commit,
     "commit_metadata": commit_metadata,
 
-    "tests": []
+    "results": []
 }
 
 
@@ -71,37 +98,46 @@ print("Building tests...")
 os.system(config["make_command"])
 
 
-    # Execute all tests and fill the results object
+    # Execute all tests and collect results in a Pandas dataframe
 
-for test in config["tests"]:
-    print("Running test :", test["name"])
-    vfcrun["tests"].append({
-        "name": test["name"],
-        "results": []
-    })
+values = [] # This is an array of Pandas dataframes for now
 
-    for backend in test["vfc_backends"]:
-        values = []
+for executable in config["executables"]:
+    print("Running executable :", executable["executable"], "...")
+
+    parameters = ""
+    if "parameters" in executable:
+        parameters = executable["parameters"]
+
+    for backend in executable["vfc_backends"]:
+        print("    ... with backend :", backend["name"])
 
         export_backend = 'VFC_BACKENDS="' + backend["name"] + '" '
-        command = "./" + test["executable"]
+        command = "./" + executable["executable"] + " " + parameters
+
+        repetitions = 1
+        if "repetitions" in backend:
+            repetitions = backend["repetitions"]
 
         # Run test repetitions and save results
-        for i in range(backend["repetitions"]):
-            output = subprocess.check_output(export_backend + command, shell=True, encoding="utf-8")
+        for i in range(repetitions):
+            os.system(export_backend + command)
 
-            # val is saved as a string because it's gonna be stored in the run file anyway
-            val = output.splitlines()[-1]
-            values.append(val)
+            # List and read all the output files
+            output_files = glob.glob(executable['output_files'])
 
-        # Append the results for this backend to the test
-        vfcrun["tests"][-1]["results"].append({
-            "vfc_backend": backend["name"],
-            "values": values
-        })
+            for file in output_files:
+                values.append(read_probes_csv(file, backend["name"]))
+
+values = pd.concat(values, sort=False, ignore_index=True)
 
 
-        # Export the results object as a JSON file
+    # Compute statistics for each variable of each test (over combined dataframe)
+
+# TODO
+
+
+    # Export the vfcrun object as a JSON file
 
 if is_git_commit:
     file_name = commit_metadata["hash"] + ".vfcrun.json"

@@ -26,6 +26,4 @@ int main(void) {
     dump_probes_ht(&probes, "test.csv");
     free_probes_ht(&probes);
 
-    // Old way of getting C test results
-    printf("%lf\n", res);
 }
