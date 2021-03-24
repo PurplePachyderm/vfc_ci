@@ -1,5 +1,5 @@
 /*
-* This file defines "ProbesHT", a hashtable-like structure which can be used
+* This file defines "vfc_probes", a hashtable-based structure which can be used
 * to place "probes" in a code and store the different values of test variables.
 * These test results can then be exported in a CSV file, and used to generate a
 * Verificarlo test report.
@@ -10,108 +10,73 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "vfc_hashmap.h"
+
 #define VAR_NAME(var) #var  // Simply returns the name of var into a string
 
 
 /*
-* Represents a node of the hashtable. The key will be a string of the shape :
-* TEST_NAME:VAR_NAME. The "values" array will contain all elements added
-* with this key (so each node actually contains a key/array of values
-* association, as opposed to a single key/value association).
+* A probe containing a double value as well as its key, which is needed when
+* dumping the probes
 */
 
-struct ProbeNode {
+struct vfc_probe_node {
     char * key;
-    unsigned int nValues;
-    double * values;
+    double value;
 };
 
-typedef struct ProbeNode ProbeNode;
+typedef struct vfc_probe_node vfc_probe_node;
 
 
 
 /*
-* The actual hashtable structure. Simply contains an array of nodes.
+* The probes structure. It simply acts as a wrapper for a Verificarlo hashmap.
 */
 
-struct ProbesHT {
-    unsigned int size;
-    ProbeNode ** nodes;
+struct vfc_probes {
+    vfc_hashmap_t map;
 };
 
-typedef struct ProbesHT ProbesHT;
+typedef struct vfc_probes vfc_probes;
 
 
 
 /*
-* Initialize an empty ProbesHT instance (the hashtable's default size is 10000)
+* Initialize an empty vfc_probes instance
 */
 
-void init_probes_ht(ProbesHT * probes) {
-    probes->size = 10000;
-    probes->nodes = (ProbeNode**) calloc(10000, sizeof(ProbeNode*));
+vfc_probes vfc_init_probes() {
+    vfc_probes probes;
+    probes.map = vfc_hashmap_create();
+
+    return probes;
 }
 
 
 
 /*
-* Free a hashtable content, and reset its size to 0
+* Free all probes
+* WARNING: Memory leaks because the char * inside the vfc_probe_nodes are not
+* freed ?
 */
 
-void free_probes_ht(ProbesHT * probes) {
-
-    if(probes == NULL) {
-        return;
-    }
-
-    for(unsigned i=0; i<probes->size; i++) {
-        if(probes->nodes[i] != NULL) {
-            if(probes->nodes[i]->values != NULL) {
-                free(probes->nodes[i]->values);
-            }
-            free(probes->nodes[i]->key);
-            free(probes->nodes[i]);
-        }
-    }
-
-    free(probes->nodes);
-    probes->nodes = NULL;
-    probes->size = 0;
+void vfc_free_probes(vfc_probes * probes) {
+    vfc_hashmap_free(probes->map);
 }
 
 
 
 /*
-* Free and resize a hashtable (in case the default size is too small/large,
-* or creates a collision error).
+* Helper function to generate the key from test and variable name
 */
 
-void resize_probes_ht(ProbesHT * probes, unsigned int newSize) {
-    free_probes_ht(probes);
+char * gen_probe_key(char * testName, char * varName) {
+    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
+    strcpy(key, testName);
+    strcat(key, ":");
+    strcat(key, varName);
 
-    probes->size = newSize;
-    probes->nodes = (ProbeNode**) calloc(newSize, sizeof(ProbeNode*));
-}
-
-
-
-/*
-* A simple hash function returning the index associated with a key(depends on
-* the table's size)
-* NOTE : Use a better hash function to be closer to a uniform distribution ?
-*/
-
-unsigned int get_probe_index(char * key, unsigned int size) {
-
-    char * c;
-    unsigned int hash = 0;
-    unsigned int i = 1;
-    for (c=key; *c!='\0'; c++) {
-        hash += (*c) * i;
-        i++;
-    }
-
-    return hash % size;
+    return key;
 }
 
 
@@ -127,7 +92,7 @@ void validate_probe_key(char * str) {
         if(str[i] == ':' || str[i] == ',') {
             fprintf(
                 stderr,
-                "ERROR : One of your Verificarlo probe has a ':' or ',' in its test or variable name (\"%s\"), which is forbidden\n",
+                "Error [verificarlo]: One of your probes has a ':' or ',' in its test or variable name (\"%s\"), which is forbidden\n",
                 str
             );
             exit(1);
@@ -139,13 +104,12 @@ void validate_probe_key(char * str) {
 
 
 /*
-* Add an element to the hashtable. If it is the first element for this
-* combination of test/variable, a new node will actually be appended. Otherwise,
-* a new value will be added to the existing node's array.
+* Add a new probe. If an issue with the key is detected (forbidden characters or
+* a duplicate key), an error will be thrown.
 */
 
-int put_probe(
-    ProbesHT * probes,
+int vfc_put_probe(
+    vfc_probes * probes,
     char * testName, char * varName,
     double val
 ) {
@@ -160,88 +124,33 @@ int put_probe(
     validate_probe_key(varName);
 
     // Get the key, which is : testName + ":" + varName
-    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
-    strcpy(key, testName);
-    strcat(key, ":");
-    strcat(key, varName);
+    char * key = gen_probe_key(testName, varName);
 
-    unsigned int index = get_probe_index(key, probes->size);
+    // Look for a duplicate key
+    vfc_probe_node * oldProbe = (vfc_probe_node*) vfc_hashmap_get(
+        probes->map, vfc_hashmap_str_function(key)
+    );
 
-
-    // If this is the first insertion with this key, append the new element to
-    // the HT ...
-    if(probes->nodes[index] == NULL) {
-        probes->nodes[index] = (ProbeNode*) malloc(sizeof(ProbeNode));
-
-        probes->nodes[index]->nValues = 1;
-        probes->nodes[index]->values = (double*) malloc(sizeof(double));
-        probes->nodes[index]->values[0] = val;
-
-        // Also copy the key (which will be used when dumping the HT)
-        probes->nodes[index]->key = (char*) malloc(
-            strlen(key) * sizeof(key) + 1
-        );
-        strncpy(probes->nodes[index]->key, key, strlen(key));
-    }
-
-    // ... otherwise, just add the value to the existing node
-    else {
-        // Make sure that the new and old keys are the same, otherwise we have a
-        // collision
-        if(strcmp(key, probes->nodes[index]->key) != 0) {
+    if(oldProbe != NULL) {
+        if(strcmp(key, oldProbe->key) == 0) {
             fprintf(
                 stderr,
-                "ERROR : you have a hashtable collision between two Verificarlo probes(\"%s\" and \"%s\"). Try changing the hashtable size or some of your probe's names.\n",
-                key, probes->nodes[index]->key
+                "Error [verificarlo]: you have a duplicate error with one of your probes (\"%s\"). Please make sure to use different names.\n",
+                key
             );
             exit(1);
         }
-
-        probes->nodes[index]->nValues++;
-        unsigned int nValues = probes->nodes[index]->nValues;
-
-        probes->nodes[index]->values = (double*) realloc(
-            probes->nodes[index]->values,
-            nValues* sizeof(double)
-        );
-
-        probes->nodes[index]->values[nValues-1] = val;
     }
 
-    return 0;
-}
+    // Insert the element in the hashmap
+    vfc_probe_node * newProbe = (vfc_probe_node*) malloc(sizeof(vfc_probe_node));
+    newProbe->key = key;
+    newProbe->value = val;
 
+    vfc_hashmap_insert(
+        probes->map, vfc_hashmap_str_function(key), newProbe
+    );
 
-
-/*
-* Return the number of values stored in a probe, and make arr point to
-* those values
-* WARNING: The value previously pointed to by arr (if any) will be lost
-*/
-
-unsigned int get_probe(
-    ProbesHT * probes, char * testName, char * varName, double ** arr
-) {
-
-    if(probes == NULL) {
-        return -1;
-    }
-
-    // Get the key, which is : testName + ":" + varName
-    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
-    strcpy(key, testName);
-    strcat(key, ":");
-    strcat(key, varName);
-
-    unsigned int index = get_probe_index(key, probes->size);
-
-
-    if(probes->nodes[index] != NULL) {
-        *arr = probes->nodes[index]->values;
-        return probes->nodes[index]->nValues;
-    }
-
-    *arr = NULL;
     return 0;
 }
 
@@ -251,31 +160,16 @@ unsigned int get_probe(
 * Remove (free) an element from the hash table
 */
 
-int remove_probe(ProbesHT * probes, char * testName, char * varName) {
+int vfc_remove_probe(vfc_probes * probes, char * testName, char * varName) {
 
     if(probes == NULL) {
         return 1;
     }
 
     // Get the key, which is : testName + ":" + varName
-    char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
-    strcpy(key, testName);
-    strcat(key, ":");
-    strcat(key, varName);
+    char * key = gen_probe_key(testName, varName);
 
-    unsigned int index = get_probe_index(key, probes->size);
-
-    if(probes->nodes[index] != NULL) {
-        if(probes->nodes[index]->values != NULL) {
-            free(probes->nodes[index]->values);
-        }
-        free(probes->nodes[index]->key);
-        free(probes->nodes[index]);
-        probes->nodes[index] = NULL;
-    }
-
-
-    free(key);
+    vfc_hashmap_remove(probes->map, vfc_hashmap_str_function(key));
 
     return 0;
 }
@@ -283,71 +177,23 @@ int remove_probe(ProbesHT * probes, char * testName, char * varName) {
 
 
 /*
-* Helper function to encode a double into a Base64 string
-* (based on : https://nachtimwald.com/2017/11/18/base64-encode-and-decode-in-c/)
+* Return the number of probes stored in the hashmap
 */
 
-char* double_to_base64(double val) {
+unsigned int vfc_num_probes(
+    vfc_probes * probes
+) {
 
-    // Get the size of the string to output (based on the size of a double)
-
-    int doubleSize  = sizeof(double);
-    int stringSize  = doubleSize;
-    if(stringSize % 3 != 0) {
-        stringSize += 3 - (stringSize % 3);
-    }
-    stringSize = stringSize * 4 / 3;
-
-
-    // Initialize in (from val) and out (base64) strings
-
-    char * in = (char*) malloc(doubleSize + 1);
-    in[stringSize] = '\0';
-    memcpy(in, &val, doubleSize);
-
-
-    char * out = (char*) malloc(stringSize + 1);
-    out[stringSize] = '\0';
-
-
-    // Write on out string
-
-    const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    int i, j, v;
-
-    for(i=0, j=0; i<doubleSize; i+=3, j+=4) {
-        v = in[i];
-        v = i+1 < doubleSize ? v << 8 | in[i+1] : v << 8;
-        v = i+2 < doubleSize ? v << 8 | in[i+2] : v << 8;
-
-        out[j] = b64chars[(v >> 18) & 0x3F];
-        out[j+1] = b64chars[(v >> 12) & 0x3F];
-
-        if(i+1 < doubleSize) {
-            out[j+2] = b64chars[(v >> 6) & 0x3F];
-        } else {
-            out[j+2] = '=';
-        }
-
-        if(i+2 < doubleSize) {
-            out[j+3] = b64chars[v & 0x3F];
-        } else {
-            out[j+3] = '=';
-        }
-    }
-
-    free(in);
-
-    return out;
+    return vfc_hashmap_num_items(probes->map);
 }
 
 
 
 /*
-* Dumps a probes HT in a .csv file (the double values are converted to base 64)
+* Dump probes in a .csv file (the double values are converted to hex)
 */
 
-int dump_probes_ht(ProbesHT * probes, char * exportPath) {
+int vfc_dump_probes(vfc_probes * probes, char * exportPath) {
 
     if(probes == NULL) {
         return 1;
@@ -358,7 +204,7 @@ int dump_probes_ht(ProbesHT * probes, char * exportPath) {
     if(fp == NULL) {
         fprintf(
             stderr,
-            "ERROR : impossible to open the CSV file to save your Verificarlo test results (\"%s\")\n",
+            "Error [verificarlo]: impossible to open the CSV file to save your probes (\"%s\")\n",
             exportPath
         );
         exit(1);
@@ -367,19 +213,17 @@ int dump_probes_ht(ProbesHT * probes, char * exportPath) {
     // First line gives the column names
     fprintf(fp, "key,value\n");
 
-    // For each HT entry
-    for(unsigned int i=0; i<probes->size; i++) {
 
-        if(probes->nodes[i] != NULL) {
-
-            // For each value of an existing probe
-            for(unsigned int j=0; j<probes->nodes[i]->nValues; j++) {
-                fprintf(
-                    fp, "%s,%s\n",
-                    probes->nodes[i]->key,
-                    double_to_base64(probes->nodes[i]->values[j])
-                );
-            }
+    // Iterate over all table elements
+    vfc_probe_node * probe = NULL;
+    for (int i = 0; i < probes->map->capacity; i++) {
+        probe = (vfc_probe_node*) get_value_at(probes->map->items, i);
+        if(probe != NULL) {
+            fprintf(
+                fp, "%s,%a\n",
+                probe->key,
+                probe->value
+            );
         }
     }
 

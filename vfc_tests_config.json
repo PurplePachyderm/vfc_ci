@@ -11,10 +11,11 @@
                 },
                 {
                     "name": "libinterflop_mca.so --precision-binary64=24",
-                    "repetitions": 1
+                    "repetitions": 10
                 },
                 {
-                    "name": "libinterflop_mca.so --mode=pb --precision-binary64=24"
+                    "name": "libinterflop_mca.so --mode=pb --precision-binary64=24",
+                    "repetitions": 10
                 }
             ]
         }

@@ -28,7 +28,7 @@ def read_probes_csv(filepath, backend):
 
     # NOTE The lambda function should probably change depending on if the system
     # uses little or big endian
-    results["value"] = results["value"].apply(lambda x: struct.unpack('<d'.format(64.0), base64.standard_b64decode(x))[0])
+    results["value"] = results["value"].apply(lambda x: float.fromhex(x))
 
     results = results.groupby("key").value.apply(list).reset_index()
     results[["test", "variable"]] = results["key"].str.split(':', expand=True)
