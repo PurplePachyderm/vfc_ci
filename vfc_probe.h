@@ -61,6 +61,18 @@ vfc_probes vfc_init_probes() {
 */
 
 void vfc_free_probes(vfc_probes * probes) {
+
+    // Before freeing the map, iterate manually over all items to free the keys
+    vfc_probe_node * probe = NULL;
+    for (int i = 0; i < probes->map->capacity; i++) {
+        probe = (vfc_probe_node*) get_value_at(probes->map->items, i);
+        if(probe != NULL) {
+            if(probe->key != NULL) {
+                free(probe->key);
+            }
+        }
+    }
+
     vfc_hashmap_free(probes->map);
 }
 
@@ -212,7 +224,6 @@ int vfc_dump_probes(vfc_probes * probes, char * exportPath) {
 
     // First line gives the column names
     fprintf(fp, "key,value\n");
-
 
     // Iterate over all table elements
     vfc_probe_node * probe = NULL;
