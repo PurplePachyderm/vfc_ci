@@ -19,6 +19,7 @@ import base64
 import struct
 
 
+
     # Helper functions that reads a probes CSV files
 
 def read_probes_csv(filepath, backend):
@@ -35,9 +36,10 @@ def read_probes_csv(filepath, backend):
     del results["key"]
     results.rename(columns = {"value":"values"}, inplace = True)
 
-    results["backend"] = backend
+    results["vfc_backend"] = backend
 
     return results
+
 
 
     # Open and read the tests config file
@@ -53,43 +55,31 @@ except FileNotFoundError as e:
 config = json.loads(data)
 
 
-    # Check the "--is-git-commit" argument
-    # (and if detected, get last commit's metadata)
 
-# Default value is the current timestamp. If the run is associated with a git commit,
-# it will be replaced by the commit's timestamp.
-timestamp = calendar.timegm(time.gmtime())
+    # Set up the commit metadata (if any)
 
-commit_metadata = {}
-is_git_commit = False
+# Commit metadata is initiated as if no commit was associated
+commit_metadata = {
+    "timestamp": calendar.timegm(time.gmtime()),
+    "is_git_commit": False
+}
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--is-git-commit":
         print("Fetching metadata from last commit...")
         from git import Repo
 
-        is_git_commit = True
+        commit_metadata["is_git_commit"] = True
 
         repo = Repo(".")
         head_commit = repo.head.commit
 
-        timestamp = head_commit.authored_date
+        commit_metadata["timestamp"] = head_commit.authored_date
 
         commit_metadata["hash"] = str(head_commit)[0:7]
         commit_metadata["author"] = str(head_commit.author) + " <" + head_commit.author.email + ">"
         commit_metadata["message"] = head_commit.message
 
-
-    # Initialize the vfcrun object that will be exported
-
-vfcrun = {
-    "timestamp": timestamp,
-
-    "is_git_commit": is_git_commit,
-    "commit_metadata": commit_metadata,
-
-    "results": []
-}
 
 
     # Run the build command
@@ -110,7 +100,6 @@ for executable in config["executables"]:
         parameters = executable["parameters"]
 
     for backend in executable["vfc_backends"]:
-        print("    ... with backend :", backend["name"])
 
         export_backend = 'VFC_BACKENDS="' + backend["name"] + '" '
         command = "./" + executable["executable"] + " " + parameters
@@ -129,23 +118,46 @@ for executable in config["executables"]:
             for file in output_files:
                 values.append(read_probes_csv(file, backend["name"]))
 
+# Combine all separate executions in one dataframe
 values = pd.concat(values, sort=False, ignore_index=True)
 
 
-    # Compute statistics for each variable of each test (over combined dataframe)
 
-# TODO
+    # Data processing
+
+print("Processing data...")
+
+def numpy_float_array(x):
+    return np.array(x).astype(float)
+
+def get_quantile(array, p):
+    return np.quantile(array, p)
+
+values["values"] = values["values"].apply(numpy_float_array)
+
+values["mu"] = values["values"].apply(np.average)
+values["sigma"] = values["values"].apply(np.std)
+
+# NOTE : What about s when the sample's avg is 0 ? (divison by 0 returns NaN)
+values["s10"] = - np.log10(np.absolute( values["sigma"] / values["mu"] ))
+values["s2"] = - np.log2(np.absolute( values["sigma"] / values["mu"] ))
+
+# NOTE : Would sorting values["values"] before getting the quantiles give
+# better performances ?
+values["quantile10"] = values["values"].apply(get_quantile, args=(0.1,))
+values["quantile50"] = values["values"].apply(get_quantile, args=(0.5,))
+values["quantile90"] = values["values"].apply(get_quantile, args=(0.9,))
+
+# Delete the raw values
+# NOTE In the future, we might want to export these values in a way or another
+del values["values"]
+values = values.set_index(["test", "vfc_backend", "variable"])
 
 
-    # Export the vfcrun object as a JSON file
+    # Concatenate data and metadata, then export to hdf5
 
-if is_git_commit:
-    file_name = commit_metadata["hash"] + ".vfcrun.json"
+print("commit_metadata = ")
+print(commit_metadata)
 
-else:
-    file_name = str(timestamp) + ".vfcrun.json"
-
-print("\nRun succesful, exporting results in", file_name)
-
-with open(file_name, 'w', encoding='utf8') as f:
-    json.dump(vfcrun, f, ensure_ascii=False)
+print("values = ")
+print(values)

@@ -48,41 +48,8 @@ runs = runs.reset_index(drop=True)
 
 # At this point, each dataframe row represents a run for one test/backend combination,
 # and has the following columns :
-# timestamp, is_git_commit, commit_metadata, test, vfc_backend, values
+# timestamp, is_git_commit, commit_metadata, test, vfc_backend
 
-
-    # Actual data processing (compute average, standard deviation, significant digits)
-
-print("Processing data...")
-
-def numpy_float_array(x):
-    return np.array(x).astype(float)
-
-def get_quantile(array, p):
-    return np.quantile(array, p)
-
-runs["values"] = runs["values"].apply(numpy_float_array)
-
-runs["mu"] = runs["values"].apply(np.average)
-runs["sigma"] = runs["values"].apply(np.std)
-
-# NOTE : What about s when the sample's avg is 0 ? (divison by 0 returns NaN)
-runs["s10"] = - np.log10(np.absolute( runs["sigma"] / runs["mu"] ))
-runs["s2"] = - np.log2(np.absolute( runs["sigma"] / runs["mu"] ))
-
-# NOTE : Would sorting runs["values"] before getting the quantiles give
-# better performances ?
-runs["quantile10"] = runs["values"].apply(get_quantile, args=(0.1,))
-runs["quantile25"] = runs["values"].apply(get_quantile, args=(0.25,))
-runs["quantile50"] = runs["values"].apply(get_quantile, args=(0.5,))
-runs["quantile75"] = runs["values"].apply(get_quantile, args=(0.75,))
-runs["quantile90"] = runs["values"].apply(get_quantile, args=(0.9,))
-
-runs["values"] = runs["values"].tolist()
-
-
-    # Group the runs by test then backend to get a hierarchical data structure
-    # (in a dictionary)
 
 # Group by test and convert to a dictionary
 runs = dict(tuple(runs.groupby('test')))
@@ -95,12 +62,6 @@ for key, value in runs.items():
     value = dict(tuple(value.groupby("vfc_backend")))
 
     for key2, value2 in value.items():
-        print("Quartiles for array :")
-        print(value2["quantile10"])
-        print(value2["quantile25"])
-        print(value2["quantile50"])
-        print(value2["quantile75"])
-        print(value2["quantile90"])
 
         # "vfc_backend" column is now useless
         del value2["vfc_backend"]
