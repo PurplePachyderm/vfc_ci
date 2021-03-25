@@ -19,7 +19,6 @@ import base64
 import struct
 
 
-
     # Helper functions that reads a probes CSV files
 
 def read_probes_csv(filepath, backend):
@@ -74,7 +73,10 @@ for i in range(1, len(sys.argv)):
 # Metadata and filename are initiated as if no commit was associated
 metadata = {
     "timestamp": calendar.timegm(time.gmtime()),
-    "is_git_commit": is_git_commit
+    "is_git_commit": is_git_commit,
+    "hash": "",
+    "author": "",
+    "message": ""
 }
 filename = str(metadata["timestamp"])
 
@@ -100,9 +102,10 @@ print("Building tests...")
 os.system(config["make_command"])
 
 
+
     # Execute all tests and collect results in a Pandas dataframe
 
-values = [] # This is an array of Pandas dataframes for now
+data = [] # This is an array of Pandas dataframes for now
 
 for executable in config["executables"]:
     print("Running executable :", executable["executable"], "...")
@@ -125,17 +128,17 @@ for executable in config["executables"]:
             os.system(export_backend + command)
 
             # List and read all the output files
-            output_files = glob.glob(executable['output_files'])
+            output_files = glob.glob(executable["output_files"])
 
             for file in output_files:
-                values.append(read_probes_csv(file, backend["name"]))
+                data.append(read_probes_csv(file, backend["name"]))
 
     # Clean output files for this executable
-    os.system("rm -f " + executable['output_files'])
+    os.system("rm -f " + executable["output_files"])
 
 # Combine all separate executions in one dataframe
-values = pd.concat(values, sort=False, ignore_index=True)
-values = values.groupby(["test", "vfc_backend", "variable"]).values.apply(list).reset_index()
+data = pd.concat(data, sort=False, ignore_index=True)
+data = data.groupby(["test", "vfc_backend", "variable"]).values.apply(list).reset_index()
 
 
 
@@ -149,34 +152,40 @@ def numpy_float_array(x):
 def get_quantile(array, p):
     return np.quantile(array, p)
 
-values["values"] = values["values"].apply(numpy_float_array)
+data["values"] = data["values"].apply(numpy_float_array)
 
-values["mu"] = values["values"].apply(np.average)
-values["sigma"] = values["values"].apply(np.std)
+data["mu"] = data["values"].apply(np.average)
+data["sigma"] = data["values"].apply(np.std)
 
 # NOTE : What about s when the sample's avg is 0 ? (divison by 0 returns NaN)
-values["s10"] = - np.log10(np.absolute( values["sigma"] / values["mu"] ))
-values["s2"] = - np.log2(np.absolute( values["sigma"] / values["mu"] ))
+data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
+data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
 
-# NOTE : Would sorting values["values"] before getting the quantiles give
+# NOTE : Would sorting data["values"] before getting the quantiles give
 # better performances ?
-values["quantile10"] = values["values"].apply(get_quantile, args=(0.1,))
-values["quantile50"] = values["values"].apply(get_quantile, args=(0.5,))
-values["quantile90"] = values["values"].apply(get_quantile, args=(0.9,))
-
-values = values.set_index(["test", "vfc_backend", "variable"])
+data["quantile10"] = data["values"].apply(get_quantile, args=(0.1,))
+data["quantile50"] = data["values"].apply(get_quantile, args=(0.5,))
+data["quantile90"] = data["values"].apply(get_quantile, args=(0.9,))
 
 
 
-    # Concatenate data and metadata, then export to hdf5
+    # Concatenate data and metadata, then export to HDF5
 
-print("Run successful, exporting results...")
+# Prepare data
+data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
+data["timestamp"] = metadata["timestamp"]
 
-values = pd.concat({json.dumps(metadata): values}, names=['metadata'])
+# Prepare metadata
+metadata = pd.DataFrame.from_dict([metadata])
 
 # NOTE : Exporting to HDF5 requires to install "tables" on the system
 if export_raw_values:
-    values.to_hdf(filename + "_raw.hd5", key="data")
+    data.to_hdf(filename + ".raw.hd5", key="data")
+    metadata.to_hdf(filename + ".raw.hd5", key="metadata")
 
-del values["values"]
-values.to_hdf(filename + ".hd5", key="data")
+del data["values"]
+data.to_hdf(filename + ".vfcrun.hd5", key="data")
+metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
+
+print()
+print("The results have been successfully written to \"" + filename + ".vfcrun.hd5\".")
