@@ -5,3 +5,4 @@ test
 *.o
 *.vfcrun.json
 *.csv
+*.hd5

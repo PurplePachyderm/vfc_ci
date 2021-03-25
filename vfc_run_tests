@@ -30,7 +30,6 @@ def read_probes_csv(filepath, backend):
     # uses little or big endian
     results["value"] = results["value"].apply(lambda x: float.fromhex(x))
 
-    results = results.groupby("key").value.apply(list).reset_index()
     results[["test", "variable"]] = results["key"].str.split(':', expand=True)
 
     del results["key"]
@@ -56,29 +55,42 @@ config = json.loads(data)
 
 
 
-    # Set up the commit metadata (if any)
+    # Parse CLI arguments
 
-# Commit metadata is initiated as if no commit was associated
-commit_metadata = {
+is_git_commit = False
+export_raw_values = False
+
+for i in range(1, len(sys.argv)):
+    if sys.argv[i] == "--is-git-commit" or sys.argv[i] == "-g":
+        is_git_commit = True
+
+    if sys.argv[i] == "--export-raw-values" or sys.argv[i] == "-r":
+        export_raw_values = True
+
+
+
+    # Set up metadata
+
+# Metadata and filename are initiated as if no commit was associated
+metadata = {
     "timestamp": calendar.timegm(time.gmtime()),
-    "is_git_commit": False
+    "is_git_commit": is_git_commit
 }
+filename = str(metadata["timestamp"])
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "--is-git-commit":
-        print("Fetching metadata from last commit...")
-        from git import Repo
+if is_git_commit:
+    print("Fetching metadata from last commit...")
+    from git import Repo
 
-        commit_metadata["is_git_commit"] = True
+    repo = Repo(".")
+    head_commit = repo.head.commit
 
-        repo = Repo(".")
-        head_commit = repo.head.commit
+    metadata["timestamp"] = head_commit.authored_date
+    filename = str(head_commit)[0:7]
 
-        commit_metadata["timestamp"] = head_commit.authored_date
-
-        commit_metadata["hash"] = str(head_commit)[0:7]
-        commit_metadata["author"] = str(head_commit.author) + " <" + head_commit.author.email + ">"
-        commit_metadata["message"] = head_commit.message
+    metadata["hash"] = str(head_commit)[0:7]
+    metadata["author"] = str(head_commit.author) + " <" + head_commit.author.email + ">"
+    metadata["message"] = head_commit.message
 
 
 
@@ -118,8 +130,12 @@ for executable in config["executables"]:
             for file in output_files:
                 values.append(read_probes_csv(file, backend["name"]))
 
+    # Clean output files for this executable
+    os.system("rm -f " + executable['output_files'])
+
 # Combine all separate executions in one dataframe
 values = pd.concat(values, sort=False, ignore_index=True)
+values = values.groupby(["test", "vfc_backend", "variable"]).values.apply(list).reset_index()
 
 
 
@@ -148,16 +164,19 @@ values["quantile10"] = values["values"].apply(get_quantile, args=(0.1,))
 values["quantile50"] = values["values"].apply(get_quantile, args=(0.5,))
 values["quantile90"] = values["values"].apply(get_quantile, args=(0.9,))
 
-# Delete the raw values
-# NOTE In the future, we might want to export these values in a way or another
-del values["values"]
 values = values.set_index(["test", "vfc_backend", "variable"])
+
 
 
     # Concatenate data and metadata, then export to hdf5
 
-print("commit_metadata = ")
-print(commit_metadata)
+print("Run successful, exporting results...")
 
-print("values = ")
-print(values)
+values = pd.concat({json.dumps(metadata): values}, names=['metadata'])
+
+# NOTE : Exporting to HDF5 requires to install "tables" on the system
+if export_raw_values:
+    values.to_hdf(filename + "_raw.hd5", key="data")
+
+del values["values"]
+values.to_hdf(filename + ".hd5", key="data")
