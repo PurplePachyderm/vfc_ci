@@ -19,8 +19,9 @@ import base64
 import struct
 
 
-    # Helper functions that reads a probes CSV files
+    # Helper functions
 
+# Read a CSV file outputted by vfc_probe as a Pandas dataframe
 def read_probes_csv(filepath, backend):
 
     results = pd.read_csv(filepath)
@@ -37,6 +38,8 @@ def read_probes_csv(filepath, backend):
     results["vfc_backend"] = backend
 
     return results
+
+################################################################################
 
 
 
@@ -177,6 +180,7 @@ data["timestamp"] = metadata["timestamp"]
 
 # Prepare metadata
 metadata = pd.DataFrame.from_dict([metadata])
+metadata = metadata.set_index("timestamp")
 
 # NOTE : Exporting to HDF5 requires to install "tables" on the system
 if export_raw_values:

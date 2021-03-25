@@ -17,13 +17,9 @@
     </head>
 
     <body>
-        Hello, {{arg}}!
 
-        <br>
-
-        Here is the first plot :
-        {{ plots['plot1'] }}
-
-    </body>
+        {% for p in plots.values() %}
+        {{p}}
+        {% endfor %}
 
 </html>

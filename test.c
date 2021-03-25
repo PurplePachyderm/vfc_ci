@@ -6,14 +6,16 @@
 int main(void) {
 
     vfc_probes probes = vfc_init_probes();
-    double res = 0;
+    double res = 11;
+    float varf = 42.4242f;
 
     for(int i=0; i<10; i++) {
-        res = res + 0.01;
-        res = res - 0.01;
+        res = res + 1.0;
+
+        varf = varf + 0.01;
+        varf = varf - 0.01;
     }
 
-    float varf = 42.4242f;
 
     vfc_put_probe(&probes, "test", VAR_NAME(res), res);
     vfc_put_probe(&probes, "test", VAR_NAME(varf), varf);
