@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 # Simple wrapper to avoid calling bokeh directly
 
-bokeh serve --show vfc_ci_server
+bokeh serve vfc_ci_server

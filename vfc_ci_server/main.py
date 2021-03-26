@@ -42,8 +42,6 @@ def gen_x_series(metadata, timestamps):
 
     # Read vfcrun files and generate data/metadata
 
-print("Looking for vfcrun files...")
-
 run_files = [ f for f in os.listdir(".") if f.endswith(".vfcrun.hd5") ]
 
 if len(run_files) == 0:
@@ -66,18 +64,49 @@ data = data.groupby(["test", "variable", "vfc_backend"]).agg(lambda x: list(x))
 
 print(data)
 
-    # Lanch Bokeh server
-
-print("[TODO] Starting the Bokeh server...")
-
-p = figure(name="plot", x_range=(0, 100), y_range=(0, 100))
-curdoc().add_root(p)
 
 
-    # Write file
+################################################################################
 
-with open("report.html", "w") as fh:
-    fh.write(render)
 
-print()
-print("The report has been successfully written to \"report.html\".")
+    # WIP Setup Bokeh server
+
+curdoc().title = "Verificarlo Report"
+
+# Plots setup
+
+boxplot = figure(
+    name="boxplot", title="Variable repartition over runs",
+    plot_width=800, plot_height=300
+)
+curdoc().add_root(boxplot)
+
+sigma_plot = figure(
+    name="sigma_plot", title="Standard deviation σ over runs",
+    plot_width=800, plot_height=300
+)
+curdoc().add_root(sigma_plot)
+
+s_plot = figure(
+    name="s_plot", title="Significant digits s over runs",
+    plot_width=800, plot_height=300
+)
+curdoc().add_root(s_plot)
+
+
+# Widgets setup
+
+select_test = Select(
+    name="select_test", title="Test :",
+    value="", options=["foo", "bar", "baz", "quux"]
+)
+
+select_var = Select(
+    name="select_var", title="Variable :",
+    value="", options=["foo", "bar", "baz", "quux"]
+)
+
+select_backend = Select(
+    name="select_backend", title="Verificarlo backend :",
+    value="", options=["foo", "bar", "baz", "quux"]
+)

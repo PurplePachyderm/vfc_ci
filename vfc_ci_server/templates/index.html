@@ -9,18 +9,10 @@
 
     <body>
     {% block contents %}
+    
+        <h1>Verificarlo Report</h1>
 
-
-        <div>
-        {{ embed(roots.plot) }}
-        </div>
-
-        <script type="text/javascript">
-        setTimeout(function(){
-            document.title = "Verificarlo Report";
-        }, 500);
-        </script>
-
+        {{ super() }}
 
     {% endblock %}
     </body>
