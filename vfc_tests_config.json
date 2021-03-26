@@ -4,7 +4,6 @@
         {
             "executable": "test",
             "parameters" : "",
-            "output_files": "*.csv",
             "vfc_backends": [
                 {
                     "name": "libinterflop_ieee.so"

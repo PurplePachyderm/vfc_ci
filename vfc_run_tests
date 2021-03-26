@@ -116,6 +116,10 @@ os.system(config["make_command"])
 
 data = [] # This is an array of Pandas dataframes for now
 
+# Create tmp folder to export results
+os.system("mkdir .vfcruns.tmp")
+n_file = 0
+
 for executable in config["executables"]:
     print("Running executable :", executable["executable"], "...")
 
@@ -125,7 +129,7 @@ for executable in config["executables"]:
 
     for backend in executable["vfc_backends"]:
 
-        export_backend = 'VFC_BACKENDS="' + backend["name"] + '" '
+        export_backend = "VFC_BACKENDS=\"" + backend["name"] + "\" "
         command = "./" + executable["executable"] + " " + parameters
 
         repetitions = 1
@@ -134,16 +138,18 @@ for executable in config["executables"]:
 
         # Run test repetitions and save results
         for i in range(repetitions):
-            os.system(export_backend + command)
+            file = ".vfcruns.tmp/" + str(n_file) + ".csv"
+            export_output = "VFC_PROBES_OUTPUT=\"" + file + "\" "
+            os.system(export_output + export_backend + command)
 
-            # List and read all the output files
-            output_files = glob.glob(executable["output_files"])
 
-            for file in output_files:
-                data.append(read_probes_csv(file, backend["name"]))
+            data.append(read_probes_csv(file, backend["name"]))
 
-    # Clean output files for this executable
-    os.system("rm -f " + executable["output_files"])
+            n_file = n_file + 1
+
+
+# Clean output files
+os.system("rm -rf .vfcruns.tmp")
 
 # Combine all separate executions in one dataframe
 data = pd.concat(data, sort=False, ignore_index=True)
@@ -189,6 +195,7 @@ if export_raw_values:
     metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
 
 del data["values"]
+
 data.to_hdf(filename + ".vfcrun.hd5", key="data")
 metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
 

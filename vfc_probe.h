@@ -197,14 +197,18 @@ unsigned int vfc_num_probes(vfc_probes * probes) {
 
 
 /*
-* Dump probes in a .csv file (the double values are converted to hex)
+* Dump probes in a .csv file (the double values are converted to hex), then
+* free it.
 */
 
-int vfc_dump_probes(vfc_probes * probes, char * exportPath) {
+int vfc_dump_probes(vfc_probes * probes) {
 
     if(probes == NULL) {
         return 1;
     }
+
+    // Get export path from the VFC_PROBES_OUTPUT env variable
+    char* exportPath = getenv("VFC_PROBES_OUTPUT");
 
     FILE * fp = fopen(exportPath, "w");
 
@@ -235,5 +239,7 @@ int vfc_dump_probes(vfc_probes * probes, char * exportPath) {
 
     fclose(fp);
 
+    vfc_free_probes(probes);
+    
     return 0;
 }
