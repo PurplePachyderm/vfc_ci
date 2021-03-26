@@ -1,8 +1,4 @@
-*.html
-*.txt
-README.md.tmp
 test
 *.o
-*.vfcrun.json
 *.csv
 *.hd5

@@ -39,6 +39,12 @@ def read_probes_csv(filepath, backend):
 
     return results
 
+def numpy_float_array(x):
+    return np.array(x).astype(float)
+
+def get_quantile(array, p):
+    return np.quantile(array, p)
+
 ################################################################################
 
 
@@ -149,12 +155,6 @@ data = data.groupby(["test", "vfc_backend", "variable"]).values.apply(list).rese
 
 print("Processing data...")
 
-def numpy_float_array(x):
-    return np.array(x).astype(float)
-
-def get_quantile(array, p):
-    return np.quantile(array, p)
-
 data["values"] = data["values"].apply(numpy_float_array)
 
 data["mu"] = data["values"].apply(np.average)
@@ -164,15 +164,16 @@ data["sigma"] = data["values"].apply(np.std)
 data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
 data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
 
-# NOTE : Would sorting data["values"] before getting the quantiles give
-# better performances ?
-data["quantile10"] = data["values"].apply(get_quantile, args=(0.1,))
+data["values"] = data["values"].apply(np.sort)
+data["min"] = data["values"].apply(np.min)
+data["quantile25"] = data["values"].apply(get_quantile, args=(0.25,))
 data["quantile50"] = data["values"].apply(get_quantile, args=(0.5,))
-data["quantile90"] = data["values"].apply(get_quantile, args=(0.9,))
+data["quantile75"] = data["values"].apply(get_quantile, args=(0.75,))
+data["max"] = data["values"].apply(np.max)
 
 
 
-    # Concatenate data and metadata, then export to HDF5
+    # Export to HDF5
 
 # Prepare data
 data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
@@ -184,8 +185,8 @@ metadata = metadata.set_index("timestamp")
 
 # NOTE : Exporting to HDF5 requires to install "tables" on the system
 if export_raw_values:
-    data.to_hdf(filename + ".raw.hd5", key="data")
-    metadata.to_hdf(filename + ".raw.hd5", key="metadata")
+    data.to_hdf(filename + ".vfcraw.hd5", key="data")
+    metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
 
 del data["values"]
 data.to_hdf(filename + ".vfcrun.hd5", key="data")

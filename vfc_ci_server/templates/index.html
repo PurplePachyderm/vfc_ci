@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Verificarlo report</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% extends base %}
+    </head>
+
+    <body>
+    {% block contents %}
+
+
+        <div>
+        {{ embed(roots.plot) }}
+        </div>
+
+        <script type="text/javascript">
+        setTimeout(function(){
+            document.title = "Verificarlo report";
+        }, 1000);
+        </script>
+
+
+    {% endblock %}
+    </body>
+
+</html>

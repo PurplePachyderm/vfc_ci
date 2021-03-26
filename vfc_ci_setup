@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# NOTE : This file has to be updated with the new scripts
 # Sets up Verificarlo CI on the current branch
 
 # Get name of both current and new CI branch

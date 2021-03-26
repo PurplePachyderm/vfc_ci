@@ -56,15 +56,13 @@ vfc_probes vfc_init_probes() {
 
 /*
 * Free all probes
-* WARNING: Memory leaks because the char * inside the vfc_probe_nodes are not
-* freed ?
 */
 
 void vfc_free_probes(vfc_probes * probes) {
 
     // Before freeing the map, iterate manually over all items to free the keys
     vfc_probe_node * probe = NULL;
-    for (int i = 0; i < probes->map->capacity; i++) {
+    for(int i = 0; i < probes->map->capacity; i++) {
         probe = (vfc_probe_node*) get_value_at(probes->map->items, i);
         if(probe != NULL) {
             if(probe->key != NULL) {
@@ -192,10 +190,7 @@ int vfc_remove_probe(vfc_probes * probes, char * testName, char * varName) {
 * Return the number of probes stored in the hashmap
 */
 
-unsigned int vfc_num_probes(
-    vfc_probes * probes
-) {
-
+unsigned int vfc_num_probes(vfc_probes * probes) {
     return vfc_hashmap_num_items(probes->map);
 }
 
@@ -227,7 +222,7 @@ int vfc_dump_probes(vfc_probes * probes, char * exportPath) {
 
     // Iterate over all table elements
     vfc_probe_node * probe = NULL;
-    for (int i = 0; i < probes->map->capacity; i++) {
+    for(int i = 0; i < probes->map->capacity; i++) {
         probe = (vfc_probe_node*) get_value_at(probes->map->items, i);
         if(probe != NULL) {
             fprintf(

@@ -1,3 +1,4 @@
+# NOTE : This file has to be updated with the new scripts
 # This workflow will be executed when {{dev_branch}} is updated:
 # it will generate the new Verificarlo report and commit it to {{ci_branch}}.
 
