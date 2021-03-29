@@ -11,7 +11,7 @@ import pandas as pd
 from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
-from bokeh.models import Select, ColumnDataSource, Panel, Tabs
+from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -23,25 +23,41 @@ def get_metadata(timestamp):
     return metadata.loc[timestamp]
 
 # From an array of timestamps, return an array of hashes/dates that can
-# be used as the x serie of a bar/box plot
+# be used as the x series of a bar/box plot, as well as the metadata associated
+# to this x series (for the tooltips)
 def gen_x_series(timestamps):
     x = []
+    x_metadata = dict(
+        date = [],
+        is_git_commit = [],
+        hash = [],
+        author = [],
+        message = []
+    )
     for i in range(0, len(timestamps)):
         row_metadata = get_metadata(timestamps[i])
+        date = datetime.datetime.fromtimestamp(timestamps[i]).isoformat()
 
         if row_metadata["is_git_commit"]:
             x.append(row_metadata["hash"])
 
         else:
-            x.append(datetime.datetime.fromtimestamp(timestamps[i]).isoformat())
+            x.append(date)
 
-    return x
+        # Fill the metadata lists
+        x_metadata["date"].append(date)
+        x_metadata["is_git_commit"].append(row_metadata["is_git_commit"])
+        x_metadata["hash"].append(row_metadata["hash"])
+        x_metadata["author"].append(row_metadata["author"])
+        x_metadata["message"].append(row_metadata["message"])
+
+    return x, x_metadata
 
 # Update plots based on current_test/var/backend combination
 def update_plots():
 
     line = data.loc[current_test, current_var, current_backend]
-    x = gen_x_series(line["timestamp"])
+    x, x_metadata = gen_x_series(line["timestamp"])
 
     # Update x_ranges
     boxplot.x_range.factors = list(x)
@@ -52,6 +68,12 @@ def update_plots():
     # Update source
     source.data = dict(
         x = x,
+        is_git_commit = x_metadata["is_git_commit"],
+        date = x_metadata["date"],
+        hash = x_metadata["hash"],
+        author = x_metadata["author"],
+        message = x_metadata["message"],
+
         sigma = line["sigma"],
         s10 = line["s10"],
         s2 = line["s2"],
@@ -68,6 +90,21 @@ def update_plots():
 def gen_boxplot(plot):
     # (based on : https://docs.bokeh.org/en/latest/docs/gallery/boxplot.html)
 
+    hover = HoverTool(tooltips = [
+        ("Git commit", "@is_git_commit"),
+        ("Date", "@date"),
+        ("Hash", "@hash"),
+        ("Author", "@author"),
+        ("Message", "@message"),
+        ("Min", "@min"),
+        ("Max", "@max"),
+        ("1st quartile", "@quantile25"),
+        ("Median", "@quantile50"),
+        ("3rd quartile", "@quantile75"),
+        ("μ", "@mu")
+    ])
+    plot.add_tools(hover)
+
     # Stems
     plot.segment(x0="x", y0="max", x1="x", y1="quantile75", source=source,
     line_color="black")
@@ -76,25 +113,59 @@ def gen_boxplot(plot):
 
     # Boxes
     plot.vbar(x="x", width=0.5, top="quantile75", bottom="quantile50", source=source,
-    line_color="black", fill_color="#3B8686")
-    plot.vbar(x="x", width=0.5, top="quantile50", bottom="quantile25", source=source,
     line_color="black", fill_color="#E08E79")
+    plot.vbar(x="x", width=0.5, top="quantile50", bottom="quantile25", source=source,
+    line_color="black", fill_color="#3B8686")
+
+    # Mu dot
+    plot.dot(x="x", y="mu", size=30, source=source,
+    color="black", legend_label="Empirical average μ")
 
     # Other
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
 
 def gen_sigma_plot(plot):
+    hover = HoverTool(tooltips = [
+        ("Git commit", "@is_git_commit"),
+        ("Date", "@date"),
+        ("Hash", "@hash"),
+        ("Author", "@author"),
+        ("Message", "@message"),
+        ("σ", "@sigma")
+    ])
+    plot.add_tools(hover)
+
     plot.vbar(x="x", top="sigma", source=source, width=0.5)
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
 
 def gen_s10_plot(plot):
+    hover = HoverTool(tooltips = [
+        ("Git commit", "@is_git_commit"),
+        ("Date", "@date"),
+        ("Hash", "@hash"),
+        ("Author", "@author"),
+        ("Message", "@message"),
+        ("s", "@s10")
+    ])
+    plot.add_tools(hover)
+
     plot.vbar(x="x", top="s10", source=source, width=0.5)
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
 
 def gen_s2_plot(plot):
+    hover = HoverTool(tooltips = [
+        ("Git commit", "@is_git_commit"),
+        ("Date", "@date"),
+        ("Hash", "@hash"),
+        ("Author", "@author"),
+        ("Message", "@message"),
+        ("s", "@s2")
+    ])
+    plot.add_tools(hover)
+
     plot.vbar(x="x", top="s2", source=source, width=0.5)
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
@@ -125,8 +196,6 @@ data = pd.concat(data).sort_index()
 data = data.sort_values("timestamp").sort_index()
 data = data.groupby(["test", "variable", "vfc_backend"]).agg(lambda x: list(x))
 
-print(data)
-
 
 ################################################################################
 
@@ -153,9 +222,15 @@ current_backend = backends[0]
     # (all updates will simply be made to this object)
 
 line = data.loc[current_test, current_var, current_backend]
-x = gen_x_series(line["timestamp"])
+x, x_metadata = gen_x_series(line["timestamp"])
 source = ColumnDataSource(data=dict(
     x = x,
+    is_git_commit = x_metadata["is_git_commit"],
+    date = x_metadata["date"],
+    hash = x_metadata["hash"],
+    author = x_metadata["author"],
+    message = x_metadata["message"],
+
     sigma = line["sigma"],
     s10 = line["s10"],
     s2 = line["s2"],

@@ -101,7 +101,7 @@ if is_git_commit:
 
     metadata["hash"] = str(head_commit)[0:7]
     metadata["author"] = str(head_commit.author) + " <" + head_commit.author.email + ">"
-    metadata["message"] = head_commit.message
+    metadata["message"] = head_commit.message.split("\n")[0]
 
 
 
@@ -201,3 +201,6 @@ metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
 
 print()
 print("The results have been successfully written to \"" + filename + ".vfcrun.hd5\".")
+
+if export_raw_values:
+    print("A file containing the raw values has also been written to \"" + filename + ".vfcraw.hd5\".")
