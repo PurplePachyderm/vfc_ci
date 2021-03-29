@@ -9,10 +9,18 @@
 
     <body>
     {% block contents %}
-    
+
         <h1>Verificarlo Report</h1>
 
-        {{ super() }}
+        <h2>Selectors</h2>
+        {{ embed(roots.select_test) }}
+        {{ embed(roots.select_var) }}
+        {{ embed(roots.select_backend) }}
+
+        <h2> Plots<h2>
+        {{ embed(roots.boxplot) }}
+        {{ embed(roots.sigma_plot) }}
+        {{ embed(roots.s_tabs) }}
 
     {% endblock %}
     </body>
