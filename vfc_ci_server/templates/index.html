@@ -4,23 +4,126 @@
     <head>
         <title>Verificarlo Report</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+
+        <style>
+            html, body{
+                background-color: #f5f5f5;
+            }
+
+            #logo-link {
+                padding: 0;
+                padding-left: 16px;
+            }
+
+            #logo-img {
+                object-fit: cover;
+                margin-top: -20px;
+                margin-left: -8px;
+                max-height: 50px;
+            }
+
+            #content-container {
+                margin-top: 1em;
+            }
+
+            .plot-card {
+                width: 800px;
+            }
+
+        </style>
+
         {% extends base %}
     </head>
+
+
 
     <body>
     {% block contents %}
 
-        <h1>Verificarlo Report</h1>
+        <!-- HEADER -->
+        <nav class="navbar has-shadow" height="40" role="navigation" aria-label="main navigation">
 
-        <h2>Selectors</h2>
-        {{ embed(roots.select_test) }}
-        {{ embed(roots.select_var) }}
-        {{ embed(roots.select_backend) }}
+            <!-- BRAND (left part) -->
+            <div class="navbar-brand">
+                <a class="navbar-item" id="logo-link" href="http://localhost:5006/vfc_ci_server">
+                    <img id="logo-img" width="85" height="45" src="https://avatars1.githubusercontent.com/u/12033642">
+                </a>
 
-        <h2> Plots<h2>
-        {{ embed(roots.boxplot) }}
-        {{ embed(roots.sigma_plot) }}
-        {{ embed(roots.s_tabs) }}
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+
+            <!-- MENU (center part) -->
+            <div class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item is-active">
+                        Compare runs
+                    </a>
+
+                    <a class="navbar-item">
+                        [TODO] Compare variables
+                    </a>
+                </div>
+            </div>
+
+            <!-- END (right part) -->
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" href="https://github.com/verificarlo/verificarlo" target="_blank">
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- CONTENT -->
+        <div class="container" id="content-container">
+        <div class="columns">
+
+            <!-- SELECTORS -->
+            <div class="column">
+                <h4 class="title is-4">Selectors<h2>
+                <div>
+                {{ embed(roots.select_test) }}
+                {{ embed(roots.select_var) }}
+                {{ embed(roots.select_backend) }}
+                </div>
+            </div>
+
+            <div class="is-divider-vertical"></div>
+
+
+            <!-- PLOTS -->
+            <div class="column is-8">
+                <h3 class="title is-3">Plots<h2>
+                <div class="container">
+                    <div class="card plot-card">
+                        {{ embed(roots.boxplot) }}
+                    </div>
+
+                    <br>
+
+                    <div class="card plot-card">
+                        {{ embed(roots.sigma_plot) }}
+                    </div>
+
+                    <br>
+
+                    <div class="card plot-card">
+                        {{ embed(roots.s_tabs) }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        </div>
+
 
     {% endblock %}
     </body>

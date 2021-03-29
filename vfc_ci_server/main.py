@@ -85,6 +85,7 @@ def update_plots():
         mu = line["mu"]
     )
 
+
 # Draw the different plots (on a blank figure)
 
 def gen_boxplot(plot):
@@ -113,9 +114,9 @@ def gen_boxplot(plot):
 
     # Boxes
     plot.vbar(x="x", width=0.5, top="quantile75", bottom="quantile50", source=source,
-    line_color="black", fill_color="#E08E79")
+    line_color="black", fill_color="#D20000")
     plot.vbar(x="x", width=0.5, top="quantile50", bottom="quantile25", source=source,
-    line_color="black", fill_color="#3B8686")
+    line_color="black", fill_color="#008000")
 
     # Mu dot
     plot.dot(x="x", y="mu", size=30, source=source,
@@ -124,6 +125,7 @@ def gen_boxplot(plot):
     # Other
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
+
 
 def gen_sigma_plot(plot):
     hover = HoverTool(tooltips = [
@@ -136,9 +138,10 @@ def gen_sigma_plot(plot):
     ])
     plot.add_tools(hover)
 
-    plot.vbar(x="x", top="sigma", source=source, width=0.5)
+    plot.vbar(x="x", top="sigma", source=source, width=0.5, color="#008000")
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
+
 
 def gen_s10_plot(plot):
     hover = HoverTool(tooltips = [
@@ -151,9 +154,10 @@ def gen_s10_plot(plot):
     ])
     plot.add_tools(hover)
 
-    plot.vbar(x="x", top="s10", source=source, width=0.5)
+    plot.vbar(x="x", top="s10", source=source, width=0.5, color="#008000")
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
+
 
 def gen_s2_plot(plot):
     hover = HoverTool(tooltips = [
@@ -166,7 +170,7 @@ def gen_s2_plot(plot):
     ])
     plot.add_tools(hover)
 
-    plot.vbar(x="x", top="s2", source=source, width=0.5)
+    plot.vbar(x="x", top="s2", source=source, width=0.5, color="#008000")
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
 
