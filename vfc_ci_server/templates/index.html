@@ -11,6 +11,10 @@
                 background-color: #f5f5f5;
             }
 
+            #navbar {
+                height: 67px;
+            }
+
             #logo-link {
                 padding: 0;
                 padding-left: 16px;
@@ -18,7 +22,7 @@
 
             #logo-img {
                 object-fit: cover;
-                margin-top: -20px;
+                margin-top: -18px;
                 margin-left: -8px;
                 max-height: 50px;
             }
@@ -42,7 +46,7 @@
     {% block contents %}
 
         <!-- HEADER -->
-        <nav class="navbar has-shadow" height="40" role="navigation" aria-label="main navigation">
+        <nav class="navbar has-shadow" id="navbar" role="navigation" aria-label="main navigation">
 
             <!-- BRAND (left part) -->
             <div class="navbar-brand">
@@ -72,56 +76,68 @@
 
             <!-- END (right part) -->
             <div class="navbar-end">
+
+                {% if git_repo_linked %}
                 <div class="navbar-item">
                     <div class="buttons">
-                        <a class="button is-light" href="https://github.com/verificarlo/verificarlo" target="_blank">
-                            GitHub
+                        <a class="button is-light" href="{{repo_url}}" target="_blank">
+                            {{repo_name}} on {{git_host}}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" href="https://github.com/verificarlo" target="_blank">
+                            Verificarlo on GitHub
                         </a>
                     </div>
                 </div>
             </div>
         </nav>
 
+
         <!-- CONTENT -->
         <div class="container" id="content-container">
-        <div class="columns">
+            <div class="columns">
 
-            <!-- SELECTORS -->
-            <div class="column">
-                <h4 class="title is-4">Selectors<h2>
-                <div>
-                {{ embed(roots.select_test) }}
-                {{ embed(roots.select_var) }}
-                {{ embed(roots.select_backend) }}
-                </div>
-            </div>
-
-            <div class="is-divider-vertical"></div>
-
-
-            <!-- PLOTS -->
-            <div class="column is-8">
-                <h3 class="title is-3">Plots<h2>
-                <div class="container">
-                    <div class="card plot-card">
-                        {{ embed(roots.boxplot) }}
-                    </div>
-
-                    <br>
-
-                    <div class="card plot-card">
-                        {{ embed(roots.sigma_plot) }}
-                    </div>
-
-                    <br>
-
-                    <div class="card plot-card">
-                        {{ embed(roots.s_tabs) }}
+                <!-- SELECTORS -->
+                <div class="column">
+                    <h4 class="title is-4">Selectors<h2>
+                    <div>
+                    {{ embed(roots.select_test) }}
+                    {{ embed(roots.select_var) }}
+                    {{ embed(roots.select_backend) }}
                     </div>
                 </div>
-            </div>
 
-        </div>
+                <div class="is-divider-vertical"></div>
+
+
+                <!-- PLOTS -->
+                <div class="column is-8">
+                    <h3 class="title is-3">Plots<h2>
+                    <div class="container">
+                        <div class="card plot-card">
+                            {{ embed(roots.boxplot) }}
+                        </div>
+
+                        <br>
+
+                        <div class="card plot-card">
+                            {{ embed(roots.sigma_plot) }}
+                        </div>
+
+                        <br>
+
+                        <div class="card plot-card">
+                            {{ embed(roots.s_tabs) }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
 

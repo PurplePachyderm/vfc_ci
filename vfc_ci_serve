@@ -1,4 +1,38 @@
 #!/usr/bin/env bash
-# Simple wrapper to avoid calling bokeh directly
 
-bokeh serve vfc_ci_server
+# Simple wrapper to avoid calling Bokeh directly and pass our own arguments
+
+# Parse arguments
+
+SHOW=""
+LINK_REPOSITORY=""
+ALLOW_ORIGIN=""
+
+for (( i=1; i<=$#; i++)); do
+    j=$((i+1))
+
+    case ${!i} in
+        -s|--show)
+        echo "Show arg detected"
+        SHOW="--show"
+        ;;
+        -gd|--git-directory)
+        echo "Repository directory arg detected"
+        LINK_REPOSITORY="directory ${!j}"
+        ;;
+        -gr|--git-remote)
+        echo "Repository remote arg detected"
+        LINK_REPOSITORY="remote ${!j}"
+        ;;
+        -a|--allow-origin)
+        echo "Allow origin arg detected"
+        ALLOW_ORIGIN="--allow-websocket-origin=${j}"
+        ;;
+    esac
+
+done
+
+
+# Launch the Bokeh server
+
+bokeh serve vfc_ci_server $SHOW $CUSTOM_PORT $ALLOW_ORIGIN --args $LINK_REPOSITORY

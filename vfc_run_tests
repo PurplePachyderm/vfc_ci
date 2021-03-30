@@ -56,7 +56,8 @@ try:
         data = file.read()
 
 except FileNotFoundError as e:
-    e.strerror = "This file is required to describe the tests to run and generate a Verificarlo run file"
+    e.strerror = "This file is required to describe the tests to run and "\
+    "generate a Verificarlo run file"
     raise e
 
 config = json.loads(data)
