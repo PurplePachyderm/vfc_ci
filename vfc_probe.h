@@ -209,6 +209,11 @@ int vfc_dump_probes(vfc_probes * probes) {
 
     // Get export path from the VFC_PROBES_OUTPUT env variable
     char* exportPath = getenv("VFC_PROBES_OUTPUT");
+    if(!exportPath) {
+        printf("Info [verificarlo]: VFC_PROBES_OUTPUT is not set, probes will not be dumped\n");
+        vfc_free_probes(probes);
+        return 0;
+    }
 
     FILE * fp = fopen(exportPath, "w");
 
@@ -240,6 +245,6 @@ int vfc_dump_probes(vfc_probes * probes) {
     fclose(fp);
 
     vfc_free_probes(probes);
-    
+
     return 0;
 }

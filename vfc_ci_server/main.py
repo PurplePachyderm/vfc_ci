@@ -281,7 +281,7 @@ if len(sys.argv) == 3:
     curdoc().template_variables["repo_name"] = repo_name
 
 
-    # We should have a "github.com" or a "gitlab.XXX" URL
+    # We should have a "github.com" or a "*gitlab*" URL
 
     if parsed_url.netloc == "github.com":
         commit_link = "https://" + parsed_url.netloc + parsed_url.path + "/commit/@hash"
@@ -289,7 +289,7 @@ if len(sys.argv) == 3:
         curdoc().template_variables["git_host"] = "GitHub"
         git_repo_linked = True
 
-    elif "gitlab." in parsed_url.netloc:
+    elif "gitlab" in parsed_url.netloc:
         commit_link = "https://" + parsed_url.netloc + parsed_url.path + "/-/commit/@hash"
         curdoc().template_variables["git_host"] = "GitLab"
         git_repo_linked = True
