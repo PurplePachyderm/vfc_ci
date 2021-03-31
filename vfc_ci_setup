@@ -32,9 +32,6 @@ fi
 # in Verificarlo and becomes available system-wide)
 python setup_ci_readme.py $dev_branch $ci_branch
 
-# Create the repertory that will contain the vfcrun files
-mkdir vfcruns
-
 # Create Verificarlo CI branch
 echo "Creating the Verificarlo CI branch (${ci_branch})..."
 git checkout --orphan $ci_branch
@@ -47,7 +44,6 @@ git push -u origin $ci_branch
 
 # Cleanup and print termination message
 rm README.md
-rm -rf vfcruns
 if [ -f "README.md.tmp" ]; then
     mv README.md.tmp README.md
 fi

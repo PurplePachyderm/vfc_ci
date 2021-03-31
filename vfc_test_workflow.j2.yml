@@ -1,7 +1,7 @@
 # This workflow will be executed when {{dev_branch}} is updated:
 # it will run the configured tests and upload the results on {{ci_branch}}.
 
-name: "Generate Verificarlo report"
+name: "Verificarlo CI({{dev_branch}})"
 
 on:
   # Triggers the workflow when {{dev_branch}} is updated
@@ -27,8 +27,8 @@ jobs:
         run: |
           git clone https://github.com/verificarlo/verificarlo
           cd verificarlo
-          sudo apt-get install libmpfr-dev clang-7 flang-7 llvm-7-dev \
-          gcc-7 autoconf automake build-essential python3 python3-numpy python3-pip
+          sudo apt-get install libmpfr-dev \
+          autoconf automake build-essential python3 python3-numpy python3-pip
           ./autogen.sh
           ./configure --with-flang CC=gcc-7 CXX=g++-7
           make
@@ -50,6 +50,7 @@ jobs:
           git config --local user.name "GitHub Action"
 
           git checkout {{ci_branch}}
+          mkdir -p vfcruns
           mv *.vfcrun.hd5 vfcruns
           git add vfcruns/*
           git commit -m "[auto] New test results for commit ${git_hash}"
