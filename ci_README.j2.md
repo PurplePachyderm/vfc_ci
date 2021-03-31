@@ -2,7 +2,6 @@
 
 You are on the `{{ci_branch}}` branch, which is automatically updated with the
 [Verificarlo](https://github.com/verificarlo/verificarlo) test results from
-`{{dev_branch}}`.
+`{{dev_branch}}` (in the `vfcruns` directory).
 
-You can open `report.html` at anytime to visualize the last test
-results.
+You can run a Verificarlo CI server at anytime using the run files of this branch.
