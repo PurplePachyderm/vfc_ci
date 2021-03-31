@@ -27,7 +27,7 @@ jobs:
         run: |
           git clone https://github.com/verificarlo/verificarlo
           cd verificarlo
-          sudo apt-get install libmpfr-dev clang-7 flang-7 llvm-7-dev llvm-11-tools \
+          sudo apt-get install libmpfr-dev clang-7 flang-7 llvm-7-dev \
           gcc-7 autoconf automake build-essential python3 python3-numpy python3-pip
           ./autogen.sh
           ./configure --with-flang CC=gcc-7 CXX=g++-7
