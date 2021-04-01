@@ -2,6 +2,27 @@
 
 # Helper script to set up Verificarlo CI on the current branch
 
+
+# Require a clean work tree before setting up the CI
+git update-index -q --ignore-submodules --refresh
+
+# Look for unstaged change
+if ! git diff-files --quiet --ignore-submodules --
+then
+    echo >&2 "Error : unstaged changes detected in your work tree."
+    echo >&2 "You need a clean work tree before setting up Verificarlo CI."
+    exit 1
+fi
+
+# Look for uncommitted changes
+if ! git diff-index --cached --quiet HEAD --ignore-submodules --
+then
+    echo >&2 "Eror: uncommitted changes detected in your index."
+    echo >&2 "You need a clean work tree before setting up Verificarlo CI."
+    exit 1
+fi
+
+
 # Get name of both current and new CI branch
 dev_branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 ci_branch="vfc_ci_${dev_branch}"

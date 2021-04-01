@@ -39,22 +39,28 @@ def gen_x_series(timestamps):
         author = [],
         message = []
     )
-    for i in range(0, len(timestamps)):
-        row_metadata = get_metadata(timestamps[i])
-        date = datetime.datetime.fromtimestamp(timestamps[i]).isoformat()
+
+    n = current_n_runs
+
+    if n == 0 or n > len(timestamps):
+        n = len(timestamps)
+
+    for i in range(0, n):
+        row_metadata = get_metadata(timestamps[-i-1])
+        date = datetime.datetime.fromtimestamp(timestamps[-i-1]).isoformat()
 
         if row_metadata["is_git_commit"]:
-            x.append(row_metadata["hash"])
+            x.insert(0, row_metadata["hash"])
 
         else:
-            x.append(date)
+            x.insert(0, date)
 
         # Fill the metadata lists
-        x_metadata["date"].append(date)
-        x_metadata["is_git_commit"].append(row_metadata["is_git_commit"])
-        x_metadata["hash"].append(row_metadata["hash"])
-        x_metadata["author"].append(row_metadata["author"])
-        x_metadata["message"].append(row_metadata["message"])
+        x_metadata["date"].insert(0, date)
+        x_metadata["is_git_commit"].insert(0, row_metadata["is_git_commit"])
+        x_metadata["hash"].insert(0, row_metadata["hash"])
+        x_metadata["author"].insert(0, row_metadata["author"])
+        x_metadata["message"].insert(0, row_metadata["message"])
 
     return x, x_metadata
 
@@ -62,7 +68,6 @@ def gen_x_series(timestamps):
 
 # Update plots based on current_test/var/backend combination
 def update_plots():
-
     line = data.loc[current_test, current_var, current_backend]
     x, x_metadata = gen_x_series(line["timestamp"])
 
@@ -74,22 +79,22 @@ def update_plots():
 
     # Update source
     source.data = dict(
-        x = x,
-        is_git_commit = x_metadata["is_git_commit"],
-        date = x_metadata["date"],
-        hash = x_metadata["hash"],
-        author = x_metadata["author"],
-        message = x_metadata["message"],
+        x = x[-current_n_runs:],
+        is_git_commit = x_metadata["is_git_commit"][-current_n_runs:],
+        date = x_metadata["date"][-current_n_runs:],
+        hash = x_metadata["hash"][-current_n_runs:],
+        author = x_metadata["author"][-current_n_runs:],
+        message = x_metadata["message"][-current_n_runs:],
 
-        sigma = line["sigma"],
-        s10 = line["s10"],
-        s2 = line["s2"],
-        min = line["min"],
-        quantile25 = line["quantile25"],
-        quantile50 = line["quantile50"],
-        quantile75 = line["quantile75"],
-        max = line["max"],
-        mu = line["mu"]
+        sigma = line["sigma"][-current_n_runs:],
+        s10 = line["s10"][-current_n_runs:],
+        s2 = line["s2"][-current_n_runs:],
+        min = line["min"][-current_n_runs:],
+        quantile25 = line["quantile25"][-current_n_runs:],
+        quantile50 = line["quantile50"][-current_n_runs:],
+        quantile75 = line["quantile75"][-current_n_runs:],
+        max = line["max"][-current_n_runs:],
+        mu = line["mu"][-current_n_runs:]
     )
 
 
@@ -138,14 +143,14 @@ def gen_boxplot(plot):
     plot.ygrid.grid_line_color = None
 
 
-def gen_sigma_plot(plot):
+def gen_bar_plot(plot, data_field, display_name):
     hover = HoverTool(tooltips = [
         ("Git commit", "@is_git_commit"),
         ("Date", "@date"),
         ("Hash", "@hash"),
         ("Author", "@author"),
         ("Message", "@message"),
-        ("σ", "@sigma")
+        (display_name, "@" + data_field)
     ])
     plot.add_tools(hover)
 
@@ -153,49 +158,10 @@ def gen_sigma_plot(plot):
         tap = TapTool(callback=OpenURL(url=commit_link))
         plot.add_tools(tap)
 
-    plot.vbar(x="x", top="sigma", source=source, width=0.5, color="#008000")
+    plot.vbar(x="x", top=data_field, source=source, width=0.5, color="#008000")
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
 
-
-def gen_s10_plot(plot):
-    hover = HoverTool(tooltips = [
-        ("Git commit", "@is_git_commit"),
-        ("Date", "@date"),
-        ("Hash", "@hash"),
-        ("Author", "@author"),
-        ("Message", "@message"),
-        ("s", "@s10")
-    ])
-    plot.add_tools(hover)
-
-    if git_repo_linked:
-        tap = TapTool(callback=OpenURL(url=commit_link))
-        plot.add_tools(tap)
-
-    plot.vbar(x="x", top="s10", source=source, width=0.5, color="#008000")
-    plot.xgrid.grid_line_color = None
-    plot.ygrid.grid_line_color = None
-
-
-def gen_s2_plot(plot):
-    hover = HoverTool(tooltips = [
-        ("Git commit", "@is_git_commit"),
-        ("Date", "@date"),
-        ("Hash", "@hash"),
-        ("Author", "@author"),
-        ("Message", "@message"),
-        ("s", "@s2")
-    ])
-    plot.add_tools(hover)
-
-    if git_repo_linked:
-        tap = TapTool(callback=OpenURL(url=commit_link))
-        plot.add_tools(tap)
-
-    plot.vbar(x="x", top="s2", source=source, width=0.5, color="#008000")
-    plot.xgrid.grid_line_color = None
-    plot.ygrid.grid_line_color = None
 
 
 ################################################################################
@@ -313,6 +279,18 @@ current_var = vars[0]
 backends = data.loc[current_test, current_var].index.get_level_values("vfc_backend").drop_duplicates().tolist()
 current_backend = backends[0]
 
+# Number of runs to display
+n_runs = {
+    "Last 3 runs": 3,
+    "Last 5 runs": 5,
+    "Last 10 runs": 10,
+    "All runs": 0
+}
+n_runs_display = list(n_runs.keys())
+
+current_n_runs = n_runs[n_runs_display[1]]
+current_n_runs_display = n_runs_display[1]
+
 
 
     # Main ColumnDataSource setup
@@ -320,34 +298,19 @@ current_backend = backends[0]
 
 line = data.loc[current_test, current_var, current_backend]
 x, x_metadata = gen_x_series(line["timestamp"])
-source = ColumnDataSource(data=dict(
-    x = x,
-    is_git_commit = x_metadata["is_git_commit"],
-    date = x_metadata["date"],
-    hash = x_metadata["hash"],
-    author = x_metadata["author"],
-    message = x_metadata["message"],
-
-    sigma = line["sigma"],
-    s10 = line["s10"],
-    s2 = line["s2"],
-    min = line["min"],
-    quantile25 = line["quantile25"],
-    quantile50 = line["quantile50"],
-    quantile75 = line["quantile75"],
-    max = line["max"],
-    mu = line["mu"]
-))
+source = ColumnDataSource(data={})
 
 
 
     # Plots setup
 
+tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+
 # Box plot
 boxplot = figure(
     name="boxplot", title="Variable distribution over runs",
     plot_width=800, plot_height=330, x_range=x,
-    tools="pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+    tools=tools
 )
 gen_boxplot(boxplot)
 curdoc().add_root(boxplot)
@@ -356,28 +319,28 @@ curdoc().add_root(boxplot)
 sigma_plot = figure(
     name="sigma_plot", title="Standard deviation σ over runs",
     plot_width=800, plot_height=330, x_range=x,
-    tools="pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+    tools=tools
 )
-gen_sigma_plot(sigma_plot)
+gen_bar_plot(sigma_plot, "sigma", "σ")
 curdoc().add_root(sigma_plot)
 
 # s plot (bar plot with 2 tabs)
 s10_plot = figure(
     name="s10_plot", title="Significant digits s over runs",
     plot_width=800, plot_height=330, x_range=x,
-    tools="pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+    tools=tools
 )
-gen_s10_plot(s10_plot)
+gen_bar_plot(s10_plot, "s10", "s")
 s10_tab = Panel(child=s10_plot, title="Base 10")
 
 s2_plot = figure(
     name="s2_plot", title="Significant digits s over runs",
     plot_width=800, plot_height=330, x_range=x,
-    tools="pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+    tools=tools
 )
-
+gen_bar_plot(s2_plot, "s2", "s")
 s2_tab = Panel(child=s2_plot, title="Base 2")
-gen_s2_plot(s2_plot)
+
 s_tabs = Tabs(name = "s_tabs", tabs=[s10_tab, s2_tab], tabs_location = "below")
 
 curdoc().add_root(s_tabs)
@@ -403,6 +366,13 @@ select_backend = Select(
     value=current_backend, options=backends
 )
 curdoc().add_root(select_backend)
+
+# Number of runs to display
+select_n_runs = Select(
+    name="select_n_runs", title="Display :",
+    value=current_n_runs_display, options=n_runs_display
+)
+curdoc().add_root(select_n_runs)
 
 
 
@@ -454,3 +424,20 @@ def update_backend(attrname, old, new):
     update_plots()
 
 select_backend.on_change("value", update_backend)
+
+
+def update_n_runs(attrname, old, new):
+    global current_n_runs_display, current_n_runs
+
+    current_n_runs_display = new
+    current_n_runs = n_runs[current_n_runs_display]
+
+    update_plots()
+
+select_n_runs.on_change("value", update_n_runs)
+
+
+
+# First plots draw
+
+update_plots()
