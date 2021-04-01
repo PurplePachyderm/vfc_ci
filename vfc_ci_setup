@@ -48,8 +48,8 @@ rm README.md
 if [ -f "README.md.tmp" ]; then
     mv README.md.tmp README.md
 fi
-git checkout $dev_branch
 git add .
+git checkout $dev_branch
 
 echo
 echo
