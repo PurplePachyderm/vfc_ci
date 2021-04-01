@@ -27,8 +27,13 @@
                 max-height: 50px;
             }
 
-            #content-container {
+            #compare-runs-container {
                 margin-top: 1em;
+            }
+
+            #compare-variables-container {
+                margin-top: 1em;
+                display : none; /* This one is hidden by default */
             }
 
             .plot-card {
@@ -39,7 +44,6 @@
 
         {% extends base %}
     </head>
-
 
 
     <body>
@@ -64,12 +68,12 @@
             <!-- MENU (center part) -->
             <div class="navbar-menu">
                 <div class="navbar-start">
-                    <a class="navbar-item is-active">
+                    <a class="navbar-item is-active" id="compare-runs-button">
                         Compare runs
                     </a>
 
-                    <a class="navbar-item">
-                        [TODO] Compare variables
+                    <a class="navbar-item" id="compare-variables-button">
+                        [WIP] Compare variables
                     </a>
                 </div>
             </div>
@@ -98,8 +102,8 @@
         </nav>
 
 
-        <!-- CONTENT -->
-        <div class="container" id="content-container">
+        <!-- CONTENT : COMPARE RUNS -->
+        <div class="container" id="compare-runs-container">
             <div class="columns">
 
                 <!-- SELECTORS -->
@@ -144,6 +148,58 @@
             </div>
         </div>
 
+
+        <!-- CONTENT : COMPARE VARIABLES -->
+        <div class="container" id="compare-variables-container">
+            <div class="columns">
+
+                <!-- SELECTORS -->
+                <div class="column">
+                    <h4 class="title is-4">Selectors<h2>
+                </div>
+
+
+                <!-- PLOTS -->
+                <div class="column is-8">
+                    <h3 class="title is-3">Plots<h2>
+                    <div class="container">
+                    </div>
+                </div>
+        </div>
+
+
+        <script>
+
+            // Listen to clicks on "Compare runs" button
+            document.getElementById("compare-runs-button")
+            .addEventListener("click", () => {
+                document.getElementById("compare-variables-container")
+                .style.display = "none";
+                document.getElementById("compare-variables-button")
+                .className = "navbar-item";
+
+                document.getElementById("compare-runs-container")
+                .style.display = "block";
+                document.getElementById("compare-runs-button")
+                .className = "navbar-item is-active";
+            });
+
+
+            // Listen to clicks on "Compare variables" button
+            document.getElementById("compare-variables-button")
+            .addEventListener("click", () => {
+                document.getElementById("compare-runs-container")
+                .style.display = "none";
+                document.getElementById("compare-runs-button")
+                .className = "navbar-item";
+
+                document.getElementById("compare-variables-container")
+                .style.display = "block";
+                document.getElementById("compare-variables-button")
+                .className = "navbar-item is-active";
+            });
+
+        </script>
 
     {% endblock %}
     </body>
