@@ -25,6 +25,9 @@ jobs:
         run: pip install numpy pandas bokeh jinja2 tables GitPython
 
       - name: Run tests
+        # We assume the script is included in the repo for now
+        # (we'll probably want to remove "./" if the script ends up being integrated
+        # in Verificarlo and becomes available system-wide)
         run: ./vfc_run_tests -g
 
       - name: Commit test results

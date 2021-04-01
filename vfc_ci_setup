@@ -32,11 +32,12 @@ fi
 # in Verificarlo and becomes available system-wide)
 python setup_ci_readme.py $dev_branch $ci_branch
 
+
 # Create Verificarlo CI branch
 echo "Creating the Verificarlo CI branch (${ci_branch})..."
 git checkout --orphan $ci_branch
 git rm --cached -r -f .
-git add README.md vfcruns
+git add README.md
 git commit -m "[auto] Create the Verificarlo CI branch for ${dev_branch}"
 echo "Pushing changes to remote : you might have to enter your Github credentials..."
 git push -u origin $ci_branch
@@ -47,8 +48,8 @@ rm README.md
 if [ -f "README.md.tmp" ]; then
     mv README.md.tmp README.md
 fi
-git add .
 git checkout $dev_branch
+git add .
 
 echo
 echo
