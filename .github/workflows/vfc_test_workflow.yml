@@ -12,8 +12,9 @@ on:
 
 
 jobs:
-  gen-report:
+  run_verificarlo_tests:
     runs-on: ubuntu-latest
+    container: verificarlo/verificarlo
 
     steps:
       - uses: actions/checkout@v2
@@ -21,24 +22,8 @@ jobs:
             fetch-depth: 0
 
       - name: Install Python requirements
-        run: sudo pip install numpy pandas bokeh jinja2 tables GitPython
+        run: pip install numpy pandas bokeh jinja2 tables GitPython
 
-      - name: Install Verificarlo
-        run: |
-          git clone https://github.com/verificarlo/verificarlo
-          cd verificarlo
-          sudo apt-get install libmpfr-dev clang-7 flang-7 llvm-7-dev llvm-11-dev llvm-11-tools \
-          gcc-7 autoconf automake build-essential python3 python3-numpy python3-pip
-          ./autogen.sh
-          ./configure --with-flang CC=gcc-7 CXX=g++-7
-          make
-          sudo make install
-          cd ..
-          rm -rf verificarlo
-
-      # For now, we assume the script is included in the repo
-      # (we'll probably want to remove "./" if the script ends up being integrated
-      # in Verificarlo and becomes available system-wide)
       - name: Run tests
         run: ./vfc_run_tests -g
 
