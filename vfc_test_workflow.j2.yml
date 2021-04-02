@@ -1,7 +1,7 @@
 # This workflow will be executed when {{dev_branch}} is updated:
 # it will run the configured tests and upload the results on {{ci_branch}}.
 
-name: "Verificarlo CI({{dev_branch}})"
+name: "Verificarlo CI ({{dev_branch}})"
 
 on:
   # Triggers the workflow when {{dev_branch}} is updated
@@ -47,5 +47,5 @@ jobs:
       - name: Upload raw results as artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${git_hash}_raw
+          name: ${{github.sha}}.vfcraw
           path: ./*.vfcraw.hd5
