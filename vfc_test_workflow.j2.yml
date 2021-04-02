@@ -44,8 +44,8 @@ jobs:
           git commit -m "[auto] New test results for commit ${git_hash}"
           git push
 
-      - name: Upload raw resuls as artifacts
+      - name: Upload raw results as artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: raw_vfc_results
+          name: ${git_hash}_raw
           path: ./*.vfcraw.hd5
