@@ -68,8 +68,8 @@ def gen_x_series(timestamps):
 
 # Update plots based on current_test/var/backend combination
 def update_plots():
-    line = data.loc[current_test, current_var, current_backend]
-    x, x_metadata = gen_x_series(line["timestamp"])
+    loc = data.loc[current_test, current_var, current_backend]
+    x, x_metadata = gen_x_series(loc["timestamp"])
 
     # Update x_ranges
     boxplot.x_range.factors = list(x)
@@ -86,15 +86,15 @@ def update_plots():
         author = x_metadata["author"][-current_n_runs:],
         message = x_metadata["message"][-current_n_runs:],
 
-        sigma = line["sigma"][-current_n_runs:],
-        s10 = line["s10"][-current_n_runs:],
-        s2 = line["s2"][-current_n_runs:],
-        min = line["min"][-current_n_runs:],
-        quantile25 = line["quantile25"][-current_n_runs:],
-        quantile50 = line["quantile50"][-current_n_runs:],
-        quantile75 = line["quantile75"][-current_n_runs:],
-        max = line["max"][-current_n_runs:],
-        mu = line["mu"][-current_n_runs:]
+        sigma = loc["sigma"][-current_n_runs:],
+        s10 = loc["s10"][-current_n_runs:],
+        s2 = loc["s2"][-current_n_runs:],
+        min = loc["min"][-current_n_runs:],
+        quantile25 = loc["quantile25"][-current_n_runs:],
+        quantile50 = loc["quantile50"][-current_n_runs:],
+        quantile75 = loc["quantile75"][-current_n_runs:],
+        max = loc["max"][-current_n_runs:],
+        mu = loc["mu"][-current_n_runs:]
     )
 
 
@@ -186,8 +186,6 @@ for f in run_files:
 metadata = pd.concat(metadata).sort_index()
 data = pd.concat(data).sort_index()
 
-data = data.sort_values("timestamp").sort_index()
-data = data.groupby(["test", "variable", "vfc_backend"]).agg(lambda x: list(x))
 
 
 ################################################################################
@@ -268,6 +266,12 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
 
 
 
+################################################################################
+
+
+    # RUNS COMPARISON
+    # TODO Move this to the dedicated file
+
     # Selection setup (initially, we select the first test/var/backend combination)
 
 tests = data.index.get_level_values("test").drop_duplicates().tolist()
@@ -293,23 +297,16 @@ current_n_runs_display = n_runs_display[1]
 
 
 
-    # Main ColumnDataSource setup
-    # (all updates will simply be made to this object)
-
-line = data.loc[current_test, current_var, current_backend]
-x, x_metadata = gen_x_series(line["timestamp"])
-source = ColumnDataSource(data={})
-
-
-
     # Plots setup
+
+source = ColumnDataSource(data={})
 
 tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
 
 # Box plot
 boxplot = figure(
     name="boxplot", title="Variable distribution over runs",
-    plot_width=800, plot_height=330, x_range=x,
+    plot_width=800, plot_height=330, x_range=[""],
     tools=tools
 )
 gen_boxplot(boxplot)
@@ -318,7 +315,7 @@ curdoc().add_root(boxplot)
 # Sigma plot (bar plot)
 sigma_plot = figure(
     name="sigma_plot", title="Standard deviation σ over runs",
-    plot_width=800, plot_height=330, x_range=x,
+    plot_width=800, plot_height=330, x_range=[""],
     tools=tools
 )
 gen_bar_plot(sigma_plot, "sigma", "σ")
@@ -327,7 +324,7 @@ curdoc().add_root(sigma_plot)
 # s plot (bar plot with 2 tabs)
 s10_plot = figure(
     name="s10_plot", title="Significant digits s over runs",
-    plot_width=800, plot_height=330, x_range=x,
+    plot_width=800, plot_height=330, x_range=[""],
     tools=tools
 )
 gen_bar_plot(s10_plot, "s10", "s")
@@ -335,7 +332,7 @@ s10_tab = Panel(child=s10_plot, title="Base 10")
 
 s2_plot = figure(
     name="s2_plot", title="Significant digits s over runs",
-    plot_width=800, plot_height=330, x_range=x,
+    plot_width=800, plot_height=330, x_range=[""],
     tools=tools
 )
 gen_bar_plot(s2_plot, "s2", "s")
@@ -438,6 +435,18 @@ select_n_runs.on_change("value", update_n_runs)
 
 
 
-# First plots draw
+    # Init plots
 
 update_plots()
+
+
+
+################################################################################
+
+
+    # WIP VARIABLES COMPARISON
+
+import compare_variables
+
+compare_variables.doc = curdoc()
+compare_variables.foo()
