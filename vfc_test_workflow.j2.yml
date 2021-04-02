@@ -28,7 +28,7 @@ jobs:
         # We assume the script is included in the repo for now
         # (we'll probably want to remove "./" if the script ends up being integrated
         # in Verificarlo and becomes available system-wide)
-        run: ./vfc_run_tests -g
+        run: ./vfc_run_tests -g -r
 
       - name: Commit test results
         run: |
@@ -43,3 +43,9 @@ jobs:
           git add vfcruns/*
           git commit -m "[auto] New test results for commit ${git_hash}"
           git push
+
+      - name: Upload raw resuls as artifacts
+      - uses: actions/upload-artifact@v2
+        with:
+          name: raw_vfc_results
+          path: ./*.vfcraw.hd5
