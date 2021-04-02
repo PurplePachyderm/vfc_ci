@@ -2,3 +2,4 @@ test
 *.o
 *.csv
 *.hd5
+__pycache__
