@@ -4,6 +4,7 @@
 import datetime
 
 import pandas as pd
+import numpy as np
 
 from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
@@ -11,8 +12,16 @@ from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool, OpenURL, TapTool
 
 
-
 ################################################################################
+
+
+# Make sure that a scalar var is in a list, in case we plot only one run
+def ensure_list(val):
+    if isinstance(val, (np.floating, float, str)):
+        val = [val]
+
+    return val
+
 
 
 class CompareRuns:
@@ -39,6 +48,8 @@ class CompareRuns:
         )
 
         n = self.current_n_runs
+
+        timestamps = ensure_list(timestamps)
 
         if n == 0 or n > len(timestamps):
             n = len(timestamps)
@@ -84,15 +95,15 @@ class CompareRuns:
             author = x_metadata["author"][-n:],
             message = x_metadata["message"][-n:],
 
-            sigma = loc["sigma"][-n:],
-            s10 = loc["s10"][-n:],
-            s2 = loc["s2"][-n:],
-            min = loc["min"][-n:],
-            quantile25 = loc["quantile25"][-n:],
-            quantile50 = loc["quantile50"][-n:],
-            quantile75 = loc["quantile75"][-n:],
-            max = loc["max"][-n:],
-            mu = loc["mu"][-n:]
+            sigma = ensure_list(loc["sigma"])[-n:],
+            s10 = ensure_list(loc["s10"])[-n:],
+            s2 = ensure_list(loc["s2"])[-n:],
+            min = ensure_list(loc["min"])[-n:],
+            quantile25 = ensure_list(loc["quantile25"])[-n:],
+            quantile50 = ensure_list(loc["quantile50"])[-n:],
+            quantile75 = ensure_list(loc["quantile75"])[-n:],
+            max = ensure_list(loc["max"])[-n:],
+            mu = ensure_list(loc["mu"])[-n:]
         )
 
 

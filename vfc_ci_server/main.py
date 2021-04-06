@@ -51,6 +51,7 @@ curdoc().title = "Verificarlo Report"
     # repository and the different commits)
 
 git_repo_linked = False
+commit_link = ""
 
 if len(sys.argv) == 3:
     from urllib.parse import urlparse
