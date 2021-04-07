@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# This script reads the vfc_tests_config.json and executes the tests accordingly
+# This script reads the vfc_tests_config.json file and executes tests accordingly
 # It will also generate a ... .vfcrun.json file with the results of the run
 
 import os

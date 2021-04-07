@@ -17,7 +17,7 @@ fi
 # Look for uncommitted changes
 if ! git diff-index --cached --quiet HEAD --ignore-submodules --
 then
-    echo >&2 "Eror: uncommitted changes detected in your index."
+    echo >&2 "Error: uncommitted changes detected in your index."
     echo >&2 "You need a clean work tree before setting up Verificarlo CI."
     exit 1
 fi

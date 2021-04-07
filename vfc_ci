@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+# This the entry point of the Verificarlo CI command line interface, which is
+# based on the click Python package. From here, 3 subcommands can be called :
+# - setup : create a vfc_ci branch and workflow on the current Git repo
+# - test : run and export test results according to the vfc_tests_config.json
+# - serve : launch a Bokeh server to visualize run results
+
+import click
+
+###############################################################################
+
+
+    # "setup" command
+
+@click.command(
+help="""
+Create an automated workflow to execute Verificarlo tests.
+"""
+)
+def setup():
+    print("Setting up Verificarlo CI workflow")
+
+
+
+    # "test" command
+
+@click.command(
+help="""
+Execute a set of Verificarlo tests and export its results.
+"""
+)
+@click.option(
+    "-g", "--is-git-commit",
+    is_flag=True,
+    help="""
+    When specified, the last Git commit of your local repository will be
+    fetched, and associated with the run. The run file will be named after the
+    commit's hash (instead of the current timestamp).
+    """
+)
+@click.option(
+    "-r", "--export-raw-results",
+    is_flag=True,
+    help="""
+    Specify if an additional HDF5 file containing the raw results must be
+    exported. The file will end with '.vfcraw.hd5'.
+    """
+)
+def test():
+    print("Running Verificarlo CI tests")
+
+
+
+    # "serve" command
+
+@click.command(
+help="""
+Start a server to visualize Verificarlo test results.
+"""
+)
+@click.option(
+    "-s", "--show",
+    is_flag=True,
+    help="""
+    Specify if the report must be opened in the browser at server startup.
+    """
+)
+@click.option(
+    "-gd", "--git-directory",
+    type=str,
+    help="""
+    Path to a local Git repository. The report will be linked to the remote URL
+    (GitHub or GitLab).
+    """
+)
+@click.option(
+    "-gu", "--git-url",
+    type=str,
+    help="""
+    GitHub or GitLab repository URL. The report will be linked to this URL.
+    """
+)
+@click.option(
+    "-p", "--port",
+    type=int,
+    default=8080,
+    help="""
+    The port on which the server will run. Defaults to 8080.
+    """
+)
+@click.option(
+    "-a", "--allow-origin",
+    type=str,
+    default="localhost",
+    help="""
+    The origin (URL) from which you will be allowed to access the report.
+    You don't have to specify the port number. Defaults to 'localhost'.
+    """
+)
+def serve():
+    print("Serving Verificarlo CI report")
+
+
+
+###############################################################################
+
+
+    # Main group and entry point
+
+@click.group(
+help = """
+A tool to configure, execute, automatize and visualize Verificarlo tests.
+"""
+)
+def cli():
+    pass
+
+
+cli.add_command(setup)
+cli.add_command(test)
+cli.add_command(serve)
+
+
+if __name__ == '__main__':
+    cli()
