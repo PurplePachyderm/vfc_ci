@@ -3,6 +3,7 @@
 
     <head>
         <title>Verificarlo Report</title>
+        <meta charset="utf8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <!-- This template uses Bulma for CSS : https://bulma.io/ -->
@@ -40,7 +41,7 @@
             }
 
             .plot-card {
-                width: 800px;
+                width: 900px;
             }
 
         </style>
@@ -53,23 +54,28 @@
     {% block contents %}
 
         <!-- HEADER -->
-        <nav class="navbar has-shadow" id="navbar" role="navigation" aria-label="main navigation">
+        <nav class="navbar has-shadow" id="navbar"
+        role="navigation" aria-label="navbar-content">
 
             <!-- BRAND (left part) -->
             <div class="navbar-brand">
                 <a class="navbar-item" id="logo-link" href=".">
-                    <img id="logo-img" width="85" height="45" src="https://avatars1.githubusercontent.com/u/12033642">
+                    <img id="logo-img" width="85" height="45"
+                    src="https://avatars1.githubusercontent.com/u/12033642">
                 </a>
 
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                <a role="button" class="navbar-burger" id="navbar-burger"
+                aria-label="menu" aria-expanded="false"
+                data-target="navbarBasicExample">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </a>
             </div>
 
-            <!-- MENU (center part) -->
-            <div class="navbar-menu">
+            <!-- MENU (content) -->
+            <div id="navbar-content" class="navbar-menu">
+
                 <div class="navbar-start">
                     <a class="navbar-item is-active" id="compare-runs-button">
                         Compare runs
@@ -79,55 +85,59 @@
                         [WIP] Compare variables
                     </a>
                 </div>
-            </div>
 
-            <!-- END (right part) -->
-            <div class="navbar-end">
+                <div class="navbar-end">
+                    {% if git_repo_linked %}
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <a class="button is-light" href="{{repo_url}}" target="_blank">
+                                {{repo_name}} on {{git_host}}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
 
-                {% if git_repo_linked %}
-                <div class="navbar-item">
-                    <div class="buttons">
-                        <a class="button is-light" href="{{repo_url}}" target="_blank">
-                            {{repo_name}} on {{git_host}}
-                        </a>
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <a class="button is-light"
+                            href="https://github.com/verificarlo" target="_blank">
+                                Verificarlo on GitHub
+                            </a>
+                        </div>
                     </div>
                 </div>
-                {% endif %}
 
-                <div class="navbar-item">
-                    <div class="buttons">
-                        <a class="button is-light" href="https://github.com/verificarlo" target="_blank">
-                            Verificarlo on GitHub
-                        </a>
-                    </div>
-                </div>
             </div>
         </nav>
 
 
         <!-- CONTENT : COMPARE RUNS -->
-        <div class="container" id="compare-runs-container">
+        <main class="container" id="compare-runs-container">
             <div class="columns">
 
                 <!-- SELECTORS -->
                 <div class="column">
                     <h4 class="title is-4">Selectors<h2>
                     <div>
-                    {{ embed(roots.select_test) }}
-                    {{ embed(roots.select_var) }}
-                    {{ embed(roots.select_backend) }}
+                        {{ embed(roots.test_filter) }}
+                        {{ embed(roots.select_test) }}
+                        <br>
+                        {{ embed(roots.var_filter) }}
+                        {{ embed(roots.select_var) }}
+                        <br>
+                        {{ embed(roots.select_backend) }}
+                        <br>
+                        <br>
+                        {{ embed(roots.select_n_runs) }}
                     </div>
 
-                    <br>
-
-                    {{ embed(roots.select_n_runs) }}
                 </div>
 
                 <div class="is-divider-vertical"></div>
 
 
                 <!-- PLOTS -->
-                <div class="column is-8">
+                <div class="column is-9">
                     <h3 class="title is-3">Plots<h2>
                     <div class="container">
                         <div class="card plot-card">
@@ -149,11 +159,11 @@
                 </div>
 
             </div>
-        </div>
+        </main>
 
 
         <!-- CONTENT : COMPARE VARIABLES -->
-        <div class="container" id="compare-variables-container">
+        <main class="container" id="compare-variables-container">
             <div class="columns">
 
                 <!-- SELECTORS -->
@@ -164,43 +174,66 @@
 
 
                 <!-- PLOTS -->
-                <div class="column is-8">
+                <div class="column is-9">
                     <h3 class="title is-3">Plots<h2>
                     <div class="container">
                     </div>
                 </div>
-        </div>
+        </main>
 
 
         <script>
 
+            // Listen to clicks on breadcrumb (for responsive header)
+            document.getElementById("navbar-burger")
+            .addEventListener("click", () => {
+
+                document.getElementById("navbar-burger")
+                .classList.toggle("is-active");
+
+                document.getElementById("navbar-content")
+                .classList.toggle("is-active");
+                
+            })
+
+
             // Listen to clicks on "Compare runs" button
             document.getElementById("compare-runs-button")
             .addEventListener("click", () => {
+
                 document.getElementById("compare-variables-container")
                 .style.display = "none";
+
                 document.getElementById("compare-variables-button")
-                .className = "navbar-item";
+                .classList.toggle("is-active");
+
 
                 document.getElementById("compare-runs-container")
                 .style.display = "block";
+
                 document.getElementById("compare-runs-button")
-                .className = "navbar-item is-active";
+                .classList.toggle("is-active");
+
             });
 
 
             // Listen to clicks on "Compare variables" button
             document.getElementById("compare-variables-button")
             .addEventListener("click", () => {
+
                 document.getElementById("compare-runs-container")
                 .style.display = "none";
+
                 document.getElementById("compare-runs-button")
-                .className = "navbar-item";
+                .classList.toggle("is-active");
+
 
                 document.getElementById("compare-variables-container")
                 .style.display = "block";
+
                 document.getElementById("compare-variables-button")
-                .className = "navbar-item is-active";
+                .classList.toggle("is-active");
+
             });
 
         </script>

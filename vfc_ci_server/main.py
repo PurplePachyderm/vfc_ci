@@ -10,8 +10,6 @@ import pandas as pd
 from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
-from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool, OpenURL, TapTool
-
 
 
 ################################################################################
