@@ -62,7 +62,7 @@ if len(sys.argv) == 3:
     # Here, address is either the remote URL or the path to the local Git repo
     # (depending on the method)
 
-    if method == "remote":
+    if method == "url":
         # We should directly have a Git URL
         url = address
 
@@ -73,20 +73,24 @@ if len(sys.argv) == 3:
         url = repo.remotes.origin.url
 
     else:
-        raise ValueError("The specified method to get the Git repository is "\
-        "invalid. Are you calling Bokeh directly instead of using the "\
-        "Verificarlo wrapper ?")
+        raise ValueError("""
+        The specified method to get the Git repository is
+        "invalid. Are you calling Bokeh directly instead of using the
+        "Verificarlo wrapper ?
+        """)
 
 
     # At this point, "url" should be set correctly, we can get the repo's
-    # URL and name
+    # URL and name, after making sure we're on a Git URL
 
     parsed_url = urlparse(url)
 
     path = parsed_url.path.split("/")
     if len(path) < 3:
-        raise ValueError("The found URL doesn't seem to be pointing to a Git "\
-        "repository (path is too short)")
+        raise ValueError("""
+        The found URL doesn't seem to be pointing to a Git
+        "repository (path is too short)
+        """)
 
     repo_name = path[2]
 
@@ -97,18 +101,22 @@ if len(sys.argv) == 3:
     # We should have a "github.com" or a "*gitlab*" URL
 
     if parsed_url.netloc == "github.com":
-        commit_link = "https://" + parsed_url.netloc + parsed_url.path + "/commit/@hash"
+        commit_link = "https://%s%s/commit/@hash" \
+        % (parsed_url.netloc, parsed_url.path)
+
         curdoc().template_variables["commit_link"] = commit_link
         curdoc().template_variables["git_host"] = "GitHub"
-        git_repo_linked = True
 
-    elif "gitlab" in parsed_url.netloc:
-        commit_link = "https://" + parsed_url.netloc + parsed_url.path + "/-/commit/@hash"
-        curdoc().template_variables["git_host"] = "GitLab"
-        git_repo_linked = True
-
+    # We assume we have a GitLab URL
     else:
-        raise ValueError("The found URL doesn't seem to be a GitHub or GitLab URL")
+        commit_link = "https://%s%s/-/commit/@hash" \
+        % (parsed_url.netloc, parsed_url.path)
+
+        curdoc().template_variables["commit_link"] = commit_link
+        curdoc().template_variables["git_host"] = "GitLab"
+
+    git_repo_linked = True
+
 
 
 curdoc().template_variables["git_repo_linked"] = git_repo_linked
@@ -130,6 +138,6 @@ compare_runs = cmp_runs.CompareRuns(
 
 
 # WIP Variables comparison
-import compare_variables
-compare_variables.doc = curdoc()
-compare_variables.foo()
+import compare_variables as cmp_vars
+cmp_vars.doc = curdoc()
+cmp_vars.foo()
