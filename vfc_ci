@@ -11,7 +11,7 @@ import click
 ###############################################################################
 
 
-    # "setup" command
+    # "setup" subcommand
 
 @click.command(
     help="""
@@ -31,7 +31,7 @@ def setup(git_host):
 
 
 
-    # "test" command
+    # "test" subcommand
 
 @click.command(
     help="""
@@ -59,13 +59,12 @@ def setup(git_host):
 
 
 def test(is_git_commit, export_raw_results):
-    click.echo("Running Verificarlo CI tests")
-    click.echo(is_git_commit)
-    click.echo(export_raw_results)
+    import ci.test
+    ci.test.run(is_git_commit, export_raw_results)
 
 
 
-    # "serve" command
+    # "serve" subcommand
 
 @click.command(
     help="""
@@ -128,8 +127,6 @@ def serve(show, git_directory, git_url, port, allow_origin):
         '-gd' / '--git-directory' and '-gu' / '--git-url' are mutually
         exclusive. Please make sure to use at most one of them.
         """)
-
-    click.echo("Serving Verificarlo CI report...")
 
     import ci.serve
     ci.serve.serve(show, git_directory, git_url, port, allow_origin)
