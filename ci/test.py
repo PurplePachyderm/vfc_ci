@@ -16,7 +16,7 @@ import numpy as np
 import base64
 import struct
 
-###############################################################################
+################################################################################
 
 
     # Helper functions
@@ -213,9 +213,13 @@ def run(is_git_commit, export_raw_values):
 
     # Print termination messages
     print()
-    print("The results have been successfully written to \"%s.vfcrun.hd5\"." \
-     % filename)
+    print(
+        "The results have been successfully written to \"%s.vfcrun.hd5\"." \
+         % filename
+     )
 
     if export_raw_values:
-        print("A file containing the raw values has also been written to \"%s.vfcraw.hd5\"." \
-        % filename)
+        print(
+            "A file containing the raw values has also been written to \"%s.vfcraw.hd5\"." \
+            % filename
+        )

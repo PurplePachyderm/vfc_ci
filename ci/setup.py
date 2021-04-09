@@ -65,7 +65,7 @@ def setup(git_host):
     # Make sure that we are not behind the remote (so we can push safely later)
     rev = "%s...%s" % (dev_branch_name, str(dev_remote))
     commits_behind = list(repo.iter_commits(rev))
-    assert(commits_behind == []); "Error: the local branch seems to be at least one commit behind remote."
+    assert(commits_behind == []), "Error: the local branch seems to be at least one commit behind remote."
 
 
         # Commit the workflow on the current (dev) branch
@@ -90,8 +90,7 @@ def setup(git_host):
         "[auto] Create the Verificarlo CI branch for %s" % dev_branch_name,
         parent_commits=None
     )
-    repo.remote(name="origin").push()
-
+    repo.remote(name="origin").push(refspec="%s:%s" % (ci_branch_name, ci_branch_name))
 
 
         # Force checkout back to the original (dev) branch

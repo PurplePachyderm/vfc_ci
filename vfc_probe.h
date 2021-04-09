@@ -108,7 +108,6 @@ void validate_probe_key(char * str) {
             exit(1);
         }
     }
-
 }
 
 
