@@ -53,19 +53,19 @@ def setup(git_host):
     repo.remotes.origin.fetch()
 
     # Make sure that repository is clean
-    assert(not repo.is_dirty()), "Error : Unstaged changes detected in your work tree."
+    assert(not repo.is_dirty()), "Unstaged changes detected in your work tree."
 
     dev_branch = repo.active_branch
     dev_branch_name = str(dev_branch)
     dev_remote = dev_branch.tracking_branch()
 
     # Make sure that the active branch (on which to setup the workflow) has a remote
-    assert(dev_remote != None), "Error : the current branch doesn't have a remote."
+    assert(dev_remote != None), "The current branch doesn't have a remote."
 
     # Make sure that we are not behind the remote (so we can push safely later)
     rev = "%s...%s" % (dev_branch_name, str(dev_remote))
     commits_behind = list(repo.iter_commits(rev))
-    assert(commits_behind == []), "Error: the local branch seems to be at least one commit behind remote."
+    assert(commits_behind == []), "The local branch seems to be at least one commit behind remote."
 
 
         # Commit the workflow on the current (dev) branch
@@ -92,7 +92,9 @@ def setup(git_host):
     )
     repo.remote(name="origin").push(refspec="%s:%s" % (ci_branch_name, ci_branch_name))
 
-
-        # Force checkout back to the original (dev) branch
-
+    # Force checkout back to the original (dev) branch
     repo.git.checkout(dev_branch_name, force=True)
+
+
+    print("A Verificarlo CI workflow has been setup on %s." % dev_branch_name)
+    print("Make sure that you have a vfc_tests_config.json on this branch.")

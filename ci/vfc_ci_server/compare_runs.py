@@ -1,10 +1,8 @@
-# This file makes it possible to compare a single variable over different runs
-# TODO : Move code from main to this file
+# Manage the view comparing a variable over different runs
 
 import datetime
 
 import pandas as pd
-import numpy as np
 
 from math import pi
 
@@ -22,9 +20,7 @@ import helper
 
 class CompareRuns:
 
-
         # Helper functions related to CompareRuns
-
 
     # From an array of timestamps, return an array of hashes/dates that can
     # be used as the x series of a bar/box plot, as well as the metadata (in a
@@ -141,10 +137,14 @@ class CompareRuns:
         source=self.source, line_color="black")
 
         # Boxes
-        plot.vbar(x="x", width=0.5, top="quantile75", bottom="quantile50",
-        source=self.source, line_color="black", fill_color="#D20000")
-        plot.vbar(x="x", width=0.5, top="quantile50", bottom="quantile25",
-        source=self.source, line_color="black", fill_color="#008000")
+        plot.vbar(
+            x="x", width=0.5, top="quantile75", bottom="quantile50",
+            source=self.source, line_color="black", fill_color="#ffffff"
+        )
+        plot.vbar(
+            x="x", width=0.5, top="quantile50", bottom="quantile25",
+            source=self.source, line_color="black", fill_color="#bbbbbb"
+        )
 
         # Mu dot
         plot.dot(x="x", y="mu", size=30, source=self.source,
@@ -176,8 +176,10 @@ class CompareRuns:
             tap = TapTool(callback=OpenURL(url=self.commit_link))
             plot.add_tools(tap)
 
-        plot.vbar(x="x", top=data_field, source=self.source, width=0.5,
-        color="#008000")
+        plot.vbar(
+            x="x", top=data_field, source=self.source,
+            width=0.5, color="#bbbbbb"
+        )
         plot.xgrid.grid_line_color = None
         plot.ygrid.grid_line_color = None
 
@@ -243,7 +245,7 @@ class CompareRuns:
     def update_n_runs(self, attrname, old, new):
         # Simply update runs selection (value and string display)
         self.current_n_runs_display = new
-        self.current_n_runs = self.n_runs[self.current_n_runs_display]
+        self.current_n_runs = self.n_runs_dict[self.current_n_runs_display]
 
         self.update_plots()
 
@@ -269,7 +271,9 @@ class CompareRuns:
 
 
         # Number of runs to display
-        self.n_runs = {
+        # The dict structure allows to get int value from the display string
+        # in O(1)
+        self.n_runs_dict = {
             "Last 3 runs": 3,
             "Last 5 runs": 5,
             "Last 10 runs": 10,
@@ -277,10 +281,10 @@ class CompareRuns:
         }
 
         # Contains all options strings
-        self.n_runs_display = list(self.n_runs.keys())
+        self.n_runs_display = list(self.n_runs_dict.keys())
 
         # Will be used when updating plots (contains actual number)
-        self.current_n_runs = self.n_runs[self.n_runs_display[1]]
+        self.current_n_runs = self.n_runs_dict[self.n_runs_display[1]]
 
         # Contains the selected option string, used to update current_n_runs
         self.current_n_runs_display = self.n_runs_display[1]
@@ -295,7 +299,7 @@ class CompareRuns:
         self.boxplot = figure(
             name="boxplot", title="Variable distribution over runs",
             plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
+            tools=tools, sizing_mode="scale_width"
         )
 
         self.gen_boxplot(self.boxplot)
@@ -358,7 +362,7 @@ class CompareRuns:
         test_filter = TextInput(
             name="test_filter", title="Tests filter:"
         )
-        test_filter.js_on_change('value', CustomJS(
+        test_filter.js_on_change("value", CustomJS(
             args=dict(options=self.tests, selector=self.select_test),
             code=filter_callback_js
         ))

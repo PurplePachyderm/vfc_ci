@@ -81,8 +81,8 @@
                         Compare runs
                     </a>
 
-                    <a class="navbar-item" id="compare-variables-button">
-                        [WIP] Compare variables
+                    <a class="navbar-item" id="inspect-runs-button">
+                        [WIP] Inspect runs
                     </a>
                 </div>
 
@@ -162,14 +162,24 @@
         </main>
 
 
-        <!-- CONTENT : COMPARE VARIABLES -->
+        <!-- CONTENT : INSPECT RUNS -->
         <main class="container" id="compare-variables-container">
             <div class="columns">
 
                 <!-- SELECTORS -->
                 <div class="column">
                     <h4 class="title is-4">Selectors<h2>
-                        {{ embed(roots.foo) }}
+                    {{ embed(roots.select_run) }}
+                    <br>
+                    {{ embed(roots.select_mode) }}
+
+                    {{ embed(roots.select_variable_by_run) }}
+                    {{ embed(roots.select_backend_by_run) }}
+
+                    <br>
+                    <br>
+
+                    <h4 class="title is-4">Run metadata<h2>
                 </div>
 
 
@@ -193,7 +203,7 @@
 
                 document.getElementById("navbar-content")
                 .classList.toggle("is-active");
-                
+
             })
 
 
@@ -204,7 +214,7 @@
                 document.getElementById("compare-variables-container")
                 .style.display = "none";
 
-                document.getElementById("compare-variables-button")
+                document.getElementById("inspect-runs-button")
                 .classList.toggle("is-active");
 
 
@@ -218,7 +228,7 @@
 
 
             // Listen to clicks on "Compare variables" button
-            document.getElementById("compare-variables-button")
+            document.getElementById("inspect-runs-button")
             .addEventListener("click", () => {
 
                 document.getElementById("compare-runs-container")
@@ -231,10 +241,16 @@
                 document.getElementById("compare-variables-container")
                 .style.display = "block";
 
-                document.getElementById("compare-variables-button")
+                document.getElementById("inspect-runs-button")
                 .classList.toggle("is-active");
 
             });
+
+
+            // Change plotting mode in runs inspection
+            function changePlottingMode() {
+                console.log("Change plotting mode");
+            }
 
         </script>
 

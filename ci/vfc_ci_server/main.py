@@ -126,9 +126,9 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
     # Setup Bokeh interfaces
 
 # Runs comparison
-import compare_runs as cmp_runs
+import compare_runs
 
-compare_runs = cmp_runs.CompareRuns(
+compare = compare_runs.CompareRuns(
     doc = curdoc(),
     data = data,
     metadata = metadata,
@@ -137,7 +137,13 @@ compare_runs = cmp_runs.CompareRuns(
 )
 
 
-# WIP Variables comparison
-import compare_variables as cmp_vars
-cmp_vars.doc = curdoc()
-cmp_vars.foo()
+# WIP Runs inspection
+import inspect_runs
+
+inspect = inspect_runs.InspectRuns(
+    doc = curdoc(),
+    data = data,
+    metadata = metadata,
+    git_repo_linked = git_repo_linked,
+    commit_link = commit_link
+)

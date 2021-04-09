@@ -48,9 +48,8 @@ def runs_tick_string(timestamp, hash):
         n = diff / 2592000
         str = "%s month%s ago"
 
-    if n == 1:
-        plural = ""
-    else:
+    plural = ""
+    if n != 1:
         plural = "s"
 
     str = str % (n, plural)
