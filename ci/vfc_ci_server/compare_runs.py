@@ -10,7 +10,7 @@ from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool, \
-TextInput, OpenURL, TapTool, CustomJS, Range
+TextInput, OpenURL, TapTool, Range, CustomJS
 
 import helper
 
@@ -101,7 +101,8 @@ class CompareRuns:
             quantile50 = loc["quantile50"][-n:],
             quantile75 = loc["quantile75"][-n:],
             max = loc["max"][-n:],
-            mu = loc["mu"][-n:]
+            mu = loc["mu"][-n:],
+            nruns = loc["nruns"][-n:]
         )
 
 
@@ -122,13 +123,18 @@ class CompareRuns:
             ("1st quartile", "@quantile25{0.*f}"),
             ("Median", "@quantile50{0.*f}"),
             ("3rd quartile", "@quantile75{0.*f}"),
-            ("μ", "@mu{0.*f}")
+            ("μ", "@mu{0.*f}"),
+            ("Number of samples", "@nruns")
         ])
         plot.add_tools(hover)
 
-        if self.git_repo_linked:
-            tap = TapTool(callback=OpenURL(url=self.commit_link))
-            plot.add_tools(tap)
+        # Custom JS callback that will be used when tapping on a run
+        # Only switches the view, a server callback is required to update plots
+        # (defined inside template to avoid bloating server w/ too much JS code)
+        tap_callback_js = "goToInspectRuns();"
+        tap = TapTool(callback=CustomJS(code=tap_callback_js))
+        plot.add_tools(tap)
+
 
         # Stems
         plot.segment(x0="x", y0="max", x1="x", y1="quantile75",
@@ -139,11 +145,11 @@ class CompareRuns:
         # Boxes
         plot.vbar(
             x="x", width=0.5, top="quantile75", bottom="quantile50",
-            source=self.source, line_color="black", fill_color="#ffffff"
+            source=self.source, line_color="black"
         )
         plot.vbar(
             x="x", width=0.5, top="quantile50", bottom="quantile25",
-            source=self.source, line_color="black", fill_color="#bbbbbb"
+            source=self.source, line_color="black"
         )
 
         # Mu dot
@@ -168,17 +174,21 @@ class CompareRuns:
             ("Hash", "@hash"),
             ("Author", "@author"),
             ("Message", "@message"),
-            (display_name, "@" + data_field)
+            (display_name, "@" + data_field),
+            ("Number of samples", "@nruns")
         ])
         plot.add_tools(hover)
 
-        if self.git_repo_linked:
-            tap = TapTool(callback=OpenURL(url=self.commit_link))
-            plot.add_tools(tap)
+        # Custom JS callback that will be used when tapping on a run
+        # Only switches the view, a server callback is required to update plots
+        # (defined inside template to avoid bloating server w/ too much JS code)
+        tap_callback_js = "goToInspectRuns();"
+        tap = TapTool(callback=CustomJS(code=tap_callback_js))
+        plot.add_tools(tap)
 
         plot.vbar(
             x="x", top=data_field, source=self.source,
-            width=0.5, color="#bbbbbb"
+            width=0.5
         )
         plot.xgrid.grid_line_color = None
         plot.ygrid.grid_line_color = None
@@ -199,19 +209,19 @@ class CompareRuns:
         self.current_test = new
 
 
-        # Reset var selection if old one is not available in new vars
         self.vars = data.loc[self.current_test]\
         .index.get_level_values("variable").drop_duplicates().tolist()
 
+        # Reset var selection if old one is not available in new vars
         if self.current_var not in self.vars:
             self.current_var = self.vars[0]
             self.select_var.value = self.current_var
 
 
-        # Reset backend selection if old one is not available in new backends
         self.backends = self.data.loc[self.current_test, self.current_var]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
 
+        # Reset backend selection if old one is not available in new backends
         if self.current_backend not in self.backends:
             self.current_backend = self.backends[0]
             self.select_backend.value = self.current_backend
@@ -225,10 +235,10 @@ class CompareRuns:
         self.current_var = new
 
 
-        # Reset backend selection if old one is not available in new backends
         self.backends = self.data.loc[self.current_test, self.current_var]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
 
+        # Reset backend selection if old one is not available in new backends
         if self.current_backend not in self.backends:
             self.current_backend = self.backends[0]
             self.select_backend.value = self.current_backend
@@ -323,8 +333,6 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-
-
         self.gen_bar_plot(self.s10_plot, "s10", "s")
         s10_tab = Panel(child=self.s10_plot, title="Base 10")
 
@@ -333,7 +341,6 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""], y_range=(-2.5, 53),
             tools=tools, sizing_mode='scale_width'
         )
-
         self.gen_bar_plot(self.s2_plot, "s2", "s")
         s2_tab = Panel(child=self.s2_plot, title="Base 2")
 
@@ -380,7 +387,7 @@ class CompareRuns:
         var_filter = TextInput(
             name="var_filter", title="Variables filter:"
         )
-        var_filter.js_on_change('value', CustomJS(
+        var_filter.js_on_change("value", CustomJS(
             args=dict(options=self.vars, selector=self.select_var),
             code=filter_callback_js
         ))
@@ -408,7 +415,9 @@ class CompareRuns:
 
         # Constructor
 
-    def __init__(self, doc, data, metadata, git_repo_linked, commit_link):
+    def __init__(self, master, doc, data, metadata, git_repo_linked, commit_link):
+
+        self.master = master
 
         self.doc = doc
         self.data = data
@@ -416,6 +425,7 @@ class CompareRuns:
         self.git_repo_linked = git_repo_linked
         self.commit_link = commit_link
 
+        # Will be filled/updated in update_plots()
         self.source = ColumnDataSource(data={})
 
 

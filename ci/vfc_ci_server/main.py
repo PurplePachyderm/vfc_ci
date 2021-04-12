@@ -125,25 +125,37 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
 
     # Setup Bokeh interfaces
 
-# Runs comparison
 import compare_runs
-
-compare = compare_runs.CompareRuns(
-    doc = curdoc(),
-    data = data,
-    metadata = metadata,
-    git_repo_linked = git_repo_linked,
-    commit_link = commit_link
-)
-
-
-# WIP Runs inspection
 import inspect_runs
 
-inspect = inspect_runs.InspectRuns(
-    doc = curdoc(),
-    data = data,
-    metadata = metadata,
-    git_repo_linked = git_repo_linked,
-    commit_link = commit_link
-)
+# Define a ViewsMaster class to allow two-ways communication between InspectRuns
+# and CompareRuns. This makes it possible to have one view update the plots of
+# another. This approach should also make the addition of other views quite easy.
+
+class ViewsMaster:
+
+    def __init__(self):
+
+        # Runs comparison
+        self.compare = compare_runs.CompareRuns(
+            master = self,
+
+            doc = curdoc(),
+            data = data,
+            metadata = metadata,
+            git_repo_linked = git_repo_linked,
+            commit_link = commit_link,
+        )
+
+        # WIP Runs inspection
+        self.inspect = inspect_runs.InspectRuns(
+            master = self,
+
+            doc = curdoc(),
+            data = data,
+            metadata = metadata,
+            git_repo_linked = git_repo_linked,
+            commit_link = commit_link
+        )
+
+views_master = ViewsMaster()
