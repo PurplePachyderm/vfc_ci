@@ -98,7 +98,7 @@ def generate_metadata(is_git_commit):
 
 
 
-    # Execute tests and collect results in a Pandas dataframe (+dataprocessing)
+    # Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
 
 def generate_data(config):
 

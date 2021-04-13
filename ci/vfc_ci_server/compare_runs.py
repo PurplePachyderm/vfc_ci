@@ -22,9 +22,9 @@ class CompareRuns:
 
         # Helper functions related to CompareRuns
 
-    # From an array of timestamps, return an array of hashes/dates that can
-    # be used as the x series of a bar/box plot, as well as the metadata (in a
-    # dict of arrays) associated to this x series (for the tooltips)
+    # From an array of timestamps, returns the array of runs names (for the x
+    # axis ticks), as well as the metadata (in a dict of arrays) associated to
+    # this array (for the tooltips)
     def gen_x_series(self, timestamps):
 
         # Initialize the objects to return
@@ -50,8 +50,8 @@ class CompareRuns:
             date = datetime.datetime.fromtimestamp(timestamps[-i-1]).isoformat()
 
             # Fill the x series
-            str = helper.runs_tick_string(timestamps[-i-1], row_metadata["hash"])
-            x.insert(0, str)
+            str = helper.get_run_name(timestamps[-i-1], row_metadata["hash"])
+            x.insert(0, helper.get_metadata(self.metadata, timestamps[-i-1])["name"])
 
             # Fill the metadata lists
             x_metadata["date"].insert(0, date)
@@ -60,6 +60,8 @@ class CompareRuns:
             x_metadata["author"].insert(0, row_metadata["author"])
             x_metadata["message"].insert(0, row_metadata["message"])
 
+
+        helper.reset_tick_strings()
 
         return x, x_metadata
 
@@ -137,24 +139,40 @@ class CompareRuns:
 
 
         # Stems
-        plot.segment(x0="x", y0="max", x1="x", y1="quantile75",
-        source=self.source, line_color="black")
-        plot.segment(x0="x", y0="min", x1="x", y1="quantile25",
-        source=self.source, line_color="black")
+        top_stem = plot.segment(
+            x0="x", y0="max", x1="x", y1="quantile75",
+            source=self.source, line_color="black"
+        )
+        top_stem.data_source.selected.on_change("indices", self.inspect_run_callback)
+
+        bottom_stem = plot.segment(
+            x0="x", y0="min", x1="x", y1="quantile25",
+            source=self.source, line_color="black"
+        )
+        bottom_stem.data_source.selected.on_change("indices", self.inspect_run_callback)
+
 
         # Boxes
-        plot.vbar(
+        top_box = plot.vbar(
             x="x", width=0.5, top="quantile75", bottom="quantile50",
             source=self.source, line_color="black"
         )
-        plot.vbar(
+        top_box.data_source.selected.on_change("indices", self.inspect_run_callback)
+
+        bottom_box = plot.vbar(
             x="x", width=0.5, top="quantile50", bottom="quantile25",
             source=self.source, line_color="black"
         )
+        bottom_box.data_source.selected.on_change("indices", self.inspect_run_callback)
+
 
         # Mu dot
-        plot.dot(x="x", y="mu", size=30, source=self.source,
-        color="black", legend_label="Empirical average μ")
+        mu_dot = plot.dot(
+            x="x", y="mu", size=30, source=self.source,
+            color="black", legend_label="Empirical average μ"
+        )
+        mu_dot.data_source.selected.on_change("indices", self.inspect_run_callback)
+
 
         # Other
         plot.xgrid.grid_line_color = None
@@ -186,10 +204,11 @@ class CompareRuns:
         tap = TapTool(callback=CustomJS(code=tap_callback_js))
         plot.add_tools(tap)
 
-        plot.vbar(
+        bar = plot.vbar(
             x="x", top=data_field, source=self.source,
             width=0.5
         )
+        bar.data_source.selected.on_change("indices", self.inspect_run_callback)
         plot.xgrid.grid_line_color = None
         plot.ygrid.grid_line_color = None
 
@@ -410,6 +429,23 @@ class CompareRuns:
         )
         self.doc.add_root(self.select_n_runs)
         self.select_n_runs.on_change("value", self.update_n_runs)
+
+
+
+        # Communication methods
+        # (to send/receive messages to/from master)
+
+    # Callback to change view of Inspect runs when data is selected
+    def inspect_run_callback(self, attr, old, new):
+
+        # In case we just unselected everything, then do nothing
+        if new == []:
+            return
+
+        index = new[-1]
+        run_name = self.source.data["x"][index]
+
+        self.master.go_to_inspect(run_name)
 
 
 

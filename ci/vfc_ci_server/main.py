@@ -118,7 +118,6 @@ if len(sys.argv) == 3:
     git_repo_linked = True
 
 
-
 curdoc().template_variables["git_repo_linked"] = git_repo_linked
 
 
@@ -127,14 +126,41 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
 
 import compare_runs
 import inspect_runs
+import helper
+
 
 # Define a ViewsMaster class to allow two-ways communication between InspectRuns
-# and CompareRuns. This makes it possible to have one view update the plots of
-# another. This approach should also make the addition of other views quite easy.
+# and CompareRuns. This approach will be useful if we want to add new views at
+# some point in the future (instead of having n views with n-1 references each).
 
 class ViewsMaster:
 
-    def __init__(self):
+        # Communication functions
+
+    def go_to_inspect(self, run_name):
+        self.inspect.switch_view(run_name)
+
+
+        #Constructor
+
+    def __init__(self, data, metadata, git_repo_linked, commit_link):
+
+        self.data = data
+        self.metadata = metadata
+        self.git_repo_linked = git_repo_linked
+        self.commit_link = commit_link
+
+        # Generate the display strings for runs (runs ticks)
+        # By doing this in master, we ensure the homogeneity of display strings
+        # across all plots
+        self.metadata["name"] = self.metadata.index.to_series().map(
+            lambda x: helper.get_run_name(
+                x,
+                helper.get_metadata(self.metadata, x)["hash"]
+            )
+        )
+
+        helper.reset_tick_strings()
 
         # Runs comparison
         self.compare = compare_runs.CompareRuns(
@@ -158,4 +184,9 @@ class ViewsMaster:
             commit_link = commit_link
         )
 
-views_master = ViewsMaster()
+views_master = ViewsMaster(
+    data = data,
+    metadata = metadata,
+    git_repo_linked = git_repo_linked,
+    commit_link = commit_link
+)

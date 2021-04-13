@@ -11,9 +11,9 @@ def get_metadata(metadata, timestamp):
     return metadata.loc[timestamp]
 
 
-# Returns the string for a tick of the runs' x-axis (a string that indicates the
-# elapsed time since the run)
-def runs_tick_string(timestamp, hash):
+# Return a string that indicates the elapsed time since the run, used as the
+# x-axis tick in "Compare runs" or when selecting run in "Inspect run"
+def get_run_name(timestamp, hash):
 
     gmt = time.gmtime()
     now = calendar.timegm(gmt)
@@ -23,8 +23,17 @@ def runs_tick_string(timestamp, hash):
     # Special case : < 1 minute (return string directly)
     if diff < 60:
         str = "Less than a minute ago"
+
         if hash != "":
             str = str + " (%s)" % hash
+
+        if str == get_run_name.previous:
+            get_run_name.counter = get_run_name.counter + 1
+            str = "%s (%s)" % (str, get_run_name.counter)
+        else:
+            get_run_name.counter = 0
+            get_run_name.previous = str
+
         return str
 
     # < 1 hour
@@ -59,4 +68,25 @@ def runs_tick_string(timestamp, hash):
     if hash != "":
         str = str + " (%s)" % hash
 
+
+    # Finally, check for duplicate with previously generated string
+    if str == get_run_name.previous:
+        # Increment the duplicate counter and add it to str
+        get_run_name.counter = get_run_name.counter + 1
+        str = "%s (%s)" % (str, get_run_name.counter)
+
+    else:
+        # No duplicate, reset both previously generated str and duplicate counter
+        get_run_name.counter = 0
+        get_run_name.previous = str
+
     return str
+
+# This will help us store data about last generated string to avoid duplicates
+get_run_name.counter = 0
+get_run_name.previous = ""
+
+
+def reset_tick_strings():
+    get_run_name.counter = 0
+    get_run_name.previous = ""

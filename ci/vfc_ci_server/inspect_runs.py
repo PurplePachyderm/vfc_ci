@@ -29,8 +29,11 @@ class InspectRuns:
 
         # Iterate over timestamp rows (runs) and fill dict
         for row in self.metadata.iloc:
-            str = helper.runs_tick_string(row.name, row["hash"])
-            runs_dict[str] = row.name
+            # WARNING The syntax used by pandas makes this part a bit tricky :
+            # row.name is the index of metadata (so it refers to the
+            # timestamp), whereas rows["name"] is the column called "name"
+            # (which is the display string used for the run)
+            runs_dict[row["name"]] = row.name
 
         return runs_dict
 
@@ -269,7 +272,15 @@ class InspectRuns:
 
 
         # Communication methods
-        # (called from master to update this class from outside)
+        # (to send/receive messages to/from master)
+
+    # When received, switch to the run_name in parameter
+    def switch_view(self, run_name):
+        self.select_run.value = run_name
+
+        # Simply call the run selector's callback function, as if the event had
+        # been triggered manually
+        self.update_run("", "", run_name)
 
 
         # Constructor
