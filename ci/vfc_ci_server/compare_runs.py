@@ -66,9 +66,10 @@ class CompareRuns:
         return x, x_metadata
 
 
-    # Update plots based on current_test/var/backend combination
+    # Update plots based on current test/var/backend combination
     def update_plots(self):
-        loc = self.data.loc[[self.current_test], self.current_var, self.current_backend]
+
+        loc = self.data.loc[[self.select_test.value], self.select_var.value, self.select_backend.value]
 
         timestamps = loc["timestamp"]
 
@@ -104,12 +105,12 @@ class CompareRuns:
             quantile75 = loc["quantile75"][-n:],
             max = loc["max"][-n:],
             mu = loc["mu"][-n:],
-            nruns = loc["nruns"][-n:]
+            nsamples = loc["nsamples"][-n:]
         )
 
 
 
-        # Plots generation function
+        # Plots generation function (fills an existing plot with data)
 
     def gen_boxplot(self, plot):
         # (based on: https://docs.bokeh.org/en/latest/docs/gallery/boxplot.html)
@@ -126,7 +127,7 @@ class CompareRuns:
             ("Median", "@quantile50{0.*f}"),
             ("3rd quartile", "@quantile75{0.*f}"),
             ("μ", "@mu{0.*f}"),
-            ("Number of samples", "@nruns")
+            ("Number of samples", "@nsamples")
         ])
         plot.add_tools(hover)
 
@@ -193,7 +194,7 @@ class CompareRuns:
             ("Author", "@author"),
             ("Message", "@message"),
             (display_name, "@" + data_field),
-            ("Number of samples", "@nruns")
+            ("Number of samples", "@nsamples")
         ])
         plot.add_tools(hover)
 
@@ -224,50 +225,44 @@ class CompareRuns:
 
     def update_test(self, attrname, old, new):
 
-        # Update test selection
-        self.current_test = new
-
-
-        self.vars = data.loc[self.current_test]\
+        # New list of available vars
+        self.vars = self.data.loc[self.select_test.value]\
         .index.get_level_values("variable").drop_duplicates().tolist()
+        self.select_var.options = self.vars
+
 
         # Reset var selection if old one is not available in new vars
-        if self.current_var not in self.vars:
-            self.current_var = self.vars[0]
-            self.select_var.value = self.current_var
+        if self.select_var.value not in self.vars:
+            self.select_var.value = self.vars[0]
+            # The update_var callback will be triggered by the assignment
 
-
-        self.backends = self.data.loc[self.current_test, self.current_var]\
-        .index.get_level_values("vfc_backend").drop_duplicates().tolist()
-
-        # Reset backend selection if old one is not available in new backends
-        if self.current_backend not in self.backends:
-            self.current_backend = self.backends[0]
-            self.select_backend.value = self.current_backend
-
-        self.update_plots()
+        else:
+            # Trigger the callback manually (since the plots need to be updated
+            # anyway)
+            self.update_var("", "", self.select_var.value)
 
 
     def update_var(self, attrname, old, new):
 
-        # Update var selection
-        self.current_var = new
-
-
-        self.backends = self.data.loc[self.current_test, self.current_var]\
+        # New list of available backends
+        self.backends = self.data.loc[self.select_test.value, self.select_var.value]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
+        self.select_backend.options = self.backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.current_backend not in self.backends:
-            self.current_backend = self.backends[0]
-            self.select_backend.value = self.current_backend
+        if self.select_backend.value not in self.backends:
+            self.select_backend.value = self.backends[0]
+            # The update_backend callback will be triggered by the assignment
 
-        self.update_plots()
+        else:
+            # Trigger the callback manually (since the plots need to be updated
+            # anyway)
+            self.update_backend("", "", self.select_backend.value)
 
 
     def update_backend(self, attrname, old, new):
-        # Simply update backend selection
-        self.current_backend = new
+
+        # Simply update plots, since no other data is affected
         self.update_plots()
 
 
@@ -286,17 +281,14 @@ class CompareRuns:
     def setup_selection(self):
 
         # Test/var/backend combination (we select all first elements at init)
-        self.tests = self.data.index.get_level_values("test").drop_duplicates().tolist()
-        self.current_test = self.tests[0]
+        self.tests = self.data\
+        .index.get_level_values("test").drop_duplicates().tolist()
 
-        self.vars = self.data.loc[self.current_test]\
+        self.vars = self.data.loc[self.tests[0]]\
         .index.get_level_values("variable").drop_duplicates().tolist()
-        self.current_var = self.vars[0]
 
-        self.backends = self.data.loc[self.current_test, self.current_var]\
+        self.backends = self.data.loc[self.tests[0], self.vars[0]]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
-
-        self.current_backend = self.backends[0]
 
 
         # Number of runs to display
@@ -380,7 +372,7 @@ class CompareRuns:
         # Test
         self.select_test = Select(
             name="select_test", title="Test :",
-            value=self.current_test, options=self.tests
+            value=self.tests[0], options=self.tests
         )
         self.doc.add_root(self.select_test)
         self.select_test.on_change("value", self.update_test)
@@ -398,7 +390,7 @@ class CompareRuns:
         # Variable
         self.select_var = Select(
             name="select_var", title="Variable :",
-            value=self.current_var, options=self.vars
+            value=self.vars[0], options=self.vars
         )
         self.doc.add_root(self.select_var)
         self.select_var.on_change("value", self.update_var)
@@ -416,7 +408,7 @@ class CompareRuns:
         # Backend
         self.select_backend = Select(
             name="select_backend", title="Verificarlo backend :",
-            value=self.current_backend, options=self.backends
+            value=self.backends[0], options=self.backends
         )
         self.doc.add_root(self.select_backend)
         self.select_backend.on_change("value", self.update_backend)

@@ -10,7 +10,7 @@
                 },
                 {
                     "name": "libinterflop_mca.so --precision-binary64=24",
-                    "repetitions": 10
+                    "repetitions": 50
                 }
             ]
         }

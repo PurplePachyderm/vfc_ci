@@ -67,7 +67,7 @@ if len(sys.argv) == 3:
         url = address
 
     elif method == "directory":
-        # Fetch the remote URL from the local repo
+        # Get the remote URL from the local repo
         from git import Repo
         repo = Repo(address)
         url = repo.remotes.origin.url

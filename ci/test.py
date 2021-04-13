@@ -173,7 +173,7 @@ def generate_data(config):
     data["quantile50"] = data["values"].apply(get_quantile, args=(0.5,))
     data["quantile75"] = data["values"].apply(get_quantile, args=(0.75,))
     data["max"] = data["values"].apply(np.max)
-    data["nruns"] = data["values"].apply(len)
+    data["nsamples"] = data["values"].apply(len)
 
     return data
 

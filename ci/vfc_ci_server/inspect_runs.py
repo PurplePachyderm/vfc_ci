@@ -43,8 +43,24 @@ class InspectRuns:
 
     # Update plots (variable selection mode only!)
     def update_var_plots(self):
-        print("Update var plots")
 
+        # For a given variable, get all backends (across all tests)
+        backends = self.filtered_data[
+            self.filtered_data.index.isin([self.select_var.value], level=1)
+        ].groupby("vfc_backend")
+
+
+        backends = backends.agg({
+            "sigma": lambda x: x.tolist(),
+            "s10": lambda x: x.tolist(),
+            "s2": lambda x: x.tolist(),
+            "mu": lambda x: x.tolist(),
+
+            "nsamples": lambda x: x.tolist()
+        })
+
+        # From there, we can compute the sigma/s quantiles, as well as the
+        # aggregated mu (with a weighted avg using nsamples)
 
     # Update plots (backend selection mode only!)
     def update_backend_plots(self):
@@ -52,8 +68,7 @@ class InspectRuns:
 
 
 
-        # Plots generation function
-
+        # Plots generation function (fills an existing plot with data)
 
 
         # Widets' callback functions
@@ -64,38 +79,44 @@ class InspectRuns:
         self.current_run_display = new
         self.current_run = self.runs_dict[new]
 
-        filtered_data = self.data.loc[self.data["timestamp"] == self.current_run]
+        # This will be reused when updating plots (to avoid filtering same data)
+        self.filtered_data = self.data[self.data["timestamp"] == self.current_run]
 
-        self.vars = filtered_data.index.\
+        # New list of available vars
+        self.vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
+        self.select_var.options = self.vars
 
         # Reset variable selection if old one is not available in new vars
-        if self.current_var not in self.vars:
-            self.current_var = self.vars[0]
-            self.select_var.value = self.current_var
+        if self.select_var.value not in self.vars:
+            self.select_var.value = self.vars[0]
+
+        else:
+            # We still need to redraw the var plots
+            self.update_var_plots()
 
 
-        self.backends = filtered_data.index.\
+        # New list of available backends
+        self.backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
+        self.select_backend.options = self.backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.current_backend not in self.backends:
-            self.current_backend = self.backends[0]
-            self.select_var.value = self.current_backend
+        if self.select_backend.value not in self.backends:
+            self.select_backend.value = self.backends[0]
+
+        else:
+            # We still need to redraw the backend plots
+            self.update_backend_plots()
 
 
-        # This is the only operation that requires redrawing all plots
-        self.update_var_plots()
-        self.update_backend_plots()
 
 
     def update_var(self, attrname, old, new):
-        self.current_var = new
         self.update_var_plots()
 
 
     def update_backend(self, attrname, old, new):
-        self.current_backend = new
         self.update_backend_plots()
 
 
@@ -126,17 +147,16 @@ class InspectRuns:
         self.current_mode = 0 # Variable is selected by default
 
 
-        filtered_data = self.data.loc[self.data["timestamp"] == self.current_run]
+        # This will be reused when updating plots (to avoid filtering same data)
+        self.filtered_data = self.data[self.data["timestamp"] == self.current_run]
 
         # Variable selection
-        self.vars = filtered_data.index.\
+        self.vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
-        self.current_var = self.vars[0]
 
         # Backend_selection
-        self.backends = filtered_data.index.\
+        self.backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.current_backend = self.backends[0]
 
 
     # Create all plots (for both variable and backend selection at once)
@@ -254,7 +274,7 @@ class InspectRuns:
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
             name="select_variable_by_run", title="Variable :",
-            value=self.current_var, options=self.vars
+            value=self.vars[0], options=self.vars
         )
         self.doc.add_root(self.select_var)
         self.select_var.on_change("value", self.update_var)
@@ -264,7 +284,7 @@ class InspectRuns:
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
             name="select_backend_by_run", title="Backend :",
-            value=self.current_backend, options=self.backends
+            value=self.backends[0], options=self.backends
         )
         self.doc.add_root(self.select_backend)
         self.select_backend.on_change("value", self.update_backend)
@@ -295,10 +315,10 @@ class InspectRuns:
         self.git_repo_linked = git_repo_linked
         self.commit_link = commit_link
 
-        # Having 2 separate sources will prevent many useless operations when
-        # updating one view only
+        # Having 2 separate ColumnDataSource will prevent many useless
+        # operations when updating one view only
         # (will be filled/updated in update_..._plots())
-        self.variable_source = ColumnDataSource(data={})
+        self.var_source = ColumnDataSource(data={})
         self.backend_source = ColumnDataSource(data={})
 
 
