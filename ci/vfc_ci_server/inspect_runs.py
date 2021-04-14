@@ -30,7 +30,7 @@ class InspectRuns:
 
         # Iterate over timestamp rows (runs) and fill dict
         for row in self.metadata.iloc:
-            # WARNING The syntax used by pandas makes this part a bit tricky :
+            # The syntax used by pandas makes this part a bit tricky :
             # row.name is the index of metadata (so it refers to the
             # timestamp), whereas row["name"] is the column called "name"
             # (which is the display string used for the run)
@@ -91,6 +91,7 @@ class InspectRuns:
         self.var_source.data = backends.to_dict("list")
 
         # Update x_ranges
+        self.mu_var.x_range.factors = list(backends["x"])
         self.sigma_var.x_range.factors = list(backends["x"])
         self.s10_var.x_range.factors = list(backends["x"])
         self.s2_var.x_range.factors = list(backends["x"])
@@ -139,6 +140,7 @@ class InspectRuns:
         self.backend_source.data = vars.to_dict("list")
 
         # Update x_ranges
+        self.mu_backend.x_range.factors = list(vars["x"])
         self.sigma_backend.x_range.factors = list(vars["x"])
         self.s10_backend.x_range.factors = list(vars["x"])
         self.s2_backend.x_range.factors = list(vars["x"])
@@ -157,7 +159,7 @@ class InspectRuns:
             ("Median", "@" + prefix + "_quantile50{%0.18e}"),
             ("3rd quartile", "@" + prefix + "_quantile75{%0.18e}"),
             ("μ", "@" + prefix + "_mu{%0.18e}"),
-            ("Number of samples", "@nsamples")
+            ("Number of samples (tests)", "@nsamples")
         ])
         hover.formatters = {
             "@%s_min" % prefix : "printf",
@@ -165,7 +167,7 @@ class InspectRuns:
             "@%s_quantile25" % prefix : "printf",
             "@%s_quantile50" % prefix : "printf",
             "@%s_quantile75" % prefix : "printf",
-            "@%s_mu" % prefix : "printf",
+            "@%s_mu" % prefix : "printf"
         }
         plot.add_tools(hover)
 
@@ -211,6 +213,34 @@ class InspectRuns:
         plot.yaxis[0].formatter.precision = 3
 
         plot.xaxis[0].major_label_orientation = pi/8
+
+
+    def gen_bar_plot(self, plot, source):
+        # This is used for plotting the mu bar plot only
+
+        hover = HoverTool(tooltips = [
+            ("μ", "@mu{%0.18e}"),
+            ("Number of samples (tests)", "@nsamples")
+        ])
+        hover.formatters = {
+            "@mu" : "printf"
+        }
+        plot.add_tools(hover)
+
+
+        bar = plot.vbar(
+            x="x", top="mu", source=source,
+            width=0.5
+        )
+        plot.xgrid.grid_line_color = None
+        plot.ygrid.grid_line_color = None
+
+        plot.yaxis[0].formatter.power_limit_high = 0
+        plot.yaxis[0].formatter.power_limit_low = 0
+        plot.yaxis[0].formatter.precision = 3
+
+        plot.xaxis[0].major_label_orientation = pi/8
+
 
 
         # Widets' callback functions
@@ -308,6 +338,17 @@ class InspectRuns:
 
             # Variable selection plots
 
+        # Mu plot
+        self.mu_var = figure(
+            name="mu_var",
+            title="Empirical average μ of variable (groupped by backends)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode="scale_width"
+        )
+        self.gen_bar_plot(self.mu_var, self.var_source)
+        self.doc.add_root(self.mu_var)
+
+
         # Sigma plot (variable selection)
         self.sigma_var = figure(
             name="sigma_var",
@@ -315,7 +356,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.gen_boxplot(self.sigma_var, self.var_source , "sigma")
+        self.gen_boxplot(self.sigma_var, self.var_source, "sigma")
         self.doc.add_root(self.sigma_var)
 
 
@@ -326,7 +367,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_boxplot(self.s10_var, self.var_source , "s10")
+        self.gen_boxplot(self.s10_var, self.var_source, "s10")
         s10_tab_var = Panel(child=self.s10_var, title="Base 10")
 
         self.s2_var = figure(
@@ -335,7 +376,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_boxplot(self.s2_var, self.var_source , "s2")
+        self.gen_boxplot(self.s2_var, self.var_source, "s2")
         s2_tab_var = Panel(child=self.s2_var, title="Base 2")
 
         s_tabs_var = Tabs(
@@ -347,6 +388,17 @@ class InspectRuns:
 
             # Backend selection plots
 
+        # Mu plot
+        self.mu_backend = figure(
+            name="mu_backend",
+            title="Empirical average μ of backend (groupped by variables)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode="scale_width"
+        )
+        self.gen_bar_plot(self.mu_backend, self.backend_source)
+        self.doc.add_root(self.mu_backend)
+
+
         # Sigma plot (backend selection)
         self.sigma_backend = figure(
             name="sigma_backend",
@@ -354,7 +406,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.gen_boxplot(self.sigma_backend, self.backend_source , "sigma")
+        self.gen_boxplot(self.sigma_backend, self.backend_source, "sigma")
         self.doc.add_root(self.sigma_backend)
 
 
@@ -365,7 +417,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_boxplot(self.s10_backend, self.backend_source , "s10")
+        self.gen_boxplot(self.s10_backend, self.backend_source, "s10")
         s10_tab_backend = Panel(child=self.s10_backend, title="Base 10")
 
         self.s2_backend = figure(
@@ -374,7 +426,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_boxplot(self.s2_backend, self.backend_source , "s2")
+        self.gen_boxplot(self.s2_backend, self.backend_source, "s2")
         s2_tab_backend = Panel(child=self.s2_backend, title="Base 2")
 
         s_tabs_backend = Tabs(

@@ -139,7 +139,7 @@ class CompareRuns:
             "@quantile25" : "printf",
             "@quantile50" : "printf",
             "@quantile75" : "printf",
-            "@mu" : "printf",
+            "@mu" : "printf"
         }
         plot.add_tools(hover)
 

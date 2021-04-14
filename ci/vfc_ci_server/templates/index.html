@@ -193,6 +193,10 @@
                     <h3 class="title is-3">Plots</h3>
                     <div class="container select-variable">
                         <div class="card plot-card">
+                            {{ embed(roots.mu_var) }}
+                        </div>
+
+                        <div class="card plot-card">
                             {{ embed(roots.sigma_var) }}
                         </div>
 
@@ -204,6 +208,10 @@
                     </div>
 
                     <div class="container select-backend" style="display: none;">
+                        <div class="card plot-card">
+                            {{ embed(roots.mu_backend) }}
+                        </div>
+
                         <div class="card plot-card">
                             {{ embed(roots.sigma_backend) }}
                         </div>
