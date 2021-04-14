@@ -6,7 +6,8 @@
             "parameters" : "",
             "vfc_backends": [
                 {
-                    "name": "libinterflop_ieee.so"
+                    "name": "libinterflop_mca.so",
+                    "repetitions": 50
                 },
                 {
                     "name": "libinterflop_mca.so --precision-binary64=24",

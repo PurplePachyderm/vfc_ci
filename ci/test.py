@@ -42,10 +42,10 @@ def read_probes_csv(filepath, backend):
 def numpy_float_array(x):
     return np.array(x).astype(float)
 
-def get_quantile(array, p):
-    return np.quantile(array, p)
+
 
 ################################################################################
+
 
     # Main functions
 
@@ -169,9 +169,9 @@ def generate_data(config):
 
     data["values"] = data["values"].apply(np.sort)
     data["min"] = data["values"].apply(np.min)
-    data["quantile25"] = data["values"].apply(get_quantile, args=(0.25,))
-    data["quantile50"] = data["values"].apply(get_quantile, args=(0.5,))
-    data["quantile75"] = data["values"].apply(get_quantile, args=(0.75,))
+    data["quantile25"] = data["values"].apply(np.quantile, args=(0.25,))
+    data["quantile50"] = data["values"].apply(np.quantile, args=(0.50,))
+    data["quantile75"] = data["values"].apply(np.quantile, args=(0.75,))
     data["max"] = data["values"].apply(np.max)
     data["nsamples"] = data["values"].apply(len)
 
@@ -221,6 +221,9 @@ def run(is_git_commit, export_raw_values):
 
     if export_raw_values:
         print(
-            "A file containing the raw values has also been written to \"%s.vfcraw.hd5\"." \
+            """A file containing the raw values has also been created :
+            "%s.vfcraw.hd5"."""
             % filename
         )
+
+    print()

@@ -37,8 +37,8 @@ class CompareRuns:
             message = []
         )
 
-        # n==0 means we want all runs, we also make sure not to go out of bound
-        # if asked for more runs than we have
+        # n == 0 means we want all runs, we also make sure not to go out of
+        # bound if asked for more runs than we have
         n = self.current_n_runs
         if n == 0 or n > len(timestamps):
             n = len(timestamps)
@@ -69,9 +69,13 @@ class CompareRuns:
     # Update plots based on current test/var/backend combination
     def update_plots(self):
 
-        loc = self.data.loc[[self.select_test.value], self.select_var.value, self.select_backend.value]
+        # Select all data matching current test/var/backend
+        runs = self.data.loc[
+            [self.select_test.value],
+            self.select_var.value, self.select_backend.value
+        ]
 
-        timestamps = loc["timestamp"]
+        timestamps = runs["timestamp"]
 
         x, x_metadata = self.gen_x_series(timestamps.sort_values())
 
@@ -84,7 +88,7 @@ class CompareRuns:
 
         # Update source
 
-        # Select the last n runs only, and make sure each entry is a list
+        # Select the last n runs only
         n = self.current_n_runs
         self.source.data = dict(
             # Metadata
@@ -96,16 +100,16 @@ class CompareRuns:
             message = x_metadata["message"][-n:],
 
             # Data
-            sigma = loc["sigma"][-n:],
-            s10 = loc["s10"][-n:],
-            s2 = loc["s2"][-n:],
-            min = loc["min"][-n:],
-            quantile25 = loc["quantile25"][-n:],
-            quantile50 = loc["quantile50"][-n:],
-            quantile75 = loc["quantile75"][-n:],
-            max = loc["max"][-n:],
-            mu = loc["mu"][-n:],
-            nsamples = loc["nsamples"][-n:]
+            sigma = runs["sigma"][-n:],
+            s10 = runs["s10"][-n:],
+            s2 = runs["s2"][-n:],
+            min = runs["min"][-n:],
+            quantile25 = runs["quantile25"][-n:],
+            quantile50 = runs["quantile50"][-n:],
+            quantile75 = runs["quantile75"][-n:],
+            max = runs["max"][-n:],
+            mu = runs["mu"][-n:],
+            nsamples = runs["nsamples"][-n:]
         )
 
 
@@ -121,14 +125,22 @@ class CompareRuns:
             ("Hash", "@hash"),
             ("Author", "@author"),
             ("Message", "@message"),
-            ("Min", "@min{0.*f}"),
-            ("Max", "@max{0.*f}"),
-            ("1st quartile", "@quantile25{0.*f}"),
-            ("Median", "@quantile50{0.*f}"),
-            ("3rd quartile", "@quantile75{0.*f}"),
-            ("μ", "@mu{0.*f}"),
+            ("Min", "@min{%0.18e}"),
+            ("Max", "@max{%0.18e}"),
+            ("1st quartile", "@quantile25{%0.18e}"),
+            ("Median", "@quantile50{%0.18e}"),
+            ("3rd quartile", "@quantile75{%0.18e}"),
+            ("μ", "@mu{%0.18e}"),
             ("Number of samples", "@nsamples")
         ])
+        hover.formatters = {
+            "@min" : "printf",
+            "@max" : "printf",
+            "@quantile25" : "printf",
+            "@quantile50" : "printf",
+            "@quantile75" : "printf",
+            "@mu" : "printf",
+        }
         plot.add_tools(hover)
 
         # Custom JS callback that will be used when tapping on a run
@@ -144,13 +156,17 @@ class CompareRuns:
             x0="x", y0="max", x1="x", y1="quantile75",
             source=self.source, line_color="black"
         )
-        top_stem.data_source.selected.on_change("indices", self.inspect_run_callback)
+        top_stem.data_source.selected.on_change(
+            "indices", self.inspect_run_callback
+        )
 
         bottom_stem = plot.segment(
             x0="x", y0="min", x1="x", y1="quantile25",
             source=self.source, line_color="black"
         )
-        bottom_stem.data_source.selected.on_change("indices", self.inspect_run_callback)
+        bottom_stem.data_source.selected.on_change(
+            "indices", self.inspect_run_callback
+        )
 
 
         # Boxes
@@ -158,13 +174,17 @@ class CompareRuns:
             x="x", width=0.5, top="quantile75", bottom="quantile50",
             source=self.source, line_color="black"
         )
-        top_box.data_source.selected.on_change("indices", self.inspect_run_callback)
+        top_box.data_source.selected.on_change(
+            "indices", self.inspect_run_callback
+        )
 
         bottom_box = plot.vbar(
             x="x", width=0.5, top="quantile50", bottom="quantile25",
             source=self.source, line_color="black"
         )
-        bottom_box.data_source.selected.on_change("indices", self.inspect_run_callback)
+        bottom_box.data_source.selected.on_change(
+            "indices", self.inspect_run_callback
+        )
 
 
         # Mu dot
@@ -172,7 +192,9 @@ class CompareRuns:
             x="x", y="mu", size=30, source=self.source,
             color="black", legend_label="Empirical average μ"
         )
-        mu_dot.data_source.selected.on_change("indices", self.inspect_run_callback)
+        mu_dot.data_source.selected.on_change(
+            "indices", self.inspect_run_callback
+        )
 
 
         # Other
@@ -355,7 +377,11 @@ class CompareRuns:
         self.gen_bar_plot(self.s2_plot, "s2", "s")
         s2_tab = Panel(child=self.s2_plot, title="Base 2")
 
-        s_tabs = Tabs(name = "s_tabs", tabs=[s10_tab, s2_tab], tabs_location = "below")
+        s_tabs = Tabs(
+            name = "s_tabs",
+            tabs=[s10_tab, s2_tab],
+            tabs_location = "below"
+        )
 
         self.doc.add_root(s_tabs)
 
