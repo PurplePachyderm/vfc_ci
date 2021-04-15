@@ -1,7 +1,7 @@
 # General helper functions for both compare_runs and compare_variables
 
-import calendar;
-import time;
+import calendar
+import time
 
 ################################################################################
 
@@ -9,6 +9,17 @@ import time;
 # From a timestamp, return the associated metadata as a Pandas serie
 def get_metadata(metadata, timestamp):
     return metadata.loc[timestamp]
+
+
+# Convert a metadata Pandas series to a JS readable dict
+def metadata_to_dict(metadata):
+    # JS doesn't accept True for booleans
+    dict = metadata.to_dict()
+    dict["is_git_commit"] = 1 if dict["is_git_commit"] else 0
+
+    dict["date"] = time.ctime(metadata.name)
+
+    return dict
 
 
 # Return a string that indicates the elapsed time since the run, used as the

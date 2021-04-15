@@ -1,12 +1,13 @@
 # Manage the view comparing the variables of a run
 
-import datetime
+import time
+import json
 
 import pandas as pd
 import numpy as np
 
-from math import pi
 
+from math import pi
 from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
@@ -254,6 +255,7 @@ class InspectRuns:
         # This will be reused when updating plots (to avoid filtering same data)
         self.filtered_data = self.data[self.data["timestamp"] == self.current_run]
 
+
         # New list of available vars
         self.vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
@@ -280,8 +282,6 @@ class InspectRuns:
         else:
             # We still need to redraw the backend plots
             self.update_backend_plots()
-
-
 
 
     def update_var(self, attrname, old, new):
@@ -442,12 +442,23 @@ class InspectRuns:
     def setup_widgets(self):
 
         # Run selection
+
+        code="updateRunMetadata(metadata);"
+
         self.select_run = Select(
             name="select_run", title="Run :",
             value=self.current_run_display, options=self.runs_display
         )
         self.doc.add_root(self.select_run)
         self.select_run.on_change("value", self.update_run)
+        self.select_run.js_on_change("value", CustomJS(
+            code = code,
+            args=(dict(
+                metadata=helper.metadata_to_dict(
+                    helper.get_metadata(self.metadata, self.current_run)
+                )
+            ))
+        ))
 
 
         # Plotting mode radio
@@ -456,13 +467,11 @@ class InspectRuns:
             name="radio",
             labels=self.modes, active=self.current_mode
         )
-        # This is a function defined inside the template to avoid writing too
+        self.doc.add_root(radio)
+        # The functions are defined inside the template to avoid writing too
         # much JS server side
         radio_callback_js = "changePlottingMode();"
-        radio.js_on_change("active", CustomJS(
-            code=radio_callback_js
-        ))
-        self.doc.add_root(radio)
+        radio.js_on_change("active", CustomJS(code=radio_callback_js))
 
 
         # Variable selection (mode 0)
@@ -493,10 +502,6 @@ class InspectRuns:
     # When received, switch to the run_name in parameter
     def switch_view(self, run_name):
         self.select_run.value = run_name
-
-        # Simply call the run selector's callback function, as if the event had
-        # been triggered manually
-        self.update_run("", "", run_name)
 
 
         # Constructor
@@ -529,3 +534,11 @@ class InspectRuns:
         # show the plots for the first time
         self.update_var_plots()
         self.update_backend_plots()
+
+
+        # Pass the initial metadata to the template (will be updated in CustomJS
+        # callbacks)
+        initial_metadata = helper.get_metadata(self.metadata, self.current_run)
+        initial_metadata = helper.metadata_to_dict(initial_metadata)
+
+        self.doc.template_variables["initial_metadata"] = initial_metadata

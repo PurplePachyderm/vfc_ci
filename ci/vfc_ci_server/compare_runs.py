@@ -1,6 +1,6 @@
 # Manage the view comparing a variable over different runs
 
-import datetime
+import time
 
 import pandas as pd
 
@@ -47,7 +47,7 @@ class CompareRuns:
         for i in range(0, n):
             # Get metadata associated to this run
             row_metadata = helper.get_metadata(self.metadata, timestamps[-i-1])
-            date = datetime.datetime.fromtimestamp(timestamps[-i-1]).isoformat()
+            date = time.ctime(timestamps[-i-1])
 
             # Fill the x series
             str = helper.get_run_name(timestamps[-i-1], row_metadata["hash"])

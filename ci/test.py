@@ -10,6 +10,11 @@ import sys
 import calendar
 import time
 
+# Forcing an older pickle protocol allows backwards compatibility when reading
+# HDF5 written in 3.8+ using an older version of Python
+import pickle
+pickle.HIGHEST_PROTOCOL = 4
+
 import pandas as pd
 import numpy as np
 

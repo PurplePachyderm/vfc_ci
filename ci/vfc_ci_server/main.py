@@ -2,7 +2,6 @@
 # .vfcrun.hd5), and lanch a Bokeh server for the visualization of this data.
 
 import os
-import datetime
 import sys
 
 import pandas as pd
@@ -101,19 +100,25 @@ if len(sys.argv) == 3:
     # We should have a "github.com" or a "*gitlab*" URL
 
     if parsed_url.netloc == "github.com":
-        commit_link = "https://%s%s/commit/@hash" \
+        commit_link = "https://%s%s/commit/" \
         % (parsed_url.netloc, parsed_url.path)
 
         curdoc().template_variables["commit_link"] = commit_link
         curdoc().template_variables["git_host"] = "GitHub"
 
+        # Used in Bokeh tooltips
+        commit_link = commit_link + "@hash"
+
     # We assume we have a GitLab URL
     else:
-        commit_link = "https://%s%s/-/commit/@hash" \
+        commit_link = "https://%s%s/-/commit/" \
         % (parsed_url.netloc, parsed_url.path)
 
         curdoc().template_variables["commit_link"] = commit_link
         curdoc().template_variables["git_host"] = "GitLab"
+
+        # Used in Bokeh tooltips
+        commit_link = commit_link + "@hash"
 
     git_repo_linked = True
 

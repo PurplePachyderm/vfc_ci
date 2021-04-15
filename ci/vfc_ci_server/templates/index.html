@@ -185,6 +185,52 @@
                     <br>
 
                     <h4 class="title is-4">Run metadata</h4>
+
+                    <b>Date :</b>
+                    <div id="run-date" style="display: inline;">
+                    </div>
+
+                    <br>
+
+                    <div id="is-git-commit">
+
+                        <b>Hash :</b>
+                        <div
+                        id="run-hash" style="display: inline;">
+                        </div>
+                        <br>
+                        <b>Author :</b>
+                        <div id="run-author" style="display: inline;">
+                        </div>
+                        <br>
+                        <b>Message :</b>
+                        <div id="run-message" style="display: inline;">
+                        </div>
+
+                        {% if git_repo_linked %}
+
+                        <br>
+                        <br>
+
+
+                        <a
+                        id="git-commit-link"
+                        href="{{commit_link}}{{initial_metadata.hash}}"
+                        target="_blank"
+                        >
+                            View this commit on {{git_host}}
+                        </a>
+
+                        {% endif %}
+
+                    </div>
+
+                    <div id="not-git-commit">
+
+                        This run is not linked to a Git commit.
+
+                    </div>
+
                 </div>
 
 
@@ -195,6 +241,8 @@
                         <div class="card plot-card">
                             {{ embed(roots.mu_var) }}
                         </div>
+
+                        <br>
 
                         <div class="card plot-card">
                             {{ embed(roots.sigma_var) }}
@@ -211,6 +259,8 @@
                         <div class="card plot-card">
                             {{ embed(roots.mu_backend) }}
                         </div>
+
+                        <br>
 
                         <div class="card plot-card">
                             {{ embed(roots.sigma_backend) }}
@@ -293,6 +343,37 @@
                     elements[i].style.display === "none" ? "" : "none";
                 }
             }
+
+
+            // Update the run metadata (in inspect run mode)
+            function updateRunMetadata(metadata) {
+
+                console.log("UPDATE METADATA")
+                console.log(metadata)
+
+                document.getElementById("run-date").innerHTML = metadata.date;
+
+                if(metadata.is_git_commit) {
+                    document.getElementById("is-git-commit").style.display = "";
+                    document.getElementById("not-git-commit").style.display = "none";
+
+                    document.getElementById("run-hash").innerHTML = metadata.hash;
+                    document.getElementById("run-author").innerHTML = metadata.author;
+                    document.getElementById("run-message").innerHTML = metadata.message;
+
+                } else {
+                    document.getElementById("is-git-commit").style.display = "none";
+                    document.getElementById("not-git-commit").style.display = "";
+
+                    document.getElementById("run-hash").innerHTML = "";
+                    document.getElementById("run-author").innerHTML = "";
+                    document.getElementById("run-message").innerHTML = "";
+                }
+            }
+
+
+            // Initial run using template data
+            updateRunMetadata({{initial_metadata}});
 
         </script>
 
