@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 
 import pandas as pd
 
@@ -10,6 +11,10 @@ from bokeh.plotting import figure, show, curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
 
+# Local imports from vfc_ci_server
+import compare_runs
+import inspect_runs
+import helper
 
 ################################################################################
 
@@ -34,11 +39,26 @@ metadata = pd.concat(metadata).sort_index()
 data = pd.concat(data).sort_index()
 
 
+# Generate the display strings for runs (runs ticks)
+# By doing this in master, we ensure the homogeneity of display strings
+# across all plots
+metadata["name"] = metadata.index.to_series().map(
+    lambda x: helper.get_run_name(
+        x,
+        helper.get_metadata(metadata, x)["hash"]
+    )
+)
+helper.reset_run_strings()
+
+metadata["date"] = metadata.index.to_series().map(
+    lambda x: time.ctime(x)
+)
+
 
 ################################################################################
 
 
-    # Setup Bokeh server
+    # Setup templates parameters
 
 curdoc().title = "Verificarlo Report"
 
@@ -127,16 +147,15 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
 
 
 
-    # Setup Bokeh interfaces
+################################################################################
 
-import compare_runs
-import inspect_runs
-import helper
 
+    # Setup report views
 
 # Define a ViewsMaster class to allow two-ways communication between views.
-# This approach will be useful if we want to add new views at some point in the
-# future (instead of having n views with n-1 references each).
+# This approach by classes allows us to have separate scopes for each view and
+# will be useful if we want to add new views at some point in the future
+# (instead of having n views with n-1 references each).
 
 class ViewsMaster:
 
@@ -155,41 +174,23 @@ class ViewsMaster:
         self.git_repo_linked = git_repo_linked
         self.commit_link = commit_link
 
-
-        # Generate the display strings for runs (runs ticks)
-        # By doing this in master, we ensure the homogeneity of display strings
-        # across all plots
-        self.metadata["name"] = self.metadata.index.to_series().map(
-            lambda x: helper.get_run_name(
-                x,
-                helper.get_metadata(self.metadata, x)["hash"]
-            )
-        )
-        helper.reset_run_strings()
-
         # Pass metadata to the template as a JSON string
         curdoc().template_variables["metadata"] = self.metadata.to_json(orient="index")
 
         # Runs comparison
         self.compare = compare_runs.CompareRuns(
             master = self,
-
             doc = curdoc(),
             data = data,
             metadata = metadata,
-            git_repo_linked = git_repo_linked,
-            commit_link = commit_link,
         )
 
         # WIP Runs inspection
         self.inspect = inspect_runs.InspectRuns(
             master = self,
-
             doc = curdoc(),
             data = data,
             metadata = metadata,
-            git_repo_linked = git_repo_linked,
-            commit_link = commit_link
         )
 
 

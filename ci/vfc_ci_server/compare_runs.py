@@ -50,7 +50,7 @@ class CompareRuns:
             date = time.ctime(timestamps[-i-1])
 
             # Fill the x series
-            str = helper.get_run_name(timestamps[-i-1], row_metadata["hash"])
+            str = row_metadata["name"]
             x.insert(0, helper.get_metadata(self.metadata, timestamps[-i-1])["name"])
 
             # Fill the metadata lists
@@ -60,8 +60,6 @@ class CompareRuns:
             x_metadata["author"].insert(0, row_metadata["author"])
             x_metadata["message"].insert(0, row_metadata["message"])
 
-
-        helper.reset_run_strings()
 
         return x, x_metadata
 
@@ -116,7 +114,7 @@ class CompareRuns:
 
         # Plots generation function (fills an existing plot with data)
 
-    def gen_boxplot(self, plot):
+    def fill_boxplot(self, plot):
         # (based on: https://docs.bokeh.org/en/latest/docs/gallery/boxplot.html)
 
         hover = HoverTool(tooltips = [
@@ -190,7 +188,7 @@ class CompareRuns:
         # Mu dot
         mu_dot = plot.dot(
             x="x", y="mu", size=30, source=self.source,
-            color="black", legend_label="Empirical average μ"
+            color="black"
         )
         mu_dot.data_source.selected.on_change(
             "indices", self.inspect_run_callback
@@ -208,7 +206,7 @@ class CompareRuns:
         plot.xaxis[0].major_label_orientation = pi/8
 
 
-    def gen_bar_plot(self, plot, data_field, display_name):
+    def fill_bar_plot(self, plot, data_field, display_name):
         hover = HoverTool(tooltips = [
             ("Git commit", "@is_git_commit"),
             ("Date", "@date"),
@@ -290,48 +288,14 @@ class CompareRuns:
 
     def update_n_runs(self, attrname, old, new):
         # Simply update runs selection (value and string display)
-        self.current_n_runs_display = new
-        self.current_n_runs = self.n_runs_dict[self.current_n_runs_display]
+        self.select_n_runs.value = new
+        self.current_n_runs = self.n_runs_dict[self.select_n_runs.value]
 
         self.update_plots()
 
 
 
-        # Setup functions
-
-    # Setup all initial selections (and possible selections)
-    def setup_selection(self):
-
-        # Test/var/backend combination (we select all first elements at init)
-        self.tests = self.data\
-        .index.get_level_values("test").drop_duplicates().tolist()
-
-        self.vars = self.data.loc[self.tests[0]]\
-        .index.get_level_values("variable").drop_duplicates().tolist()
-
-        self.backends = self.data.loc[self.tests[0], self.vars[0]]\
-        .index.get_level_values("vfc_backend").drop_duplicates().tolist()
-
-
-        # Number of runs to display
-        # The dict structure allows to get int value from the display string
-        # in O(1)
-        self.n_runs_dict = {
-            "Last 3 runs": 3,
-            "Last 5 runs": 5,
-            "Last 10 runs": 10,
-            "All runs": 0
-        }
-
-        # Contains all options strings
-        self.n_runs_display = list(self.n_runs_dict.keys())
-
-        # Will be used when updating plots (contains actual number)
-        self.current_n_runs = self.n_runs_dict[self.n_runs_display[1]]
-
-        # Contains the selected option string, used to update current_n_runs
-        self.current_n_runs_display = self.n_runs_display[1]
-
+        # Bokeh setup functions
 
     # Create all plots
     def setup_plots(self):
@@ -345,7 +309,7 @@ class CompareRuns:
             tools=tools, sizing_mode="scale_width"
         )
 
-        self.gen_boxplot(self.boxplot)
+        self.fill_boxplot(self.boxplot)
         self.doc.add_root(self.boxplot)
 
 
@@ -356,7 +320,7 @@ class CompareRuns:
             tools=tools, sizing_mode='scale_width'
         )
 
-        self.gen_bar_plot(self.sigma_plot, "sigma", "σ")
+        self.fill_bar_plot(self.sigma_plot, "sigma", "σ")
         self.doc.add_root(self.sigma_plot)
 
 
@@ -366,7 +330,7 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_bar_plot(self.s10_plot, "s10", "s")
+        self.fill_bar_plot(self.s10_plot, "s10", "s")
         s10_tab = Panel(child=self.s10_plot, title="Base 10")
 
         self.s2_plot = figure(
@@ -374,7 +338,7 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""], y_range=(-2.5, 53),
             tools=tools, sizing_mode='scale_width'
         )
-        self.gen_bar_plot(self.s2_plot, "s2", "s")
+        self.fill_bar_plot(self.s2_plot, "s2", "s")
         s2_tab = Panel(child=self.s2_plot, title="Base 2")
 
         s_tabs = Tabs(
@@ -389,13 +353,42 @@ class CompareRuns:
     # Create all widgets
     def setup_widgets(self):
 
+        # Test/var/backend combination (we select all first elements at init)
+        self.tests = self.data\
+        .index.get_level_values("test").drop_duplicates().tolist()
+
+        self.vars = self.data.loc[self.tests[0]]\
+        .index.get_level_values("variable").drop_duplicates().tolist()
+
+        self.backends = self.data.loc[self.tests[0], self.vars[0]]\
+        .index.get_level_values("vfc_backend").drop_duplicates().tolist()
+
+
         # Custom JS callback that will be used client side to filter selections
         filter_callback_js = """
         selector.options = options.filter(e => !e.indexOf(cb_obj.value));
         """
 
 
-        # Test
+            # Test selector widget
+
+        # Number of runs to display
+        # The dict structure allows us to get int value from the display string
+        # in O(1)
+        self.n_runs_dict = {
+            "Last 3 runs": 3,
+            "Last 5 runs": 5,
+            "Last 10 runs": 10,
+            "All runs": 0
+        }
+
+        # Contains all options strings
+        n_runs_display = list(self.n_runs_dict.keys())
+
+        # Will be used when updating plots (contains actual number to diplay)
+        self.current_n_runs = self.n_runs_dict[n_runs_display[1]]
+
+        # Selector widget
         self.select_test = Select(
             name="select_test", title="Test :",
             value=self.tests[0], options=self.tests
@@ -403,6 +396,7 @@ class CompareRuns:
         self.doc.add_root(self.select_test)
         self.select_test.on_change("value", self.update_test)
 
+        # Filter widget
         test_filter = TextInput(
             name="test_filter", title="Tests filter:"
         )
@@ -413,7 +407,18 @@ class CompareRuns:
         self.doc.add_root(test_filter)
 
 
-        # Variable
+            # Number of runs to display
+
+        self.select_n_runs = Select(
+            name="select_n_runs", title="Display :",
+            value=n_runs_display[1], options=n_runs_display
+        )
+        self.doc.add_root(self.select_n_runs)
+        self.select_n_runs.on_change("value", self.update_n_runs)
+
+
+            # Variable selector widget
+
         self.select_var = Select(
             name="select_var", title="Variable :",
             value=self.vars[0], options=self.vars
@@ -431,22 +436,14 @@ class CompareRuns:
         self.doc.add_root(var_filter)
 
 
-        # Backend
+            # Backend selector widget
+
         self.select_backend = Select(
             name="select_backend", title="Verificarlo backend :",
             value=self.backends[0], options=self.backends
         )
         self.doc.add_root(self.select_backend)
         self.select_backend.on_change("value", self.update_backend)
-
-
-        # Number of runs to display
-        self.select_n_runs = Select(
-            name="select_n_runs", title="Display :",
-            value=self.current_n_runs_display, options=self.n_runs_display
-        )
-        self.doc.add_root(self.select_n_runs)
-        self.select_n_runs.on_change("value", self.update_n_runs)
 
 
 
@@ -469,22 +466,19 @@ class CompareRuns:
 
         # Constructor
 
-    def __init__(self, master, doc, data, metadata, git_repo_linked, commit_link):
+    def __init__(self, master, doc, data, metadata):
 
         self.master = master
 
         self.doc = doc
         self.data = data
         self.metadata = metadata
-        self.git_repo_linked = git_repo_linked
-        self.commit_link = commit_link
 
         # Will be filled/updated in update_plots()
         self.source = ColumnDataSource(data={})
 
 
-        # Setup everything
-        self.setup_selection()
+        # Setup Bokeh objects
         self.setup_plots()
         self.setup_widgets()
 
