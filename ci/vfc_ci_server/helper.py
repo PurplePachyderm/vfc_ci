@@ -98,6 +98,6 @@ get_run_name.counter = 0
 get_run_name.previous = ""
 
 
-def reset_tick_strings():
+def reset_run_strings():
     get_run_name.counter = 0
     get_run_name.previous = ""

@@ -141,7 +141,7 @@
                     <h3 class="title is-3">Plots</h3>
                     <div class="container">
                         <div class="card plot-card">
-                            {{ embed(roots.boxplot) }}
+                            {{ embed(roots.s_tabs) }}
                         </div>
 
                         <br>
@@ -153,7 +153,7 @@
                         <br>
 
                         <div class="card plot-card">
-                            {{ embed(roots.s_tabs) }}
+                            {{ embed(roots.boxplot) }}
                         </div>
                     </div>
                 </div>
@@ -215,7 +215,7 @@
 
                         <a
                         id="git-commit-link"
-                        href="{{commit_link}}{{initial_metadata.hash}}"
+                        href=""
                         target="_blank"
                         >
                             View this commit on {{git_host}}
@@ -239,7 +239,7 @@
                     <h3 class="title is-3">Plots</h3>
                     <div class="container select-variable">
                         <div class="card plot-card">
-                            {{ embed(roots.mu_var) }}
+                            {{ embed(roots.s_tabs_var) }}
                         </div>
 
                         <br>
@@ -251,13 +251,13 @@
                         <br>
 
                         <div class="card plot-card">
-                            {{ embed(roots.s_tabs_var) }}
+                            {{ embed(roots.mu_var) }}
                         </div>
                     </div>
 
                     <div class="container select-backend" style="display: none;">
                         <div class="card plot-card">
-                            {{ embed(roots.mu_backend) }}
+                            {{ embed(roots.s_tabs_backend) }}
                         </div>
 
                         <br>
@@ -269,7 +269,7 @@
                         <br>
 
                         <div class="card plot-card">
-                            {{ embed(roots.s_tabs_backend) }}
+                            {{ embed(roots.mu_backend) }}
                         </div>
                     </div>
                 </div>
@@ -346,20 +346,38 @@
 
 
             // Update the run metadata (in inspect run mode)
-            function updateRunMetadata(metadata) {
+            function updateRunMetadata(runId) {
 
-                console.log("UPDATE METADATA")
-                console.log(metadata)
+                // Assume runId is the run's timestamp
+                let run = metadata[runId];
 
-                document.getElementById("run-date").innerHTML = metadata.date;
+                // If it is undefined, perform a search by name
+                // (by iterating metadata)
+                if(!run) {
+                    for(let [key, value] of Object.entries(metadata)) {
 
-                if(metadata.is_git_commit) {
+                        if (!metadata.hasOwnProperty(key)) continue;
+                        if(value.name == runId) {
+                            run = value;
+                            break;
+                        }
+                    }
+                }
+
+                document.getElementById("run-date").innerHTML = run.name;
+
+                if(run.is_git_commit) {
                     document.getElementById("is-git-commit").style.display = "";
                     document.getElementById("not-git-commit").style.display = "none";
 
-                    document.getElementById("run-hash").innerHTML = metadata.hash;
-                    document.getElementById("run-author").innerHTML = metadata.author;
-                    document.getElementById("run-message").innerHTML = metadata.message;
+                    document.getElementById("run-hash").innerHTML = run.hash;
+                    document.getElementById("run-author").innerHTML = run.author;
+                    document.getElementById("run-message").innerHTML = run.message;
+
+                    {% if git_repo_linked %}
+                    document.getElementById("git-commit-link")
+                    .setAttribute("href", "{{commit_link}}" + run.hash);
+                    {% endif %}
 
                 } else {
                     document.getElementById("is-git-commit").style.display = "none";
@@ -371,9 +389,11 @@
                 }
             }
 
+            //Object containing metadata from all runs
+            metadata = {{metadata}}
 
-            // Initial run using template data
-            updateRunMetadata({{initial_metadata}});
+            // Initial run using the template arg
+            updateRunMetadata({{initial_timestamp}});
 
         </script>
 

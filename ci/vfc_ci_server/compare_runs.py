@@ -61,7 +61,7 @@ class CompareRuns:
             x_metadata["message"].insert(0, row_metadata["message"])
 
 
-        helper.reset_tick_strings()
+        helper.reset_run_strings()
 
         return x, x_metadata
 

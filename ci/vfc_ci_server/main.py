@@ -134,9 +134,9 @@ import inspect_runs
 import helper
 
 
-# Define a ViewsMaster class to allow two-ways communication between InspectRuns
-# and CompareRuns. This approach will be useful if we want to add new views at
-# some point in the future (instead of having n views with n-1 references each).
+# Define a ViewsMaster class to allow two-ways communication between views.
+# This approach will be useful if we want to add new views at some point in the
+# future (instead of having n views with n-1 references each).
 
 class ViewsMaster:
 
@@ -155,6 +155,7 @@ class ViewsMaster:
         self.git_repo_linked = git_repo_linked
         self.commit_link = commit_link
 
+
         # Generate the display strings for runs (runs ticks)
         # By doing this in master, we ensure the homogeneity of display strings
         # across all plots
@@ -164,8 +165,10 @@ class ViewsMaster:
                 helper.get_metadata(self.metadata, x)["hash"]
             )
         )
+        helper.reset_run_strings()
 
-        helper.reset_tick_strings()
+        # Pass metadata to the template as a JSON string
+        curdoc().template_variables["metadata"] = self.metadata.to_json(orient="index")
 
         # Runs comparison
         self.compare = compare_runs.CompareRuns(
@@ -188,6 +191,7 @@ class ViewsMaster:
             git_repo_linked = git_repo_linked,
             commit_link = commit_link
         )
+
 
 views_master = ViewsMaster(
     data = data,

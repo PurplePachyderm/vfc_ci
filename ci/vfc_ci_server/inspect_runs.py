@@ -443,7 +443,7 @@ class InspectRuns:
 
         # Run selection
 
-        code="updateRunMetadata(metadata);"
+        code="updateRunMetadata(cb_obj.value);"
 
         self.select_run = Select(
             name="select_run", title="Run :",
@@ -538,7 +538,6 @@ class InspectRuns:
 
         # Pass the initial metadata to the template (will be updated in CustomJS
         # callbacks)
-        initial_metadata = helper.get_metadata(self.metadata, self.current_run)
-        initial_metadata = helper.metadata_to_dict(initial_metadata)
+        initial_run = helper.get_metadata(self.metadata, self.current_run)
 
-        self.doc.template_variables["initial_metadata"] = initial_metadata
+        self.doc.template_variables["initial_timestamp"] = self.current_run
