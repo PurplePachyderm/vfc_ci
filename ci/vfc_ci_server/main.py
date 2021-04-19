@@ -58,93 +58,108 @@ metadata["date"] = metadata.index.to_series().map(
 ################################################################################
 
 
-    # Setup templates parameters
-
 curdoc().title = "Verificarlo Report"
 
 
-    # Look for the Git repository remote address
-    # (if a Git repo is specified, the webpage will contain hyperlinks to the
-    # repository and the different commits)
+    # Read server arguments
+    # (this is quite easy because Bokeh server is called through a wrapper, so
+    # we know exactly what the arguments might be)
 
 git_repo_linked = False
 commit_link = ""
 
-if len(sys.argv) == 3:
-    from urllib.parse import urlparse
+has_logo = False
+logo_url = ""
 
-    method = sys.argv[1]
-    address = sys.argv[2]
-    url = ""
+for i in range(1, len(sys.argv)):
 
+    # Look for the Git repository remote address
+    # (if a Git repo is specified, the webpage will contain hyperlinks to the
+    # repository and the different commits)
+    if sys.argv[i] == "git":
+        from urllib.parse import urlparse
 
-    # Here, address is either the remote URL or the path to the local Git repo
-    # (depending on the method)
-
-    if method == "url":
-        # We should directly have a Git URL
-        url = address
-
-    elif method == "directory":
-        # Get the remote URL from the local repo
-        from git import Repo
-        repo = Repo(address)
-        url = repo.remotes.origin.url
-
-    else:
-        raise ValueError("""
-        The specified method to get the Git repository is
-        "invalid. Are you calling Bokeh directly instead of using the
-        "Verificarlo wrapper ?
-        """)
+        method = sys.argv[i + 1]
+        address = sys.argv[i + 2]
+        url = ""
 
 
-    # At this point, "url" should be set correctly, we can get the repo's
-    # URL and name, after making sure we're on a Git URL
+        # Here, address is either the remote URL or the path to the local Git
+        # repo (depending on the method)
 
-    parsed_url = urlparse(url)
+        if method == "url":
+            # We should directly have a Git URL
+            url = address
 
-    path = parsed_url.path.split("/")
-    if len(path) < 3:
-        raise ValueError("""
-        The found URL doesn't seem to be pointing to a Git
-        "repository (path is too short)
-        """)
+        elif method == "directory":
+            # Get the remote URL from the local repo
+            from git import Repo
+            repo = Repo(address)
+            url = repo.remotes.origin.url
 
-    repo_name = path[2]
-
-    curdoc().template_variables["repo_url"] = url
-    curdoc().template_variables["repo_name"] = repo_name
-
-
-    # We should have a "github.com" or a "*gitlab*" URL
-
-    if parsed_url.netloc == "github.com":
-        commit_link = "https://%s%s/commit/" \
-        % (parsed_url.netloc, parsed_url.path)
-
-        curdoc().template_variables["commit_link"] = commit_link
-        curdoc().template_variables["git_host"] = "GitHub"
-
-        # Used in Bokeh tooltips
-        commit_link = commit_link + "@hash"
-
-    # We assume we have a GitLab URL
-    else:
-        commit_link = "https://%s%s/-/commit/" \
-        % (parsed_url.netloc, parsed_url.path)
-
-        curdoc().template_variables["commit_link"] = commit_link
-        curdoc().template_variables["git_host"] = "GitLab"
-
-        # Used in Bokeh tooltips
-        commit_link = commit_link + "@hash"
-
-    git_repo_linked = True
+        else:
+            raise ValueError("""
+            The specified method to get the Git repository is
+            "invalid. Are you calling Bokeh directly instead of using the
+            "Verificarlo wrapper ?
+            """)
 
 
+        # At this point, "url" should be set correctly, we can get the repo's
+        # URL and name, after making sure we're on a Git URL
+
+        parsed_url = urlparse(url)
+
+        path = parsed_url.path.split("/")
+        if len(path) < 3:
+            raise ValueError("""
+            The found URL doesn't seem to be pointing to a Git
+            "repository (path is too short)
+            """)
+
+        repo_name = path[2]
+
+        curdoc().template_variables["repo_url"] = url
+        curdoc().template_variables["repo_name"] = repo_name
+
+
+        # We should have a "github.com" or a "*gitlab*" URL
+
+        if parsed_url.netloc == "github.com":
+            commit_link = "https://%s%s/commit/" \
+            % (parsed_url.netloc, parsed_url.path)
+
+            curdoc().template_variables["commit_link"] = commit_link
+            curdoc().template_variables["git_host"] = "GitHub"
+
+            # Used in Bokeh tooltips
+            commit_link = commit_link + "@hash"
+
+        # We assume we have a GitLab URL
+        else:
+            commit_link = "https://%s%s/-/commit/" \
+            % (parsed_url.netloc, parsed_url.path)
+
+            curdoc().template_variables["commit_link"] = commit_link
+            curdoc().template_variables["git_host"] = "GitLab"
+
+            # Used in Bokeh tooltips
+            commit_link = commit_link + "@hash"
+
+        git_repo_linked = True
+
+
+
+    # Look for a logo URL
+    # If a logo URL is specified, it will be included in the report's header
+    if sys.argv[i] == "logo":
+        curdoc().template_variables["logo_url"] = sys.argv[i + 1]
+        has_logo = True
+
+
+# After the loop, we know if a repo has been linked, if we have a logo, ...
 curdoc().template_variables["git_repo_linked"] = git_repo_linked
-
+curdoc().template_variables["has_logo"] = has_logo
 
 
 ################################################################################

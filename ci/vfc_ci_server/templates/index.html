@@ -59,6 +59,16 @@
 
             <!-- BRAND (left part) -->
             <div class="navbar-brand">
+                {% if has_logo %}
+                <a
+                class="navbar-item" id="logo-link" href="."
+                style="margin-top: 12px;"
+                >
+                    <img id="logo-img" width="85" height="45"
+                    src="{{ logo_url }}">
+                </a>
+                {% endif %}
+
                 <a class="navbar-item" id="logo-link" href=".">
                     <img id="logo-img" width="85" height="45"
                     src="https://avatars1.githubusercontent.com/u/12033642">

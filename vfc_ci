@@ -116,8 +116,16 @@ def test(is_git_commit, export_raw_results):
     """
 )
 
+@click.option(
+    "-l", "--logo",
+    type=str,
+    help="""
+    Specify the URL of an image to be displayed in the report header.
+    """
+)
 
-def serve(show, git_directory, git_url, port, allow_origin):
+
+def serve(show, git_directory, git_url, port, allow_origin, logo):
 
     # git_directory and git_url are supposed to be exclusive
     # (click doesn't provide exclusive option groups so the validation is made
@@ -129,7 +137,7 @@ def serve(show, git_directory, git_url, port, allow_origin):
         """)
 
     import ci.serve
-    ci.serve.serve(show, git_directory, git_url, port, allow_origin)
+    ci.serve.serve(show, git_directory, git_url, port, allow_origin, logo)
 
 
 
