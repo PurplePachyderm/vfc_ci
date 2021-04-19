@@ -78,10 +78,7 @@ class CompareRuns:
         x, x_metadata = self.gen_x_series(timestamps.sort_values())
 
         # Update x_ranges
-        self.boxplot.x_range.factors = list(x)
-        self.sigma_plot.x_range.factors = list(x)
-        self.s10_plot.x_range.factors = list(x)
-        self.s2_plot.x_range.factors = list(x)
+        helper.reset_x_ranges(self.plots, list(x))
 
 
         # Update source
@@ -251,8 +248,20 @@ class CompareRuns:
 
     def update_test(self, attrname, old, new):
 
+        # If the value is updated by the CustomJS, self.select_var.value won't
+        # be updated, so we have to look for that case and assign it manually
+
+        # new should be a list when updated by CustomJS
+        if type(new) == list:
+            new = new[0]
+
+        if new != self.select_test.value:
+            # The callback will be triggered again with the updated value
+            self.select_test.value = new
+            return
+
         # New list of available vars
-        self.vars = self.data.loc[self.select_test.value]\
+        self.vars = self.data.loc[new]\
         .index.get_level_values("variable").drop_duplicates().tolist()
         self.select_var.options = self.vars
 
@@ -269,6 +278,19 @@ class CompareRuns:
 
 
     def update_var(self, attrname, old, new):
+
+        # If the value is updated by the CustomJS, self.select_var.value won't
+        # be updated, so we have to look for that case and assign it manually
+
+        # new should be a list when updated by CustomJS
+        if type(new) == list:
+            new = new[0]
+
+        if new != self.select_var.value:
+            # The callback will be triggered again with the updated value
+            self.select_var.value = new
+            return
+
 
         # New list of available backends
         self.backends = self.data.loc[self.select_test.value, self.select_var.value]\
@@ -309,14 +331,14 @@ class CompareRuns:
         tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
 
         # Box plot
-        self.boxplot = figure(
+        self.plots["boxplot"] = figure(
             name="boxplot", title="Variable distribution over runs",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
 
-        self.fill_boxplot(self.boxplot)
-        self.doc.add_root(self.boxplot)
+        self.fill_boxplot(self.plots["boxplot"])
+        self.doc.add_root(self.plots["boxplot"])
 
 
         # Sigma plot (bar plot)
@@ -331,21 +353,21 @@ class CompareRuns:
 
 
         # s plot (bar plot with 2 tabs)
-        self.s10_plot = figure(
+        self.plots["s10_plot"] = figure(
             name="s10_plot", title="Significant digits s over runs",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_dot_plot(self.s10_plot, "s10", "s")
-        s10_tab = Panel(child=self.s10_plot, title="Base 10")
+        self.fill_dot_plot(self.plots["s10_plot"], "s10", "s")
+        s10_tab = Panel(child=self.plots["s10_plot"], title="Base 10")
 
-        self.s2_plot = figure(
+        self.plots["s2_plot"] = figure(
             name="s2_plot", title="Significant digits s over runs",
             plot_width=900, plot_height=400, x_range=[""], y_range=(-2.5, 53),
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_dot_plot(self.s2_plot, "s2", "s")
-        s2_tab = Panel(child=self.s2_plot, title="Base 2")
+        self.fill_dot_plot(self.plots["s2_plot"], "s2", "s")
+        s2_tab = Panel(child=self.plots["s2_plot"], title="Base 2")
 
         s_tabs = Tabs(
             name = "s_tabs",
@@ -372,7 +394,7 @@ class CompareRuns:
 
         # Custom JS callback that will be used client side to filter selections
         filter_callback_js = """
-        selector.options = options.filter(e => !e.indexOf(cb_obj.value));
+        selector.options = options.filter(e => e.includes(cb_obj.value));
         """
 
 
@@ -401,6 +423,7 @@ class CompareRuns:
         )
         self.doc.add_root(self.select_test)
         self.select_test.on_change("value", self.update_test)
+        self.select_test.on_change("options", self.update_test)
 
         # Filter widget
         test_filter = TextInput(
@@ -431,6 +454,7 @@ class CompareRuns:
         )
         self.doc.add_root(self.select_var)
         self.select_var.on_change("value", self.update_var)
+        self.select_var.on_change("options", self.update_var)
 
         var_filter = TextInput(
             name="var_filter", title="Variables filter:"
@@ -483,6 +507,8 @@ class CompareRuns:
         # Will be filled/updated in update_plots()
         self.source = ColumnDataSource(data={})
 
+
+        self.plots = {}
 
         # Setup Bokeh objects
         self.setup_plots()

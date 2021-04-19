@@ -41,6 +41,35 @@ class InspectRuns:
         return runs_dict
 
 
+    # Data processing for all modes
+    def data_processing(self, dataframe):
+
+        dataframe["mu"] = np.vectorize(np.average)(dataframe["mu"], weights=dataframe["nsamples"])
+
+        # Now that aggregated mu has been computed, nsamples is the number of
+        # aggregated tests (which is the number of samples for our new sigma
+        # and s distributions)
+        dataframe["nsamples"] = dataframe["nsamples"].apply(lambda x: len(x))
+
+        # Get quantiles and mu for sigma, s10, s2
+        for stat in ["sigma", "s10", "s2"]:
+            dataframe[stat] = dataframe[stat].apply(np.sort)
+            dataframe["%s_min" % stat] = dataframe[stat].apply(np.min)
+            dataframe["%s_quantile25" % stat] = dataframe[stat].apply(np.quantile, args=(0.25,))
+            dataframe["%s_quantile50" % stat] = dataframe[stat].apply(np.quantile, args=(0.50,))
+            dataframe["%s_quantile75" % stat] = dataframe[stat].apply(np.quantile, args=(0.75,))
+            dataframe["%s_max" % stat] = dataframe[stat].apply(np.max)
+            dataframe["%s_mu" % stat] = dataframe[stat].apply(np.average)
+            del dataframe[stat]
+
+        dataframe["x"] = dataframe.index
+        dataframe["x"] = dataframe["x"].apply(
+            lambda x: x[:17] + "[...]" + x[-17:] if len(x) > 39 else x
+        )
+
+        return dataframe
+
+
     # It's better to have one update_plots function for each mode since most of
     # the time we will likely update only one view
 
@@ -62,39 +91,17 @@ class InspectRuns:
             "nsamples": lambda x: x.tolist()
         })
 
+        backends = self.data_processing(backends)
 
-        # From there, we can compute the sigma/s quantiles, as well as the
-        # aggregated mu (with a weighted avg using nsamples)
-
-        backends["mu"] = np.vectorize(np.average)(backends["mu"], weights=backends["nsamples"])
-
-        # Now that aggregated mu has been computed, nsamples is the number of
-        # aggregated tests (which is the number of samples for our new sigma
-        # and s distributions)
-        backends["nsamples"] = backends["nsamples"].apply(lambda x: len(x))
-
-        # Get quantiles and mu for sigma, s10, s2
-        for stat in ["sigma", "s10", "s2"]:
-            backends[stat] = backends[stat].apply(np.sort)
-            backends["%s_min" % stat] = backends[stat].apply(np.min)
-            backends["%s_quantile25" % stat] = backends[stat].apply(np.quantile, args=(0.25,))
-            backends["%s_quantile50" % stat] = backends[stat].apply(np.quantile, args=(0.50,))
-            backends["%s_quantile75" % stat] = backends[stat].apply(np.quantile, args=(0.75,))
-            backends["%s_max" % stat] = backends[stat].apply(np.max)
-            backends["%s_mu" % stat] = backends[stat].apply(np.average)
-            del backends[stat]
-
-        backends["x"] = backends.index
-        backends["x"] = backends["x"].apply(
-            lambda x: x[:17] + "[...]" + x[-17:] if len(x) > 39 else x
-        )
         self.backend_source.data = backends.to_dict("list")
 
         # Update x_ranges
-        self.mu_backend.x_range.factors = list(backends["x"])
-        self.sigma_backend.x_range.factors = list(backends["x"])
-        self.s10_backend.x_range.factors = list(backends["x"])
-        self.s2_backend.x_range.factors = list(backends["x"])
+        self.backend_plots["mu_backend"].x_range.factors = list(backends["x"])
+        self.backend_plots["sigma_backend"].x_range.factors = list(backends["x"])
+        self.backend_plots["s10_backend"].x_range.factors = list(backends["x"])
+        self.backend_plots["s2_backend"].x_range.factors = list(backends["x"])
+
+        helper.reset_x_ranges(self.backend_plots, list(backends["x"]))
 
 
     # Update plots ("Group by variable" mode only)
@@ -115,35 +122,12 @@ class InspectRuns:
             "nsamples": lambda x: x.tolist()
         })
 
-        # From there, we can compute the sigma/s quantiles, as well as the
-        # aggregated mu (with a weighted avg using nsamples)
+        vars = self.data_processing(vars)
 
-        vars["mu"] = np.vectorize(np.average)(vars["mu"], weights=vars["nsamples"])
-
-        # Now that aggregated mu has been computed, nsamples is the number of
-        # aggregated tests (which is the number of samples for our new sigma
-        # and s distributions)
-        vars["nsamples"] = vars["nsamples"].apply(lambda x: len(x))
-
-        # Get quantiles and mu for sigma, s10, s2
-        for stat in ["sigma", "s10", "s2"]:
-            vars[stat] = vars[stat].apply(np.sort)
-            vars["%s_min" % stat] = vars[stat].apply(np.min)
-            vars["%s_quantile25" % stat] = vars[stat].apply(np.quantile, args=(0.25,))
-            vars["%s_quantile50" % stat] = vars[stat].apply(np.quantile, args=(0.50,))
-            vars["%s_quantile75" % stat] = vars[stat].apply(np.quantile, args=(0.75,))
-            vars["%s_max" % stat] = vars[stat].apply(np.max)
-            vars["%s_mu" % stat] = vars[stat].apply(np.average)
-            del vars[stat]
-
-        vars["x"] = vars.index
         self.var_source.data = vars.to_dict("list")
 
         # Update x_ranges
-        self.mu_var.x_range.factors = list(vars["x"])
-        self.sigma_var.x_range.factors = list(vars["x"])
-        self.s10_var.x_range.factors = list(vars["x"])
-        self.s2_var.x_range.factors = list(vars["x"])
+        helper.reset_x_ranges(self.var_plots, list(vars["x"]))
 
 
 
@@ -304,45 +288,45 @@ class InspectRuns:
             # "Group by backends" plots
 
         # Mu plot
-        self.mu_backend = figure(
+        self.backend_plots["mu_backend"] = figure(
             name="mu_backend",
             title="Empirical average μ of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.mu_backend, self.backend_source)
-        self.doc.add_root(self.mu_backend)
+        self.fill_dot_plot(self.backend_plots["mu_backend"], self.backend_source)
+        self.doc.add_root(self.backend_plots["mu_backend"])
 
 
         # Sigma plot
-        self.sigma_backend = figure(
+        self.backend_plots["sigma_backend"] = figure(
             name="sigma_backend",
             title="Standard deviation σ of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_boxplot(self.sigma_backend, self.backend_source, "sigma")
-        self.doc.add_root(self.sigma_backend)
+        self.fill_boxplot(self.backend_plots["sigma_backend"], self.backend_source, "sigma")
+        self.doc.add_root(self.backend_plots["sigma_backend"])
 
 
         # s plots
-        self.s10_backend = figure(
+        self.backend_plots["s10_backend"] = figure(
             name="s10_backend",
             title="Significant digits s of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.s10_backend, self.backend_source, "s10")
-        s10_tab_backend = Panel(child=self.s10_backend, title="Base 10")
+        self.fill_boxplot(self.backend_plots["s10_backend"], self.backend_source, "s10")
+        s10_tab_backend = Panel(child=self.backend_plots["s10_backend"], title="Base 10")
 
-        self.s2_backend = figure(
+        self.backend_plots["s2_backend"] = figure(
             name="s2_backend",
             title="Significant digits s of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.s2_backend, self.backend_source, "s2")
-        s2_tab_backend = Panel(child=self.s2_backend, title="Base 2")
+        self.fill_boxplot(self.backend_plots["s2_backend"], self.backend_source, "s2")
+        s2_tab_backend = Panel(child=self.backend_plots["s2_backend"], title="Base 2")
 
         s_tabs_backend = Tabs(
             name = "s_tabs_backend",
@@ -355,45 +339,45 @@ class InspectRuns:
             # "Group by variables" plots
 
         # Mu plot
-        self.mu_var = figure(
+        self.var_plots["mu_var"] = figure(
             name="mu_var",
             title="Empirical average μ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.mu_var, self.var_source)
-        self.doc.add_root(self.mu_var)
+        self.fill_dot_plot(self.var_plots["mu_var"], self.var_source)
+        self.doc.add_root(self.var_plots["mu_var"])
 
 
         # Sigma plot
-        self.sigma_var = figure(
+        self.var_plots["sigma_var"] = figure(
             name="sigma_var",
             title="Standard deviation σ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_boxplot(self.sigma_var, self.var_source, "sigma")
-        self.doc.add_root(self.sigma_var)
+        self.fill_boxplot(self.var_plots["sigma_var"], self.var_source, "sigma")
+        self.doc.add_root(self.var_plots["sigma_var"])
 
 
         # s plots
-        self.s10_var = figure(
+        self.var_plots["s10_var"] = figure(
             name="s10_var",
             title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.s10_var, self.var_source, "s10")
-        s10_tab_var = Panel(child=self.s10_var, title="Base 10")
+        self.fill_boxplot(self.var_plots["s10_var"], self.var_source, "s10")
+        s10_tab_var = Panel(child=self.var_plots["s10_var"], title="Base 10")
 
-        self.s2_var = figure(
+        self.var_plots["s2_var"] = figure(
             name="s2_var",
             title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.s2_var, self.var_source, "s2")
-        s2_tab_var = Panel(child=self.s2_var, title="Base 2")
+        self.fill_boxplot(self.var_plots["s2_var"], self.var_source, "s2")
+        s2_tab_var = Panel(child=self.var_plots["s2_var"], title="Base 2")
 
         s_tabs_var = Tabs(
             name = "s_tabs_var", tabs=[s10_tab_var, s2_tab_var],
@@ -520,6 +504,8 @@ class InspectRuns:
         self.backend_source = ColumnDataSource(data={})
         self.var_source = ColumnDataSource(data={})
 
+        self.backend_plots = {}
+        self.var_plots = {}
 
         # Setup Bokeh objects
         self.setup_plots()

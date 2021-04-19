@@ -101,3 +101,9 @@ get_run_name.previous = ""
 def reset_run_strings():
     get_run_name.counter = 0
     get_run_name.previous = ""
+
+
+# From an dict of plots, reset all the x-ranges
+def reset_x_ranges(plots, x_range):
+    for key, value in plots.items():
+        value.x_range.factors = x_range
