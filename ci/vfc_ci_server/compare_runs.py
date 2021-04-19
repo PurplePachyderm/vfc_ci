@@ -206,7 +206,7 @@ class CompareRuns:
         plot.xaxis[0].major_label_orientation = pi/8
 
 
-    def fill_bar_plot(self, plot, data_field, display_name):
+    def fill_dot_plot(self, plot, data_field, display_name):
         hover = HoverTool(tooltips = [
             ("Git commit", "@is_git_commit"),
             ("Date", "@date"),
@@ -225,11 +225,17 @@ class CompareRuns:
         tap = TapTool(callback=CustomJS(code=tap_callback_js))
         plot.add_tools(tap)
 
-        bar = plot.vbar(
-            x="x", top=data_field, source=self.source,
-            width=0.5
+        circle = plot.circle(
+            x="x", y=data_field, source=self.source,
+            size=12
         )
-        bar.data_source.selected.on_change("indices", self.inspect_run_callback)
+        circle.data_source.selected.on_change("indices", self.inspect_run_callback)
+
+        line = plot.line(
+            x="x", y=data_field, source=self.source,
+        )
+
+
         plot.xgrid.grid_line_color = None
         plot.ygrid.grid_line_color = None
 
@@ -320,7 +326,7 @@ class CompareRuns:
             tools=tools, sizing_mode='scale_width'
         )
 
-        self.fill_bar_plot(self.sigma_plot, "sigma", "σ")
+        self.fill_dot_plot(self.sigma_plot, "sigma", "σ")
         self.doc.add_root(self.sigma_plot)
 
 
@@ -330,7 +336,7 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_bar_plot(self.s10_plot, "s10", "s")
+        self.fill_dot_plot(self.s10_plot, "s10", "s")
         s10_tab = Panel(child=self.s10_plot, title="Base 10")
 
         self.s2_plot = figure(
@@ -338,7 +344,7 @@ class CompareRuns:
             plot_width=900, plot_height=400, x_range=[""], y_range=(-2.5, 53),
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_bar_plot(self.s2_plot, "s2", "s")
+        self.fill_dot_plot(self.s2_plot, "s2", "s")
         s2_tab = Panel(child=self.s2_plot, title="Base 2")
 
         s_tabs = Tabs(

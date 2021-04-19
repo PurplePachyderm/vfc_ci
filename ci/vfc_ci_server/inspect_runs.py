@@ -215,7 +215,7 @@ class InspectRuns:
         plot.xaxis[0].major_label_orientation = pi/8
 
 
-    def fill_bar_plot(self, plot, source):
+    def fill_dot_plot(self, plot, source):
         # This is used for plotting the mu bar plot only
 
         hover = HoverTool(tooltips = [
@@ -227,11 +227,12 @@ class InspectRuns:
         }
         plot.add_tools(hover)
 
-
-        bar = plot.vbar(
-            x="x", top="mu", source=source,
-            width=0.5
+        circle = plot.circle(
+            x="x", y="mu", source=source,
+            size=12
         )
+
+
         plot.xgrid.grid_line_color = None
         plot.ygrid.grid_line_color = None
 
@@ -309,7 +310,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_bar_plot(self.mu_backend, self.backend_source)
+        self.fill_dot_plot(self.mu_backend, self.backend_source)
         self.doc.add_root(self.mu_backend)
 
 
@@ -360,7 +361,7 @@ class InspectRuns:
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_bar_plot(self.mu_var, self.var_source)
+        self.fill_dot_plot(self.mu_var, self.var_source)
         self.doc.add_root(self.mu_var)
 
 
