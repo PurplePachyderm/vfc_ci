@@ -26,21 +26,37 @@ def gen_readme(dev_branch, ci_branch):
         fh.write(render)
 
 
-def gen_workflow(dev_branch, ci_branch):
+def gen_workflow(git_host, dev_branch, ci_branch):
 
     # Init template loader
     path = os.path.dirname(os.path.abspath(__file__))
     env = Environment(loader=FileSystemLoader(path))
-    template = env.get_template("workflow_templates/vfc_test_workflow.j2.yml")
 
-    # Render templates
-    render = template.render(dev_branch=dev_branch, ci_branch=ci_branch)
 
-    # Write template
-    filename = ".github/workflows/vfc_test_workflow.yml"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "w") as fh:
-        fh.write(render)
+    if git_host == "github":
+        # Load template
+        template = env.get_template("workflow_templates/vfc_test_workflow.j2.yml")
+
+        # Render it
+        render = template.render(dev_branch=dev_branch, ci_branch=ci_branch)
+
+        # Write the file
+        filename = ".github/workflows/vfc_test_workflow.yml"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "w") as fh:
+            fh.write(render)
+
+
+    if git_host == "gitlab":
+        template = env.get_template("workflow_templates/gitlab-ci.j2.yml")
+
+        # Ask for the user that will run the jobs (Gitlab specific)
+        user = input("Enter the name of the user who will run the CI jobs:")
+        render = template.render(dev_branch=dev_branch, ci_branch=ci_branch)
+
+        filename = ".gitlab-ci.j2.yml"
+        with open(filename, "w") as fh:
+            fh.write(render)
 
 
 ################################################################################
@@ -71,7 +87,7 @@ def setup(git_host):
         # Commit the workflow on the current (dev) branch
 
     ci_branch_name = "vfc_ci_%s" % dev_branch_name
-    gen_workflow(dev_branch_name, ci_branch_name)
+    gen_workflow(git_host, dev_branch_name, ci_branch_name)
     repo.git.add(".")
     repo.index.commit("[auto] Set up Verificarlo CI on this branch")
     repo.remote(name="origin").push()
@@ -98,3 +114,6 @@ def setup(git_host):
 
     print("A Verificarlo CI workflow has been setup on %s." % dev_branch_name)
     print("Make sure that you have a vfc_tests_config.json on this branch.")
+
+    if git_host == "gitlab":
+        print("Since you are using GitLab, make sure that you have created a CI_PUSH_TOKEN for the user you specified.")

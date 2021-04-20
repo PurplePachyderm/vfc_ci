@@ -218,7 +218,6 @@ def run(is_git_commit, export_raw_values):
 
 
     # Print termination messages
-    print()
     print(
         "The results have been successfully written to \"%s.vfcrun.hd5\"." \
          % filename
@@ -230,5 +229,3 @@ def run(is_git_commit, export_raw_values):
             "%s.vfcraw.hd5"."""
             % filename
         )
-
-    print()

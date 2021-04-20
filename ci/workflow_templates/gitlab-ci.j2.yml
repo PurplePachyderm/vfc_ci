@@ -1,0 +1,38 @@
+# This workflow will be executed when {{dev_branch}} is updated:
+# it will run the configured tests and upload the results on vfc_ci_master.
+
+image: verificarlo/verificarlo
+
+
+stages:
+  - run_tests
+
+
+run_tests:
+  stage: run_tests
+
+  before_script:
+  - git remote set-url origin https://{{user}}:${CI_PUSH_TOKEN}@gitlab.com/${CI_PROJECT_NAME}.git
+  - git config --global user.email "${GITLAB_USER_EMAIL}"
+  - git config --global user.name "${GITLAB_USER_NAME}"
+
+  script:
+  - pip install click numpy scipy pandas bokeh jinja2 tables GitPython
+
+  - ./vfc_ci test -g -r
+
+  # TODO Fix this to make checkout and commit functionnal
+  # - git_hash=$(git rev-parse --short "$CI_COMMIT_SHA")
+  # - git checkout {{ci_branch}}
+  # - mkdir -p vfcruns
+  # - mv *.vfcrun.hd5 vfcruns
+  # - git add vfcruns/*
+  # - git commit -m "[auto] New test results for commit ${git_hash}"
+  # - git push
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "{{dev_branch}}"'
+
+  artifacts:
+    paths:
+    - "*.vfcraw.hd5"
