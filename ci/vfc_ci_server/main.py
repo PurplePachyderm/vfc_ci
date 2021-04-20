@@ -198,7 +198,7 @@ class ViewsMaster:
             metadata = metadata,
         )
 
-        # WIP Runs inspection
+        # Runs inspection
         self.inspect = inspect_runs.InspectRuns(
             master = self,
             doc = curdoc(),

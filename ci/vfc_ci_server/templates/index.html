@@ -44,6 +44,34 @@
                 width: 900px;
             }
 
+            #loader {
+                height: 100%;
+            }
+
+            #loading-logo {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                max-width: 400px;
+
+                animation: pulse 1.5s linear infinite;
+            }
+
+            @keyframes pulse {
+            	0% {
+            		transform: scale(1) translate(-50%, -50%);
+            	}
+
+            	50% {
+            		transform: scale(0.9) translate(-55%, -55%);
+            	}
+
+            	100% {
+            		transform: scale(1) translate(-50%, -50%);
+            	}
+            }
+
         </style>
 
         {% extends base %}
@@ -52,6 +80,10 @@
 
     <body>
     {% block contents %}
+
+
+        <!-- REPORT -->
+        <div id="report" style="display: none;">
 
         <!-- HEADER -->
         <nav class="navbar has-shadow" id="navbar"
@@ -128,7 +160,7 @@
                 <!-- SELECTORS -->
                 <div class="column">
                     <h4 class="title is-4">Selectors</h4>
-                    <div>
+                    <div id="compare-widgets">
                         {{ embed(roots.test_filter) }}
                         {{ embed(roots.select_test) }}
                         <br>
@@ -285,6 +317,19 @@
                 </div>
         </main>
 
+        </div>
+
+
+        <!--- LOADER -->
+        <div id="loader">
+
+                {% if has_logo %}
+                <img id="loading-logo" src="{{logo_url}}">
+                {% else %}
+                <img id="loading-logo" src="https://avatars1.githubusercontent.com/u/12033642">
+                {% endif %}
+        </div>
+
 
         <script>
 
@@ -319,6 +364,37 @@
                 .classList.toggle("is-active");
 
             });
+
+
+
+            // Toggle the display properties of the loader/report
+            function removeLoader() {
+                document.getElementById("loader")
+                .style.display = "none";
+
+                document.getElementById("report")
+                .style.display = "";
+            }
+
+
+            // To detect the end of Bokeh initialization and remove the loader,
+            // we look at the number of children of a div containing widgets
+            let nChildren = document.getElementById('compare-widgets')
+            .getElementsByTagName('*').length;
+
+            function pollBokehLoading() {
+                let newNChildren = document.getElementById('compare-widgets')
+                .getElementsByTagName('*').length;
+
+                if(newNChildren != nChildren) {
+                    removeLoader();
+                }
+                else {
+                    setTimeout(pollBokehLoading, 100);
+                }
+            }
+            setTimeout(pollBokehLoading, 100);
+
 
 
             // Listen to clicks on "Inspect runs" button
