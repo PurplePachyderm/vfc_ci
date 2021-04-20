@@ -52,7 +52,7 @@ def gen_workflow(git_host, dev_branch, ci_branch):
 
         # Ask for the user that will run the jobs (Gitlab specific)
         user = input("Enter the name of the user who will run the CI jobs:")
-        render = template.render(dev_branch=dev_branch, ci_branch=ci_branch)
+        render = template.render(dev_branch=dev_branch, ci_branch=ci_branch, user=user)
 
         filename = ".gitlab-ci.j2.yml"
         with open(filename, "w") as fh:

@@ -6,13 +6,13 @@ import pandas as pd
 
 from math import pi
 
-from bokeh.plotting import figure, show, curdoc
-from bokeh.resources import INLINE
+from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool, \
-TextInput, OpenURL, TapTool, Range, CustomJS
+TextInput, TapTool, CustomJS
 
 import helper
+import plot
 
 ################################################################################
 
@@ -109,141 +109,6 @@ class CompareRuns:
 
 
 
-        # Plots generation function (fills an existing plot with data)
-
-    def fill_boxplot(self, plot):
-        # (based on: https://docs.bokeh.org/en/latest/docs/gallery/boxplot.html)
-
-        hover = HoverTool(tooltips = [
-            ("Git commit", "@is_git_commit"),
-            ("Date", "@date"),
-            ("Hash", "@hash"),
-            ("Author", "@author"),
-            ("Message", "@message"),
-            ("Min", "@min{%0.18e}"),
-            ("Max", "@max{%0.18e}"),
-            ("1st quartile", "@quantile25{%0.18e}"),
-            ("Median", "@quantile50{%0.18e}"),
-            ("3rd quartile", "@quantile75{%0.18e}"),
-            ("μ", "@mu{%0.18e}"),
-            ("Number of samples", "@nsamples")
-        ])
-        hover.formatters = {
-            "@min" : "printf",
-            "@max" : "printf",
-            "@quantile25" : "printf",
-            "@quantile50" : "printf",
-            "@quantile75" : "printf",
-            "@mu" : "printf"
-        }
-        plot.add_tools(hover)
-
-        # Custom JS callback that will be used when tapping on a run
-        # Only switches the view, a server callback is required to update plots
-        # (defined inside template to avoid bloating server w/ too much JS code)
-        tap_callback_js = "goToInspectRuns();"
-        tap = TapTool(callback=CustomJS(code=tap_callback_js))
-        plot.add_tools(tap)
-
-
-        # Stems
-        top_stem = plot.segment(
-            x0="x", y0="max", x1="x", y1="quantile75",
-            source=self.source, line_color="black"
-        )
-        top_stem.data_source.selected.on_change(
-            "indices", self.inspect_run_callback
-        )
-
-        bottom_stem = plot.segment(
-            x0="x", y0="min", x1="x", y1="quantile25",
-            source=self.source, line_color="black"
-        )
-        bottom_stem.data_source.selected.on_change(
-            "indices", self.inspect_run_callback
-        )
-
-
-        # Boxes
-        top_box = plot.vbar(
-            x="x", width=0.5, top="quantile75", bottom="quantile50",
-            source=self.source, line_color="black"
-        )
-        top_box.data_source.selected.on_change(
-            "indices", self.inspect_run_callback
-        )
-
-        bottom_box = plot.vbar(
-            x="x", width=0.5, top="quantile50", bottom="quantile25",
-            source=self.source, line_color="black"
-        )
-        bottom_box.data_source.selected.on_change(
-            "indices", self.inspect_run_callback
-        )
-
-
-        # Mu dot
-        mu_dot = plot.dot(
-            x="x", y="mu", size=30, source=self.source,
-            color="black"
-        )
-        mu_dot.data_source.selected.on_change(
-            "indices", self.inspect_run_callback
-        )
-
-
-        # Other
-        plot.xgrid.grid_line_color = None
-        plot.ygrid.grid_line_color = None
-
-        plot.yaxis[0].formatter.power_limit_high = 0
-        plot.yaxis[0].formatter.power_limit_low = 0
-        plot.yaxis[0].formatter.precision = 3
-
-        plot.xaxis[0].major_label_orientation = pi/8
-
-
-    def fill_dot_plot(self, plot, data_field, display_name):
-        hover = HoverTool(tooltips = [
-            ("Git commit", "@is_git_commit"),
-            ("Date", "@date"),
-            ("Hash", "@hash"),
-            ("Author", "@author"),
-            ("Message", "@message"),
-            (display_name, "@" + data_field),
-            ("Number of samples", "@nsamples")
-        ])
-        plot.add_tools(hover)
-
-        # Custom JS callback that will be used when tapping on a run
-        # Only switches the view, a server callback is required to update plots
-        # (defined inside template to avoid bloating server w/ too much JS code)
-        tap_callback_js = "goToInspectRuns();"
-        tap = TapTool(callback=CustomJS(code=tap_callback_js))
-        plot.add_tools(tap)
-
-        circle = plot.circle(
-            x="x", y=data_field, source=self.source,
-            size=12
-        )
-        circle.data_source.selected.on_change("indices", self.inspect_run_callback)
-
-        line = plot.line(
-            x="x", y=data_field, source=self.source,
-        )
-
-
-        plot.xgrid.grid_line_color = None
-        plot.ygrid.grid_line_color = None
-
-        plot.yaxis[0].formatter.power_limit_high = 0
-        plot.yaxis[0].formatter.power_limit_low = 0
-        plot.yaxis[0].formatter.precision = 3
-
-        plot.xaxis[0].major_label_orientation = pi/8
-
-
-
         # Widgets' callback functions
 
     def update_test(self, attrname, old, new):
@@ -325,10 +190,15 @@ class CompareRuns:
 
         # Bokeh setup functions
 
-    # Create all plots
     def setup_plots(self):
 
         tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
+
+        # Custom JS callback that will be used when tapping on a run
+        # Only switches the view, a server callback is required to update plots
+        # (defined inside template to avoid bloating server w/ too much JS code)
+        js_tap_callback = "goToInspectRuns();"
+
 
         # Box plot
         self.plots["boxplot"] = figure(
@@ -337,36 +207,116 @@ class CompareRuns:
             tools=tools, sizing_mode="scale_width"
         )
 
-        self.fill_boxplot(self.plots["boxplot"])
+        box_tooltips = [
+            ("Git commit", "@is_git_commit"),
+            ("Date", "@date"),
+            ("Hash", "@hash"),
+            ("Author", "@author"),
+            ("Message", "@message"),
+            ("Min", "@min{%0.18e}"),
+            ("Max", "@max{%0.18e}"),
+            ("1st quartile", "@quantile25{%0.18e}"),
+            ("Median", "@quantile50{%0.18e}"),
+            ("3rd quartile", "@quantile75{%0.18e}"),
+            ("μ", "@mu{%0.18e}"),
+            ("Number of samples", "@nsamples")
+        ]
+        box_tooltips_formatters = {
+            "@min" : "printf",
+            "@max" : "printf",
+            "@quantile25" : "printf",
+            "@quantile50" : "printf",
+            "@quantile75" : "printf",
+            "@mu" : "printf"
+        }
+
+        plot.fill_boxplot(
+            self.plots["boxplot"], self.source,
+            tooltips = box_tooltips,
+            tooltips_formatters = box_tooltips_formatters,
+            js_tap_callback = js_tap_callback,
+            server_tap_callback = self.inspect_run_callback,
+        )
         self.doc.add_root(self.plots["boxplot"])
 
 
         # Sigma plot (bar plot)
-        self.sigma_plot = figure(
+        self.plots["sigma_plot"] = figure(
             name="sigma_plot", title="Standard deviation σ over runs",
             plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
+            tools=tools, sizing_mode="scale_width"
         )
 
-        self.fill_dot_plot(self.sigma_plot, "sigma", "σ")
-        self.doc.add_root(self.sigma_plot)
+        sigma_tooltips = [
+            ("Git commit", "@is_git_commit"),
+            ("Date", "@date"),
+            ("Hash", "@hash"),
+            ("Author", "@author"),
+            ("Message", "@message"),
+            ("σ", "@sigma"),
+            ("Number of samples", "@nsamples")
+        ]
+
+        plot.fill_dotplot(
+            self.plots["sigma_plot"], self.source, "sigma",
+            tooltips = sigma_tooltips,
+            js_tap_callback = js_tap_callback,
+            server_tap_callback = self.inspect_run_callback,
+            lines = True
+        )
+        self.doc.add_root(self.plots["sigma_plot"])
 
 
         # s plot (bar plot with 2 tabs)
         self.plots["s10_plot"] = figure(
             name="s10_plot", title="Significant digits s over runs",
             plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
+            tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.plots["s10_plot"], "s10", "s")
+
+        s10_tooltips = [
+            ("Git commit", "@is_git_commit"),
+            ("Date", "@date"),
+            ("Hash", "@hash"),
+            ("Author", "@author"),
+            ("Message", "@message"),
+            ("s", "@s10"),
+            ("Number of samples", "@nsamples")
+        ]
+
+        plot.fill_dotplot(
+            self.plots["s10_plot"], self.source, "s10",
+            tooltips = s10_tooltips,
+            js_tap_callback = js_tap_callback,
+            server_tap_callback = self.inspect_run_callback,
+            lines = True
+        )
         s10_tab = Panel(child=self.plots["s10_plot"], title="Base 10")
+
 
         self.plots["s2_plot"] = figure(
             name="s2_plot", title="Significant digits s over runs",
-            plot_width=900, plot_height=400, x_range=[""], y_range=(-2.5, 53),
-            tools=tools, sizing_mode='scale_width'
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.plots["s2_plot"], "s2", "s")
+
+        s2_tooltips = [
+            ("Git commit", "@is_git_commit"),
+            ("Date", "@date"),
+            ("Hash", "@hash"),
+            ("Author", "@author"),
+            ("Message", "@message"),
+            ("s", "@s2"),
+            ("Number of samples", "@nsamples")
+        ]
+
+        plot.fill_dotplot(
+            self.plots["s2_plot"], self.source, "s2",
+            tooltips = s2_tooltips,
+            js_tap_callback = js_tap_callback,
+            server_tap_callback = self.inspect_run_callback,
+            lines = True
+        )
         s2_tab = Panel(child=self.plots["s2_plot"], title="Base 2")
 
         s_tabs = Tabs(
@@ -378,8 +328,9 @@ class CompareRuns:
         self.doc.add_root(s_tabs)
 
 
-    # Create all widgets
     def setup_widgets(self):
+
+            # Initial selections
 
         # Test/var/backend combination (we select all first elements at init)
         self.tests = self.data\
@@ -456,14 +407,18 @@ class CompareRuns:
         self.select_var.on_change("value", self.update_var)
         self.select_var.on_change("options", self.update_var)
 
-        var_filter = TextInput(
-            name="var_filter", title="Variables filter:"
-        )
-        var_filter.js_on_change("value", CustomJS(
-            args=dict(options=self.vars, selector=self.select_var),
-            code=filter_callback_js
-        ))
-        self.doc.add_root(var_filter)
+        # BUG Since arguments to CustomJS are not updated, the filter might not
+        # behave as expected after updating the tests (if tests don't have the
+        # same variables). Until a solution is found, it is safer to remove this
+        # filter from the report.
+        # var_filter = TextInput(
+        #     name="var_filter", title="Variables filter:"
+        # )
+        # var_filter.js_on_change("value", CustomJS(
+        #     args=dict(options=self.vars, selector=self.select_var),
+        #     code=filter_callback_js
+        # ))
+        # self.doc.add_root(var_filter)
 
 
             # Backend selector widget

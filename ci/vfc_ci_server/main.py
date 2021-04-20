@@ -7,9 +7,7 @@ import time
 
 import pandas as pd
 
-from bokeh.plotting import figure, show, curdoc
-from bokeh.resources import INLINE
-from bokeh.embed import components
+from bokeh.plotting import curdoc
 
 # Local imports from vfc_ci_server
 import compare_runs

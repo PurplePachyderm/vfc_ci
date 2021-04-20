@@ -7,13 +7,13 @@ import numpy as np
 
 
 from math import pi
-from bokeh.plotting import figure, show, curdoc
-from bokeh.resources import INLINE
+from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool,\
-TextInput, RadioButtonGroup, CustomJS
+RadioButtonGroup, CustomJS
 
 import helper
+import plot
 
 ################################################################################
 
@@ -39,6 +39,28 @@ class InspectRuns:
             runs_dict[row["name"]] = row.name
 
         return runs_dict
+
+
+    def gen_boxplot_tooltips(self, prefix):
+        return [
+            ("Min", "@" + prefix + "_min{%0.18e}"),
+            ("Max", "@" + prefix + "_max{%0.18e}"),
+            ("1st quartile", "@" + prefix + "_quantile25{%0.18e}"),
+            ("Median", "@" + prefix + "_quantile50{%0.18e}"),
+            ("3rd quartile", "@" + prefix + "_quantile75{%0.18e}"),
+            ("μ", "@" + prefix + "_mu{%0.18e}"),
+            ("Number of samples (tests)", "@nsamples")
+        ]
+
+    def gen_boxplot_tooltips_formatters(self, prefix):
+        return {
+            "@%s_min" % prefix : "printf",
+            "@%s_max" % prefix : "printf",
+            "@%s_quantile25" % prefix : "printf",
+            "@%s_quantile50" % prefix : "printf",
+            "@%s_quantile75" % prefix : "printf",
+            "@%s_mu" % prefix : "printf"
+        }
 
 
     # Data processing for all modes
@@ -131,103 +153,6 @@ class InspectRuns:
 
 
 
-        # Plots generation function (fills an existing plot with data)
-
-    def fill_boxplot(self, plot, source, prefix):
-        # (based on: https://docs.bokeh.org/en/latest/docs/gallery/boxplot.html)
-
-        hover = HoverTool(tooltips = [
-            ("Min", "@" + prefix + "_min{%0.18e}"),
-            ("Max", "@" + prefix + "_max{%0.18e}"),
-            ("1st quartile", "@" + prefix + "_quantile25{%0.18e}"),
-            ("Median", "@" + prefix + "_quantile50{%0.18e}"),
-            ("3rd quartile", "@" + prefix + "_quantile75{%0.18e}"),
-            ("μ", "@" + prefix + "_mu{%0.18e}"),
-            ("Number of samples (tests)", "@nsamples")
-        ])
-        hover.formatters = {
-            "@%s_min" % prefix : "printf",
-            "@%s_max" % prefix : "printf",
-            "@%s_quantile25" % prefix : "printf",
-            "@%s_quantile50" % prefix : "printf",
-            "@%s_quantile75" % prefix : "printf",
-            "@%s_mu" % prefix : "printf"
-        }
-        plot.add_tools(hover)
-
-
-        # Stems
-        self.top_stem = plot.segment(
-            x0="x", y0="%s_max" % prefix,
-            x1="x", y1="%s_quantile75" % prefix,
-            source=source, line_color="black"
-        )
-        bottom_stem = plot.segment(
-            x0="x", y0="%s_min" % prefix,
-            x1="x", y1="%s_quantile25" % prefix,
-            source=source, line_color="black"
-        )
-
-        # Boxes
-        top_box = plot.vbar(
-            x="x", width=0.5,
-            top="%s_quantile75" % prefix, bottom="%s_quantile50" % prefix,
-            source=source, line_color="black"
-        )
-        bottom_box = plot.vbar(
-            x="x", width=0.5,
-            top="%s_quantile50" % prefix, bottom="%s_quantile25" % prefix,
-            source=source, line_color="black"
-        )
-
-
-        # Mu dot
-        mu_dot = plot.dot(
-            x="x", y="%s_mu" % prefix, size=30, source=source,
-            color="black"
-        )
-
-
-        # Other
-        plot.xgrid.grid_line_color = None
-        plot.ygrid.grid_line_color = None
-
-        plot.yaxis[0].formatter.power_limit_high = 0
-        plot.yaxis[0].formatter.power_limit_low = 0
-        plot.yaxis[0].formatter.precision = 3
-
-        plot.xaxis[0].major_label_orientation = pi/8
-
-
-    def fill_dot_plot(self, plot, source):
-        # This is used for plotting the mu bar plot only
-
-        hover = HoverTool(tooltips = [
-            ("μ", "@mu{%0.18e}"),
-            ("Number of samples (tests)", "@nsamples")
-        ])
-        hover.formatters = {
-            "@mu" : "printf"
-        }
-        plot.add_tools(hover)
-
-        circle = plot.circle(
-            x="x", y="mu", source=source,
-            size=12
-        )
-
-
-        plot.xgrid.grid_line_color = None
-        plot.ygrid.grid_line_color = None
-
-        plot.yaxis[0].formatter.power_limit_high = 0
-        plot.yaxis[0].formatter.power_limit_low = 0
-        plot.yaxis[0].formatter.precision = 3
-
-        plot.xaxis[0].major_label_orientation = pi/8
-
-
-
         # Widets' callback functions
 
     def update_run(self, attrname, old, new):
@@ -278,54 +203,89 @@ class InspectRuns:
 
 
         # Bokeh setup functions
+        # (for both variable and backend selection at once)
 
-    # Create all plots (for both variable and backend selection at once)
     def setup_plots(self):
 
         tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
 
+
+            # Tooltips and formatters
+
+        dotplots_tooltips = [
+            ("μ", "@mu{%0.18e}"),
+            ("Number of samples (tests)", "@nsamples")
+        ]
+        dotplot_formatters = {
+            "@mu" : "printf"
+        }
+
+        sigma_boxplot_tooltips = self.gen_boxplot_tooltips("sigma")
+        sigma_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("sigma")
+
+        s10_boxplot_tooltips = self.gen_boxplot_tooltips("s10")
+        s10_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("s10")
+
+        s2_boxplot_tooltips = self.gen_boxplot_tooltips("s2")
+        s2_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("s2")
 
             # "Group by backends" plots
 
         # Mu plot
         self.backend_plots["mu_backend"] = figure(
             name="mu_backend",
-            title="Empirical average μ of backend (groupped by variables)",
+            title="Empirical average μ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.backend_plots["mu_backend"], self.backend_source)
+        plot.fill_dotplot(
+            self.backend_plots["mu_backend"], self.backend_source, "mu",
+            tooltips = dotplots_tooltips,
+            tooltips_formatters = dotplot_formatters
+        )
         self.doc.add_root(self.backend_plots["mu_backend"])
 
 
         # Sigma plot
         self.backend_plots["sigma_backend"] = figure(
             name="sigma_backend",
-            title="Standard deviation σ of backend (groupped by variables)",
+            title="Standard deviation σ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_boxplot(self.backend_plots["sigma_backend"], self.backend_source, "sigma")
+        plot.fill_boxplot(
+            self.backend_plots["sigma_backend"], self.backend_source, prefix="sigma",
+            tooltips = sigma_boxplot_tooltips,
+            tooltips_formatters = sigma_boxplot_tooltips_formatters
+        )
         self.doc.add_root(self.backend_plots["sigma_backend"])
 
 
         # s plots
         self.backend_plots["s10_backend"] = figure(
             name="s10_backend",
-            title="Significant digits s of backend (groupped by variables)",
+            title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.backend_plots["s10_backend"], self.backend_source, "s10")
+        plot.fill_boxplot(
+            self.backend_plots["s10_backend"], self.backend_source, prefix="s10",
+            tooltips = s10_boxplot_tooltips,
+            tooltips_formatters = s10_boxplot_tooltips_formatters
+        )
         s10_tab_backend = Panel(child=self.backend_plots["s10_backend"], title="Base 10")
 
         self.backend_plots["s2_backend"] = figure(
             name="s2_backend",
-            title="Significant digits s of backend (groupped by variables)",
+            title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.backend_plots["s2_backend"], self.backend_source, "s2")
+        plot.fill_boxplot(
+            self.backend_plots["s2_backend"], self.backend_source, prefix="s2",
+            tooltips = s2_boxplot_tooltips,
+            tooltips_formatters = s2_boxplot_tooltips_formatters
+        )
         s2_tab_backend = Panel(child=self.backend_plots["s2_backend"], title="Base 2")
 
         s_tabs_backend = Tabs(
@@ -341,42 +301,58 @@ class InspectRuns:
         # Mu plot
         self.var_plots["mu_var"] = figure(
             name="mu_var",
-            title="Empirical average μ of variable (groupped by backends)",
+            title="Empirical average μ of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_dot_plot(self.var_plots["mu_var"], self.var_source)
+        plot.fill_dotplot(
+            self.var_plots["mu_var"], self.var_source, "mu",
+            tooltips = dotplots_tooltips,
+            tooltips_formatters = dotplot_formatters
+        )
         self.doc.add_root(self.var_plots["mu_var"])
 
 
         # Sigma plot
         self.var_plots["sigma_var"] = figure(
             name="sigma_var",
-            title="Standard deviation σ of variable (groupped by backends)",
+            title="Standard deviation σ of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
-        self.fill_boxplot(self.var_plots["sigma_var"], self.var_source, "sigma")
+        plot.fill_boxplot(
+            self.var_plots["sigma_var"], self.var_source, prefix="sigma",
+            tooltips = sigma_boxplot_tooltips,
+            tooltips_formatters = sigma_boxplot_tooltips_formatters
+        )
         self.doc.add_root(self.var_plots["sigma_var"])
 
 
         # s plots
         self.var_plots["s10_var"] = figure(
             name="s10_var",
-            title="Significant digits s of variable (groupped by backends)",
+            title="Significant digits s of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.var_plots["s10_var"], self.var_source, "s10")
+        plot.fill_boxplot(
+            self.var_plots["s10_var"], self.var_source, prefix="s10",
+            tooltips = s10_boxplot_tooltips,
+            tooltips_formatters = s10_boxplot_tooltips_formatters
+        )
         s10_tab_var = Panel(child=self.var_plots["s10_var"], title="Base 10")
 
         self.var_plots["s2_var"] = figure(
             name="s2_var",
-            title="Significant digits s of variable (groupped by backends)",
+            title="Significant digits s of backend (groupped by variables)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
-        self.fill_boxplot(self.var_plots["s2_var"], self.var_source, "s2")
+        plot.fill_boxplot(
+            self.var_plots["s2_var"], self.var_source, prefix="s2",
+            tooltips = s2_boxplot_tooltips,
+            tooltips_formatters = s2_boxplot_tooltips_formatters
+        )
         s2_tab_var = Panel(child=self.var_plots["s2_var"], title="Base 2")
 
         s_tabs_var = Tabs(
@@ -386,8 +362,6 @@ class InspectRuns:
         self.doc.add_root(s_tabs_var)
 
 
-
-    # Create all widgets (for both variable and backend selection at once)
     def setup_widgets(self):
 
             # Run selection
