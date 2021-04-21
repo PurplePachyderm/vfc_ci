@@ -100,7 +100,7 @@ class InspectRuns:
 
         # For a given variable, get all backends (across all tests)
         backends = self.filtered_data[
-            self.filtered_data.index.isin([self.select_var.value], level=1)
+            self.filtered_data.index.isin([self.select_var_by_backend.value], level=1)
         ].groupby("vfc_backend")
 
         backends = backends.agg({
@@ -126,12 +126,12 @@ class InspectRuns:
         helper.reset_x_ranges(self.backend_plots, list(backends["x"]))
 
 
-    # Update plots ("Group by variable" mode only)
+    # Update plots ("Group by variables" mode only)
     def update_var_plots(self):
 
         # For a given backend, get all variables (across all tests)
         vars = self.filtered_data[
-            self.filtered_data.index.isin([self.select_backend.value], level=2)
+            self.filtered_data.index.isin([self.select_backend_by_var.value], level=2)
         ].groupby("variable")
 
         vars = vars.agg({
@@ -152,6 +152,32 @@ class InspectRuns:
         helper.reset_x_ranges(self.var_plots, list(vars["x"]))
 
 
+    # Update plots ("Group by tests" mode only)
+    def update_test_plots(self):
+
+        # For a given backend, get all tests (across all variables)
+        tests = self.filtered_data[
+            self.filtered_data.index.isin([self.select_backend_by_test.value], level=2)
+        ].groupby("test")
+
+        tests = tests.agg({
+            "sigma": lambda x: x.tolist(),
+            "s10": lambda x: x.tolist(),
+            "s2": lambda x: x.tolist(),
+            "mu": lambda x: x.tolist(),
+
+            # Used for mu weighted average first, then will be replaced
+            "nsamples": lambda x: x.tolist()
+        })
+
+        tests = self.data_processing(tests)
+
+        self.test_source.data = tests.to_dict("list")
+
+        # Update x_ranges
+        helper.reset_x_ranges(self.test_plots, list(tests["x"]))
+
+
 
         # Widets' callback functions
 
@@ -168,11 +194,11 @@ class InspectRuns:
         # New list of available vars
         vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
-        self.select_var.options = vars
+        self.select_var_by_backend.options = vars
 
         # Reset variable selection if old one is not available in new vars
-        if self.select_var.value not in vars:
-            self.select_var.value = vars[0]
+        if self.select_var_by_backend.value not in vars:
+            self.select_var_by_backend.value = vars[0]
 
         else:
             # We still need to redraw the var plots
@@ -182,23 +208,30 @@ class InspectRuns:
         # New list of available backends
         backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.select_backend.options = backends
+        self.select_backend_by_var.options = backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.select_backend.value not in backends:
-            self.select_backend.value = backends[0]
-
+        if self.select_backend_by_var.value not in backends:
+            self.select_backend_by_var.value = backends[0]
         else:
             # We still need to redraw the backend plots
             self.update_backend_plots()
+
+        if self.select_backend_by_test.value not in backends:
+            self.select_backend_by_test.value = backends[0]
+        else:
+            # We still need to redraw the backend plots
+            self.update_test_plots()
 
 
     def update_var(self, attrname, old, new):
         self.update_var_plots()
 
-
     def update_backend(self, attrname, old, new):
         self.update_backend_plots()
+
+    def update_test(self, attrname, old, new):
+        self.update_test_plots()
 
 
 
@@ -362,6 +395,73 @@ class InspectRuns:
         self.doc.add_root(s_tabs_var)
 
 
+
+            # "Group by tests" plots
+
+        # Mu plot
+        self.test_plots["mu_test"] = figure(
+            name="mu_test",
+            title="Empirical average μ of backend (groupped by variables)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode="scale_width"
+        )
+        plot.fill_dotplot(
+            self.test_plots["mu_test"], self.test_source, "mu",
+            tooltips = dotplots_tooltips,
+            tooltips_formatters = dotplot_formatters
+        )
+        self.doc.add_root(self.test_plots["mu_test"])
+
+
+        # Sigma plot
+        self.test_plots["sigma_test"] = figure(
+            name="sigma_test",
+            title="Standard deviation σ of backend (groupped by variables)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode="scale_width"
+        )
+        plot.fill_boxplot(
+            self.test_plots["sigma_test"], self.test_source, prefix="sigma",
+            tooltips = sigma_boxplot_tooltips,
+            tooltips_formatters = sigma_boxplot_tooltips_formatters
+        )
+        self.doc.add_root(self.test_plots["sigma_test"])
+
+
+        # s plots
+        self.test_plots["s10_test"] = figure(
+            name="s10_test",
+            title="Significant digits s of backend (groupped by variables)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode='scale_width'
+        )
+        plot.fill_boxplot(
+            self.test_plots["s10_test"], self.test_source, prefix="s10",
+            tooltips = s10_boxplot_tooltips,
+            tooltips_formatters = s10_boxplot_tooltips_formatters
+        )
+        s10_tab_test = Panel(child=self.test_plots["s10_test"], title="Base 10")
+
+        self.test_plots["s2_test"] = figure(
+            name="s2_test",
+            title="Significant digits s of backend (groupped by variables)",
+            plot_width=900, plot_height=400, x_range=[""],
+            tools=tools, sizing_mode='scale_width'
+        )
+        plot.fill_boxplot(
+            self.test_plots["s2_test"], self.test_source, prefix="s2",
+            tooltips = s2_boxplot_tooltips,
+            tooltips_formatters = s2_boxplot_tooltips_formatters
+        )
+        s2_tab_test = Panel(child=self.test_plots["s2_test"], title="Base 2")
+
+        s_tabs_test = Tabs(
+            name = "s_tabs_test", tabs=[s10_tab_test, s2_tab_test],
+            tabs_location = "below"
+        )
+        self.doc.add_root(s_tabs_test)
+
+
     def setup_widgets(self):
 
             # Run selection
@@ -403,7 +503,7 @@ class InspectRuns:
 
         # Once a run is selected, it is possible to group either by backend
         # or variable to obtain plots (via a radio button to switch modes)
-        modes = ["Backend", "Variable"]
+        modes = ["Backends", "Variables", "Tests"]
 
         radio = RadioButtonGroup(
             name="radio",
@@ -412,7 +512,7 @@ class InspectRuns:
         self.doc.add_root(radio)
         # The functions are defined inside the template to avoid writing too
         # much JS server side
-        radio_callback_js = "changePlottingMode();"
+        radio_callback_js = "changePlottingMode(cb_obj.active);"
         radio.js_on_change("active", CustomJS(code=radio_callback_js))
 
 
@@ -426,30 +526,43 @@ class InspectRuns:
         vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
 
-        self.select_var = Select(
+        self.select_var_by_backend = Select(
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
-            name="select_variable_by_run", title="Select a variable :",
+            name="select_var_by_backend", title="Select a variable :",
             value=vars[0], options=vars
         )
-        self.doc.add_root(self.select_var)
-        self.select_var.on_change("value", self.update_backend)
+        self.doc.add_root(self.select_var_by_backend)
+        self.select_var_by_backend.on_change("value", self.update_backend)
 
 
-            # Group by variable (mode 1)
+            # Group by variables (mode 1)
             # (and select a backend)
 
         backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
 
-        self.select_backend = Select(
+        self.select_backend_by_var = Select(
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
-            name="select_backend_by_run", title="Select a backend :",
+            name="select_backend_by_var", title="Select a backend :",
             value=backends[0], options=backends
         )
-        self.doc.add_root(self.select_backend)
-        self.select_backend.on_change("value", self.update_var)
+        self.doc.add_root(self.select_backend_by_var)
+        self.select_backend_by_var.on_change("value", self.update_var)
+
+
+            # Group by tests (mode 2)
+            # (and select a backend)
+
+        self.select_backend_by_test = Select(
+            # We need a different name to avoid collision in the template with
+            # the runs comparison's widget
+            name="select_backend_by_test", title="Select a backend :",
+            value=backends[0], options=backends
+        )
+        self.doc.add_root(self.select_backend_by_test)
+        self.select_backend_by_test.on_change("value", self.update_test)
 
 
 
@@ -459,6 +572,7 @@ class InspectRuns:
     # When received, switch to the run_name in parameter
     def switch_view(self, run_name):
         self.select_run.value = run_name
+
 
 
         # Constructor
@@ -472,14 +586,16 @@ class InspectRuns:
         self.metadata = metadata
 
 
-        # Having 2 separate ColumnDataSource will prevent many useless
+        # Having separate ColumnDataSources will prevent many useless
         # operations when updating only one view
         # (will be filled/updated in update_..._plots())
         self.backend_source = ColumnDataSource(data={})
         self.var_source = ColumnDataSource(data={})
+        self.test_source = ColumnDataSource(data={})
 
         self.backend_plots = {}
         self.var_plots = {}
+        self.test_plots = {}
 
         # Setup Bokeh objects
         self.setup_plots()
@@ -490,10 +606,11 @@ class InspectRuns:
         # show the plots for the first time
         self.update_backend_plots()
         self.update_var_plots()
+        self.update_test_plots()
 
 
         # Pass the initial metadata to the template (will be updated in CustomJS
-        # callbacks)
+        # callbacks). This is required because metadata is not displayed in a
+        # Bokeh widget, so we can't update this with a server callback.
         initial_run = helper.get_metadata(self.metadata, self.current_run)
-
         self.doc.template_variables["initial_timestamp"] = self.current_run

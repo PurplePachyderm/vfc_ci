@@ -124,7 +124,7 @@
                     </a>
 
                     <a class="navbar-item" id="inspect-runs-button">
-                        [WIP] Inspect runs
+                        Inspect runs
                     </a>
                 </div>
 
@@ -216,11 +216,15 @@
                     {{ embed(roots.radio) }}
 
                     <div class="group-by-backend">
-                        {{ embed(roots.select_variable_by_run) }}
+                        {{ embed(roots.select_var_by_backend) }}
                     </div>
 
                     <div class="group-by-variable" style="display: none;">
-                        {{ embed(roots.select_backend_by_run) }}
+                        {{ embed(roots.select_backend_by_var) }}
+                    </div>
+
+                    <div class="group-by-test" style="display: none;">
+                        {{ embed(roots.select_backend_by_test) }}
                     </div>
 
                     <br>
@@ -314,7 +318,27 @@
                             {{ embed(roots.mu_var) }}
                         </div>
                     </div>
-                </div>
+
+                    <div class="container group-by-test" style="display: none;">
+                        <div class="card plot-card">
+                            {{ embed(roots.s_tabs_test) }}
+                        </div>
+
+                        <br>
+
+                        <div class="card plot-card">
+                            {{ embed(roots.sigma_test) }}
+                        </div>
+
+                        <br>
+
+                        <div class="card plot-card">
+                            {{ embed(roots.mu_test) }}
+                        </div>
+                    </div>
+
+                    </div>
+            </div>
         </main>
 
         </div>
@@ -346,6 +370,7 @@
             })
 
 
+
             // Listen to clicks on "Compare runs" button
             document.getElementById("compare-runs-button")
             .addEventListener("click", () => {
@@ -365,6 +390,28 @@
 
             });
 
+            // Listen to clicks on "Inspect runs" button
+            // (dedicated function as this is needs to be called in a CustomJS callback)
+            function goToInspectRuns() {
+                window.scrollTo(0,0);
+
+                document.getElementById("compare-runs-container")
+                .style.display = "none";
+
+                document.getElementById("compare-runs-button")
+                .classList.toggle("is-active");
+
+
+                document.getElementById("compare-variables-container")
+                .style.display = "block";
+
+                document.getElementById("inspect-runs-button")
+                .classList.toggle("is-active");
+            }
+
+            document.getElementById("inspect-runs-button")
+            .addEventListener("click", goToInspectRuns);
+
 
 
             // Toggle the display properties of the loader/report
@@ -375,6 +422,7 @@
                 document.getElementById("report")
                 .style.display = "";
             }
+
 
 
             // To detect the end of Bokeh initialization and remove the loader,
@@ -397,40 +445,30 @@
 
 
 
-            // Listen to clicks on "Inspect runs" button
-            // (dedicated function as this needs to be called in a CustomJS callback)
-            function goToInspectRuns() {
-                window.scrollTo(0,0);
-
-                document.getElementById("compare-runs-container")
-                .style.display = "none";
-
-                document.getElementById("compare-runs-button")
-                .classList.toggle("is-active");
-
-
-                document.getElementById("compare-variables-container")
-                .style.display = "block";
-
-                document.getElementById("inspect-runs-button")
-                .classList.toggle("is-active");
-            }
-
-            document.getElementById("inspect-runs-button")
-            .addEventListener("click", goToInspectRuns);
-
-
             // Change plotting mode in runs inspection
-            function changePlottingMode() {
+            function changePlottingMode(id) {
+
+                // Hardcoding the ID/class name correspondance is probably the
+                // best way, since this is server dependent (apart from passing
+                // the array< as a template parameter ?)
+                let classNames = [
+                    "group-by-backend",
+                    "group-by-variable",
+                    "group-by-test"
+                ]
+
                 let elements = document.querySelectorAll(
-                    ".group-by-backend, .group-by-variable"
+                    ".group-by-backend, .group-by-variable, .group-by-test"
                 );
 
+                // Loop through all elements, enable display if they have the
+                // correct class, disable otherwise
                 for (let i = 0; i < elements.length; i++) {
                     elements[i].style.display =
-                    elements[i].style.display === "none" ? "" : "none";
+                    elements[i].className.includes(classNames[id]) ? "" : "none";
                 }
             }
+
 
 
             // Update the run metadata (in inspect run mode)
