@@ -103,7 +103,19 @@ def reset_run_strings():
     get_run_name.previous = ""
 
 
-# From an dict of plots, reset all the x-ranges
+# Update all the x-ranges from a dict of plots
 def reset_x_ranges(plots, x_range):
     for key, value in plots.items():
         value.x_range.factors = x_range
+
+        if len(x_range) < 15:
+            value.xaxis.major_tick_line_color = "#000000"
+            value.xaxis.minor_tick_line_color = "#000000"
+
+            value.xaxis.major_label_text_font_size = "8pt"
+
+        else:
+            value.xaxis.major_tick_line_color = None
+            value.xaxis.minor_tick_line_color = None
+
+            value.xaxis.major_label_text_font_size = "0pt"

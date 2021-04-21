@@ -17,7 +17,7 @@ run_tests:
   - git config --global user.name "${GITLAB_USER_NAME}"
 
   script:
-  - pip install click numpy scipy pandas bokeh jinja2 tables GitPython
+  - pip install numpy scipy pandas bokeh jinja2 tables GitPython
 
   - ./vfc_ci test -g -r
 

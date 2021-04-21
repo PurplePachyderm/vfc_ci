@@ -22,7 +22,7 @@ jobs:
             fetch-depth: 0
 
       - name: Install Python requirements
-        run: pip install click numpy scipy pandas bokeh jinja2 tables GitPython
+        run: pip install numpy scipy pandas bokeh jinja2 tables GitPython
 
       - name: Run tests
         # We assume the script is included in the repo for now
