@@ -40,7 +40,6 @@ struct vfc_probes {
 typedef struct vfc_probes vfc_probes;
 
 
-
 /*
 * Initialize an empty vfc_probes instance
 */
@@ -83,7 +82,7 @@ void vfc_free_probes(vfc_probes * probes) {
 char * gen_probe_key(char * testName, char * varName) {
     char * key = (char *) malloc(strlen(testName) + strlen(varName) + 2);
     strcpy(key, testName);
-    strcat(key, ":");
+    strcat(key, ",");
     strcat(key, varName);
 
     return key;
@@ -92,17 +91,18 @@ char * gen_probe_key(char * testName, char * varName) {
 
 
 /*
-* Helper function to detect forbidden characters (':' and ',') in the keys
+* Helper function to detect forbidden character ',' in the keys
 */
 
 void validate_probe_key(char * str) {
     unsigned int len = strlen(str);
 
     for(unsigned int i=0; i<len; i++) {
-        if(str[i] == ':' || str[i] == ',') {
+        if(str[i] == ',') {
             fprintf(
                 stderr,
-                "Error [verificarlo]: One of your probes has a ':' or ',' in its test or variable name (\"%s\"), which is forbidden\n",
+                "Error [verificarlo]: One of your probes has a ',' in its test \
+                or variable name (\"%s\"), which is forbidden\n",
                 str
             );
             exit(1);
@@ -127,12 +127,12 @@ int vfc_put_probe(
         return 1;
     }
 
-    // Make sure testName and varName don't contain any ':' or ',', which would
+    // Make sure testName and varName don't contain any ',', which would
     // interfere with the key/CSV encoding
     validate_probe_key(testName);
     validate_probe_key(varName);
 
-    // Get the key, which is : testName + ":" + varName
+    // Get the key, which is : testName + "," + varName
     char * key = gen_probe_key(testName, varName);
 
     // Look for a duplicate key
@@ -144,7 +144,8 @@ int vfc_put_probe(
         if(strcmp(key, oldProbe->key) == 0) {
             fprintf(
                 stderr,
-                "Error [verificarlo]: you have a duplicate error with one of your probes (\"%s\"). Please make sure to use different names.\n",
+                "Error [verificarlo]: you have a duplicate error with one of \
+                your probes (\"%s\"). Please make sure to use different names.\n",
                 key
             );
             exit(1);
@@ -175,7 +176,7 @@ int vfc_remove_probe(vfc_probes * probes, char * testName, char * varName) {
         return 1;
     }
 
-    // Get the key, which is : testName + ":" + varName
+    // Get the key, which is : testName + "," + varName
     char * key = gen_probe_key(testName, varName);
 
     vfc_hashmap_remove(probes->map, vfc_hashmap_str_function(key));
@@ -209,7 +210,10 @@ int vfc_dump_probes(vfc_probes * probes) {
     // Get export path from the VFC_PROBES_OUTPUT env variable
     char* exportPath = getenv("VFC_PROBES_OUTPUT");
     if(!exportPath) {
-        printf("Info [verificarlo]: VFC_PROBES_OUTPUT is not set, probes will not be dumped\n");
+        printf(
+            "Info [verificarlo]: VFC_PROBES_OUTPUT is not set, probes will \
+            not be dumped\n"
+        );
         vfc_free_probes(probes);
         return 0;
     }
@@ -219,14 +223,15 @@ int vfc_dump_probes(vfc_probes * probes) {
     if(fp == NULL) {
         fprintf(
             stderr,
-            "Error [verificarlo]: impossible to open the CSV file to save your probes (\"%s\")\n",
+            "Error [verificarlo]: impossible to open the CSV file to save your \
+            probes (\"%s\")\n",
             exportPath
         );
         exit(1);
     }
 
     // First line gives the column names
-    fprintf(fp, "key,value\n");
+    fprintf(fp, "test,variable,value\n");
 
     // Iterate over all table elements
     vfc_probe_node * probe = NULL;

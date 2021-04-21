@@ -27,16 +27,40 @@ import struct
     # Helper functions
 
 # Read a CSV file outputted by vfc_probe as a Pandas dataframe
-def read_probes_csv(filepath, backend):
-    results = pd.read_csv(filepath)
+def read_probes_csv(filepath, backend, warnings, execution_data):
 
-    # NOTE The lambda function should probably change depending on if the system
-    # uses little or big endian
+    try:
+        results = pd.read_csv(filepath)
+
+    except FileNotFoundError:
+        print(
+            "Warning [vfc_ci]: Probes not found, your code might have crashed " \
+            "or you might have forgotten to call vfc_dump_probes"
+        )
+        warnings.append(execution_data)
+        return pd.DataFrame(
+            columns = ["test", "variable", "values", "vfc_backend"]
+        )
+
+    except Exception:
+        print(
+            "Warning [vfc_ci]: Your probes could not be read for some unknown " \
+            "reason"
+        )
+        warnings.append(execution_data)
+        return pd.DataFrame(
+            columns = ["test", "variable", "values", "vfc_backend"]
+        )
+
+    if len(results) == 0:
+        print(
+            "Warning [vfc_ci]: Probes empty, it looks like you have dumped " \
+            "them without calling vfc_put_probe"
+        )
+        warnings.append(execution_data)
+
+
     results["value"] = results["value"].apply(lambda x: float.fromhex(x))
-
-    results[["test", "variable"]] = results["key"].str.split(':', expand=True)
-
-    del results["key"]
     results.rename(columns = {"value":"values"}, inplace = True)
 
     results["vfc_backend"] = backend
@@ -63,8 +87,8 @@ def read_config():
             data = file.read()
 
     except FileNotFoundError as e:
-        e.strerror = "This file is required to describe the tests to run and "\
-        "generate a Verificarlo run file"
+        e.strerror = "Error [vfc_ci]: This file is required to describe the tests "\
+        "to run and generate a Verificarlo run file"
         raise e
 
     return json.loads(data)
@@ -105,10 +129,10 @@ def generate_metadata(is_git_commit):
 
     # Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
 
-def generate_data(config):
+def run_tests(config):
 
     # Run the build command
-    print("Building tests...")
+    print("Info [vfc_ci]: Building tests...")
     os.system(config["make_command"])
 
 
@@ -118,12 +142,16 @@ def generate_data(config):
 
     # Create tmp folder to export results
     os.system("mkdir .vfcruns.tmp")
-    n_file = 0
+    n_files = 0
 
+
+    # This will contain all executables/repetition numbers from which we could
+    # not get any data
+    warnings = []
 
     # Tests execution loop
     for executable in config["executables"]:
-        print("Running executable :", executable["executable"], "...")
+        print("Info [vfc_ci]: Running executable :", executable["executable"], "...")
 
         parameters = ""
         if "parameters" in executable:
@@ -140,14 +168,27 @@ def generate_data(config):
 
             # Run test repetitions and save results
             for i in range(repetitions):
-                file = ".vfcruns.tmp/%s.csv" % str(n_file)
+                file = ".vfcruns.tmp/%s.csv" % str(n_files)
                 export_output = "VFC_PROBES_OUTPUT=\"%s\" " % file
                 os.system(export_output + export_backend + command)
 
+                # This will only be used if we need to append this exec to the
+                # warnings list
+                execution_data = {
+                    "executable": executable["executable"],
+                    "backend": backend["name"],
+                    "repetition": i + 1
+                }
 
-                data.append(read_probes_csv(file, backend["name"]))
+                data.append(read_probes_csv(
+                    file,
+                    backend["name"],
 
-                n_file = n_file + 1
+                    warnings,
+                    execution_data
+                ))
+
+                n_files = n_files + 1
 
 
     # Clean CSV output files (by deleting the tmp folder)
@@ -160,8 +201,48 @@ def generate_data(config):
     .values.apply(list).reset_index()
 
 
+    # Make sure we have some data to work on
+    assert(len(data) != 0), "Error [vfc_ci]: No data have been generated " \
+    "by your tests executions, aborting run without writing results file"
+
+    return data, warnings
+
+
+
+    # Display all executions that resulted in a warning
+def show_warnings(warnings):
+    if len(warnings) > 0:
+        print(
+            "Warning [vfc_ci]: Some of your runs could not generate any data " \
+            "(for instance because your code crashed) and resulted in "
+            "warnings. Here is the complete list :"
+        )
+
+        for i in range(0, len(warnings)):
+            print("- Warning %s:" % i)
+
+            print("  Executable: %s" % warnings[i]["executable"])
+            print("  Backend: %s" % warnings[i]["backend"])
+            print("  Repetition: %s" % warnings[i]["repetition"])
+
+
+    # Main function
+
+def run(is_git_commit, export_raw_values):
+
+    # Get config, metadata and data
+    print("Info [vfc_ci]: Reading tests config file...")
+    config = read_config()
+
+    print("Info [vfc_ci]: Generating run metadata...")
+    metadata = generate_metadata(is_git_commit)
+
+    data, warnings = run_tests(config)
+    show_warnings(warnings)
+
+
     # Data processing
-    print("Processing data...")
+    print("Info [vfc_ci]: Processing data...")
 
     data["values"] = data["values"].apply(numpy_float_array)
 
@@ -180,36 +261,25 @@ def generate_data(config):
     data["max"] = data["values"].apply(np.max)
     data["nsamples"] = data["values"].apply(len)
 
-    return data
 
-
-
-    # Main function
-
-def run(is_git_commit, export_raw_values):
-
-    # Get config, metadata and data
-    config = read_config()
-    metadata = generate_metadata(is_git_commit)
-    data = generate_data(config)
-
-    # Prepare data
+    # Prepare data for export
     data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
     data["timestamp"] = metadata["timestamp"]
 
     filename = metadata["hash"] if is_git_commit else str(metadata["timestamp"])
 
-    # Prepare metadata
+
+    # Prepare metadata for export
     metadata = pd.DataFrame.from_dict([metadata])
     metadata = metadata.set_index("timestamp")
 
 
-    # Export metadata if needed
     # NOTE : Exporting to HDF5 requires to install "tables" on the system
+
+    # Export raw data if needed
     if export_raw_values:
         data.to_hdf(filename + ".vfcraw.hd5", key="data")
         metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
-
 
     # Export data
     del data["values"]
@@ -219,13 +289,13 @@ def run(is_git_commit, export_raw_values):
 
     # Print termination messages
     print(
-        "The results have been successfully written to \"%s.vfcrun.hd5\"." \
+        "Info [vfc_ci]: The results have been successfully written to %s.vfcrun.hd5." \
          % filename
      )
 
     if export_raw_values:
         print(
-            """A file containing the raw values has also been created :
-            "%s.vfcraw.hd5"."""
+            "Info [vfc_ci]: A file containing the raw values has also been " \
+            "created : %s.vfcraw.hd5."
             % filename
         )

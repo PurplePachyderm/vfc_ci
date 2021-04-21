@@ -22,8 +22,10 @@ import helper
 run_files = [ f for f in os.listdir(".") if f.endswith(".vfcrun.hd5") ]
 
 if len(run_files) == 0:
-    print("Could not find any vfcrun files in the directory. Exiting script.")
-    exit(1)
+    print(
+        "Warning [vfc_ci]: Could not find any vfcrun files in the directory. " \
+        "This will result in server errors and prevent you from viewing the report."
+    )
 
 # These are arrays of Pandas dataframes for now
 metadata = []
@@ -96,11 +98,11 @@ for i in range(1, len(sys.argv)):
             url = repo.remotes.origin.url
 
         else:
-            raise ValueError("""
-            The specified method to get the Git repository is
-            "invalid. Are you calling Bokeh directly instead of using the
-            "Verificarlo wrapper ?
-            """)
+            raise ValueError(
+                "Error [vfc_ci]: The specified method to get the Git " \
+                "repository is invalid. Are you calling Bokeh directly " \
+                "instead of using the Verificarlo wrapper ?"
+            )
 
 
         # At this point, "url" should be set correctly, we can get the repo's
@@ -110,10 +112,10 @@ for i in range(1, len(sys.argv)):
 
         path = parsed_url.path.split("/")
         if len(path) < 3:
-            raise ValueError("""
-            The found URL doesn't seem to be pointing to a Git
-            "repository (path is too short)
-            """)
+            raise ValueError(
+                "Error [vfc_ci]: The found URL doesn't seem to be pointing " \
+                "to a Git repository (path is too short)"
+            )
 
         repo_name = path[2]
 

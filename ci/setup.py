@@ -26,6 +26,7 @@ def gen_readme(dev_branch, ci_branch):
         fh.write(render)
 
 
+
 def gen_workflow(git_host, dev_branch, ci_branch):
 
     # Init template loader
@@ -63,25 +64,30 @@ def gen_workflow(git_host, dev_branch, ci_branch):
 
 def setup(git_host):
 
-        # Init repo and make sure that setup is possible
+
+        # Init repo and make sure that the workflow setup is possible
 
     repo = git.Repo(".")
     repo.remotes.origin.fetch()
 
     # Make sure that repository is clean
-    assert(not repo.is_dirty()), "Unstaged changes detected in your work tree."
+    assert(not repo.is_dirty()), "Error [vfc_ci]: Unstaged changes detected " \
+    "in your work tree."
 
     dev_branch = repo.active_branch
     dev_branch_name = str(dev_branch)
     dev_remote = dev_branch.tracking_branch()
 
     # Make sure that the active branch (on which to setup the workflow) has a remote
-    assert(dev_remote != None), "The current branch doesn't have a remote."
+    assert(dev_remote != None), "Error [vfc_ci]: The current branch doesn't " \
+    "have a remote."
 
     # Make sure that we are not behind the remote (so we can push safely later)
     rev = "%s...%s" % (dev_branch_name, str(dev_remote))
     commits_behind = list(repo.iter_commits(rev))
-    assert(commits_behind == []), "The local branch seems to be at least one commit behind remote."
+    assert(commits_behind == []), "Error [vfc_ci]: The local branch seems " \
+    "to be at least one commit behind remote."
+
 
 
         # Commit the workflow on the current (dev) branch
@@ -91,6 +97,7 @@ def setup(git_host):
     repo.git.add(".")
     repo.index.commit("[auto] Set up Verificarlo CI on this branch")
     repo.remote(name="origin").push()
+
 
 
         # Create the CI branch (orphan branch with a readme on it)
@@ -106,14 +113,28 @@ def setup(git_host):
         "[auto] Create the Verificarlo CI branch for %s" % dev_branch_name,
         parent_commits=None
     )
-    repo.remote(name="origin").push(refspec="%s:%s" % (ci_branch_name, ci_branch_name))
+    repo.remote(name="origin").push(
+        refspec="%s:%s" % (ci_branch_name, ci_branch_name)
+    )
 
     # Force checkout back to the original (dev) branch
     repo.git.checkout(dev_branch_name, force=True)
 
 
-    print("A Verificarlo CI workflow has been setup on %s." % dev_branch_name)
-    print("Make sure that you have a vfc_tests_config.json on this branch.")
+
+        # Print termination messages
+
+    print(
+        "Info [vfc_ci]: A Verificarlo CI workflow has been setup on " \
+        "%s." % dev_branch_name
+    )
+    print(
+        "Info [vfc_ci]: Make sure that you have a vfc_tests_config.json on " \
+        "this branch."
+    )
 
     if git_host == "gitlab":
-        print("Since you are using GitLab, make sure that you have created a CI_PUSH_TOKEN for the user you specified.")
+        print(
+            "Info [vfc_ci]: Since you are using GitLab, make sure that you " \
+            " have created a CI_PUSH_TOKEN for the user you specified."
+        )
