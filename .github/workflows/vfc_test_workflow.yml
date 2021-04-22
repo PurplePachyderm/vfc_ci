@@ -21,8 +21,15 @@ jobs:
         with:
             fetch-depth: 0
 
+      # We will probably drop these installations when integrating CI into
+      # Verificarlo
       - name: Install Python requirements
-        run: pip install numpy scipy pandas bokeh jinja2 tables GitPython
+        run: |
+          pip install numpy scipy pandas bokeh jinja2 tables GitPython
+
+          apt update
+          apt install wget
+          wget https://raw.githubusercontent.com/verificarlo/significantdigits/main/sigdigits.py -P /usr/local/lib/python3.8/dist-packages
 
       - name: Run tests
         # We assume the script is included in the repo for now

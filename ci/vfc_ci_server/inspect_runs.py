@@ -43,6 +43,7 @@ class InspectRuns:
 
     def gen_boxplot_tooltips(self, prefix):
         return [
+            ("Name", "@x"),
             ("Min", "@" + prefix + "_min{%0.18e}"),
             ("Max", "@" + prefix + "_max{%0.18e}"),
             ("1st quartile", "@" + prefix + "_quantile25{%0.18e}"),
@@ -246,6 +247,7 @@ class InspectRuns:
             # Tooltips and formatters
 
         dotplots_tooltips = [
+            ("Name", "@x"),
             ("μ", "@mu{%0.18e}"),
             ("Number of samples (tests)", "@nsamples")
         ]

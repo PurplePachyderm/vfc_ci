@@ -3,9 +3,6 @@
 
 import os
 import json
-import glob
-
-import sys
 
 import calendar
 import time
@@ -17,9 +14,10 @@ pickle.HIGHEST_PROTOCOL = 4
 
 import pandas as pd
 import numpy as np
+import scipy.stats
 
-import base64
-import struct
+import sigdigits as sd
+
 
 ################################################################################
 
@@ -68,8 +66,29 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     return results
 
 
-def numpy_float_array(x):
-    return np.array(x).astype(float)
+# Wrapper to sd.significant_digits  (returns result in base 2)
+def significant_digits(x):
+
+    # In a pandas DF, "values" actually refers to the array of columns, and
+    # not the column named "values"
+    values = x.values[3]
+    method = sd.Method.General if x.pvalue < 0.05 else sd.Method.CNH
+
+    values = values.reshape(len(values), 1)
+
+    # Since we will be comparing values with themselves, we need to have
+    # len(values) % 2 == 0. When it's not verified, we double the last element
+    if len(values) % 2 != 0:
+        values.append(values[:1])
+
+    s = sd.significant_digits(
+        values.reshape(len(values), 1),
+        None,
+        precision=sd.Precision.Absolute,
+        method=method
+    )
+
+    return s[0]
 
 
 
@@ -244,14 +263,19 @@ def run(is_git_commit, export_raw_values):
     # Data processing
     print("Info [vfc_ci]: Processing data...")
 
-    data["values"] = data["values"].apply(numpy_float_array)
+    data["values"] = data["values"].apply(lambda x: np.array(x).astype(float))
 
     data["mu"] = data["values"].apply(np.average)
     data["sigma"] = data["values"].apply(np.std)
+    data["pvalue"] = data["values"].apply(lambda x: scipy.stats.shapiro(x).pvalue)
 
-    # NOTE : What about s when the sample's avg is 0 ? (divison by 0 returns NaN)
-    data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
-    data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
+
+    # data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
+    # data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
+
+    data["s2"] = data.apply(significant_digits, axis=1)
+    data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
+
 
     data["values"] = data["values"].apply(np.sort)
     data["min"] = data["values"].apply(np.min)

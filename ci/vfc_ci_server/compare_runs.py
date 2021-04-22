@@ -104,6 +104,7 @@ class CompareRuns:
             quantile75 = runs["quantile75"][-n:],
             max = runs["max"][-n:],
             mu = runs["mu"][-n:],
+            pvalue = runs["pvalue"][-n:],
             nsamples = runs["nsamples"][-n:]
         )
 
@@ -219,6 +220,7 @@ class CompareRuns:
             ("Median", "@quantile50{%0.18e}"),
             ("3rd quartile", "@quantile75{%0.18e}"),
             ("μ", "@mu{%0.18e}"),
+            ("p-value", "@pvalue"),
             ("Number of samples", "@nsamples")
         ]
         box_tooltips_formatters = {
