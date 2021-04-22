@@ -69,8 +69,8 @@ class CompareRuns:
 
         # Select all data matching current test/var/backend
         runs = self.data.loc[
-            [self.select_test.value],
-            self.select_var.value, self.select_backend.value
+            [self.widgets["select_test"].value],
+            self.widgets["select_var"].value, self.widgets["select_backend"].value
         ]
 
         timestamps = runs["timestamp"]
@@ -114,64 +114,64 @@ class CompareRuns:
 
     def update_test(self, attrname, old, new):
 
-        # If the value is updated by the CustomJS, self.select_var.value won't
-        # be updated, so we have to look for that case and assign it manually
+        # If the value is updated by the CustomJS, self.widgets["select_var"].value
+        # won't be updated, so we have to look for that case and assign it manually
 
         # new should be a list when updated by CustomJS
         if type(new) == list:
             new = new[0]
 
-        if new != self.select_test.value:
+        if new != self.widgets["select_test"].value:
             # The callback will be triggered again with the updated value
-            self.select_test.value = new
+            self.widgets["select_test"].value = new
             return
 
         # New list of available vars
         self.vars = self.data.loc[new]\
         .index.get_level_values("variable").drop_duplicates().tolist()
-        self.select_var.options = self.vars
+        self.widgets["select_var"].options = self.vars
 
 
         # Reset var selection if old one is not available in new vars
-        if self.select_var.value not in self.vars:
-            self.select_var.value = self.vars[0]
+        if self.widgets["select_var"].value not in self.vars:
+            self.widgets["select_var"].value = self.vars[0]
             # The update_var callback will be triggered by the assignment
 
         else:
             # Trigger the callback manually (since the plots need to be updated
             # anyway)
-            self.update_var("", "", self.select_var.value)
+            self.update_var("", "", self.widgets["select_var"].value)
 
 
     def update_var(self, attrname, old, new):
 
-        # If the value is updated by the CustomJS, self.select_var.value won't
-        # be updated, so we have to look for that case and assign it manually
+        # If the value is updated by the CustomJS, self.widgets["select_var"].value
+        # won't be updated, so we have to look for that case and assign it manually
 
         # new should be a list when updated by CustomJS
         if type(new) == list:
             new = new[0]
 
-        if new != self.select_var.value:
+        if new != self.widgets["select_var"].value:
             # The callback will be triggered again with the updated value
-            self.select_var.value = new
+            self.widgets["select_var"].value = new
             return
 
 
         # New list of available backends
-        self.backends = self.data.loc[self.select_test.value, self.select_var.value]\
+        self.backends = self.data.loc[self.widgets["select_test"].value, self.widgets["select_var"].value]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.select_backend.options = self.backends
+        self.plots["select_backend"].options = self.backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.select_backend.value not in self.backends:
-            self.select_backend.value = self.backends[0]
+        if self.plots["select_backend"].value not in self.backends:
+            self.plots["select_backend"].value = self.backends[0]
             # The update_backend callback will be triggered by the assignment
 
         else:
             # Trigger the callback manually (since the plots need to be updated
             # anyway)
-            self.update_backend("", "", self.select_backend.value)
+            self.update_backend("", "", self.plots["select_backend"].value)
 
 
     def update_backend(self, attrname, old, new):
@@ -370,67 +370,54 @@ class CompareRuns:
         self.current_n_runs = self.n_runs_dict[n_runs_display[1]]
 
         # Selector widget
-        self.select_test = Select(
+        self.widgets["select_test"] = Select(
             name="select_test", title="Test :",
             value=self.tests[0], options=self.tests
         )
-        self.doc.add_root(self.select_test)
-        self.select_test.on_change("value", self.update_test)
-        self.select_test.on_change("options", self.update_test)
+        self.doc.add_root(self.widgets["select_test"])
+        self.widgets["select_test"].on_change("value", self.update_test)
+        self.widgets["select_test"].on_change("options", self.update_test)
 
         # Filter widget
-        test_filter = TextInput(
+        self.widgets["test_filter"] = TextInput(
             name="test_filter", title="Tests filter:"
         )
-        test_filter.js_on_change("value", CustomJS(
-            args=dict(options=self.tests, selector=self.select_test),
+        self.widgets["test_filter"].js_on_change("value", CustomJS(
+            args=dict(options=self.tests, selector=self.widgets["select_test"]),
             code=filter_callback_js
         ))
-        self.doc.add_root(test_filter)
+        self.doc.add_root(self.widgets["test_filter"])
 
 
             # Number of runs to display
 
-        self.select_n_runs = Select(
+        self.widgets["select_n_runs"] = Select(
             name="select_n_runs", title="Display :",
             value=n_runs_display[1], options=n_runs_display
         )
-        self.doc.add_root(self.select_n_runs)
-        self.select_n_runs.on_change("value", self.update_n_runs)
+        self.doc.add_root(self.widgets["select_n_runs"])
+        self.widgets["select_n_runs"].on_change("value", self.update_n_runs)
 
 
             # Variable selector widget
 
-        self.select_var = Select(
+        self.widgets["select_var"] = Select(
             name="select_var", title="Variable :",
             value=self.vars[0], options=self.vars
         )
-        self.doc.add_root(self.select_var)
-        self.select_var.on_change("value", self.update_var)
-        self.select_var.on_change("options", self.update_var)
-
-        # BUG Since arguments to CustomJS are not updated, the filter might not
-        # behave as expected after updating the tests (if tests don't have the
-        # same variables). Until a solution is found, it is safer to remove this
-        # filter from the report.
-        # var_filter = TextInput(
-        #     name="var_filter", title="Variables filter:"
-        # )
-        # var_filter.js_on_change("value", CustomJS(
-        #     args=dict(options=self.vars, selector=self.select_var),
-        #     code=filter_callback_js
-        # ))
-        # self.doc.add_root(var_filter)
+        self.doc.add_root(self.widgets["select_var"])
+        self.widgets["select_var"].on_change("value", self.update_var)
+        self.widgets["select_var"].on_change("options", self.update_var)
 
 
             # Backend selector widget
 
-        self.select_backend = Select(
+        self.widgets["select_backend"] = Select(
             name="select_backend", title="Verificarlo backend :",
             value=self.backends[0], options=self.backends
         )
-        self.doc.add_root(self.select_backend)
-        self.select_backend.on_change("value", self.update_backend)
+        self.doc.add_root(self.widgets["select_backend"])
+        self.widgets["select_backend"].on_change("value", self.update_backend)
 
 
 
@@ -466,6 +453,7 @@ class CompareRuns:
 
 
         self.plots = {}
+        self.widgets = {}
 
         # Setup Bokeh objects
         self.setup_plots()

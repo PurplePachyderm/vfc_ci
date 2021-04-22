@@ -3,6 +3,9 @@
 import calendar
 import time
 
+# Magic numbers
+max_ticks = 15
+
 ################################################################################
 
 
@@ -108,7 +111,7 @@ def reset_x_ranges(plots, x_range):
     for key, value in plots.items():
         value.x_range.factors = x_range
 
-        if len(x_range) < 15:
+        if len(x_range) < max_ticks:
             value.xaxis.major_tick_line_color = "#000000"
             value.xaxis.minor_tick_line_color = "#000000"
 

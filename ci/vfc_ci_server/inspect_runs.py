@@ -4,16 +4,19 @@ import json
 
 import pandas as pd
 import numpy as np
-
+import scipy.stats
 
 from math import pi
 from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool,\
-RadioButtonGroup, CustomJS
+RadioButtonGroup, CheckboxGroup, CustomJS
 
 import helper
 import plot
+
+# Magic numbers
+max_zscore=3
 
 ################################################################################
 
@@ -101,7 +104,7 @@ class InspectRuns:
 
         # For a given variable, get all backends (across all tests)
         backends = self.filtered_data[
-            self.filtered_data.index.isin([self.select_var_by_backend.value], level=1)
+            self.filtered_data.index.isin([self.widgets["select_var_by_backend"].value], level=1)
         ].groupby("vfc_backend")
 
         backends = backends.agg({
@@ -132,7 +135,7 @@ class InspectRuns:
 
         # For a given backend, get all variables (across all tests)
         vars = self.filtered_data[
-            self.filtered_data.index.isin([self.select_backend_by_var.value], level=2)
+            self.filtered_data.index.isin([self.widgets["select_backend_by_var"].value], level=2)
         ].groupby("variable")
 
         vars = vars.agg({
@@ -158,7 +161,7 @@ class InspectRuns:
 
         # For a given backend, get all tests (across all variables)
         tests = self.filtered_data[
-            self.filtered_data.index.isin([self.select_backend_by_test.value], level=2)
+            self.filtered_data.index.isin([self.widgets["select_backend_by_test"].value], level=2)
         ].groupby("test")
 
         tests = tests.agg({
@@ -195,11 +198,11 @@ class InspectRuns:
         # New list of available vars
         vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
-        self.select_var_by_backend.options = vars
+        self.widgets["select_var_by_backend"].options = vars
 
         # Reset variable selection if old one is not available in new vars
-        if self.select_var_by_backend.value not in vars:
-            self.select_var_by_backend.value = vars[0]
+        if self.widgets["select_var_by_backend"].value not in vars:
+            self.widgets["select_var_by_backend"].value = vars[0]
 
         else:
             # We still need to redraw the var plots
@@ -209,17 +212,17 @@ class InspectRuns:
         # New list of available backends
         backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.select_backend_by_var.options = backends
+        self.widgets["select_backend_by_var"].options = backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.select_backend_by_var.value not in backends:
-            self.select_backend_by_var.value = backends[0]
+        if self.widgets["select_backend_by_var"].value not in backends:
+            self.widgets["select_backend_by_var"].value = backends[0]
         else:
             # We still need to redraw the backend plots
             self.update_backend_plots()
 
-        if self.select_backend_by_test.value not in backends:
-            self.select_backend_by_test.value = backends[0]
+        if self.widgets["select_backend_by_test"].value not in backends:
+            self.widgets["select_backend_by_test"].value = backends[0]
         else:
             # We still need to redraw the backend plots
             self.update_test_plots()
@@ -485,13 +488,13 @@ class InspectRuns:
 
         change_run_callback_js="updateRunMetadata(cb_obj.value);"
 
-        self.select_run = Select(
+        self.widgets["select_run"] = Select(
             name="select_run", title="Run :",
             value=self.current_run_display, options=runs_display
         )
-        self.doc.add_root(self.select_run)
-        self.select_run.on_change("value", self.update_run)
-        self.select_run.js_on_change("value", CustomJS(
+        self.doc.add_root(self.widgets["select_run"])
+        self.widgets["select_run"].on_change("value", self.update_run)
+        self.widgets["select_run"].js_on_change("value", CustomJS(
             code = change_run_callback_js,
             args=(dict(
                 metadata=helper.metadata_to_dict(
@@ -501,21 +504,30 @@ class InspectRuns:
         ))
 
 
+            # Toggle for outliers filtering
+
+        self.widgets["toggle_outliers_filtering"] = CheckboxGroup(
+            name="toggle_outliers_filtering",
+            labels=["Filter outliers"], active =[]
+        )
+        self.doc.add_root(self.widgets["toggle_outliers_filtering"])
+
+
             # Plotting mode radio
 
         # Once a run is selected, it is possible to group either by backend
         # or variable to obtain plots (via a radio button to switch modes)
         modes = ["Backends", "Variables", "Tests"]
 
-        radio = RadioButtonGroup(
+        self.widgets["radio"] = RadioButtonGroup(
             name="radio",
             labels=modes, active=0
         )
-        self.doc.add_root(radio)
+        self.doc.add_root(self.widgets["radio"])
         # The functions are defined inside the template to avoid writing too
         # much JS server side
         radio_callback_js = "changePlottingMode(cb_obj.active);"
-        radio.js_on_change("active", CustomJS(code=radio_callback_js))
+        self.widgets["radio"].js_on_change("active", CustomJS(code=radio_callback_js))
 
 
         # This will be reused when updating plots (to avoid filtering same data)
@@ -528,14 +540,14 @@ class InspectRuns:
         vars = self.filtered_data.index.\
         get_level_values("variable").drop_duplicates().tolist()
 
-        self.select_var_by_backend = Select(
+        self.widgets["select_var_by_backend"] = Select(
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
             name="select_var_by_backend", title="Select a variable :",
             value=vars[0], options=vars
         )
-        self.doc.add_root(self.select_var_by_backend)
-        self.select_var_by_backend.on_change("value", self.update_backend)
+        self.doc.add_root(self.widgets["select_var_by_backend"])
+        self.widgets["select_var_by_backend"].on_change("value", self.update_backend)
 
 
             # Group by variables (mode 1)
@@ -544,27 +556,27 @@ class InspectRuns:
         backends = self.filtered_data.index.\
         get_level_values("vfc_backend").drop_duplicates().tolist()
 
-        self.select_backend_by_var = Select(
+        self.widgets["select_backend_by_var"] = Select(
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
             name="select_backend_by_var", title="Select a backend :",
             value=backends[0], options=backends
         )
-        self.doc.add_root(self.select_backend_by_var)
-        self.select_backend_by_var.on_change("value", self.update_var)
+        self.doc.add_root(self.widgets["select_backend_by_var"])
+        self.widgets["select_backend_by_var"].on_change("value", self.update_var)
 
 
             # Group by tests (mode 2)
             # (and select a backend)
 
-        self.select_backend_by_test = Select(
+        self.widgets["select_backend_by_test"] = Select(
             # We need a different name to avoid collision in the template with
             # the runs comparison's widget
             name="select_backend_by_test", title="Select a backend :",
             value=backends[0], options=backends
         )
-        self.doc.add_root(self.select_backend_by_test)
-        self.select_backend_by_test.on_change("value", self.update_test)
+        self.doc.add_root(self.widgets["select_backend_by_test"])
+        self.widgets["select_backend_by_test"].on_change("value", self.update_test)
 
 
 
@@ -598,6 +610,7 @@ class InspectRuns:
         self.backend_plots = {}
         self.var_plots = {}
         self.test_plots = {}
+        self.widgets = {}
 
         # Setup Bokeh objects
         self.setup_plots()
