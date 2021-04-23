@@ -18,6 +18,9 @@ import scipy.stats
 
 import sigdigits as sd
 
+# Magic numbers
+min_pvalue = 0.05
+
 
 ################################################################################
 
@@ -72,7 +75,7 @@ def significant_digits(x):
     # In a pandas DF, "values" actually refers to the array of columns, and
     # not the column named "values"
     values = x.values[3]
-    method = sd.Method.General if x.pvalue < 0.05 else sd.Method.CNH
+    method = sd.Method.General if x.pvalue < min_pvalue else sd.Method.CNH
 
     values = values.reshape(len(values), 1)
 
@@ -270,11 +273,12 @@ def run(is_git_commit, export_raw_values):
     data["pvalue"] = data["values"].apply(lambda x: scipy.stats.shapiro(x).pvalue)
 
 
-    # data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
-    # data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
+    data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
+    data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
 
-    data["s2"] = data.apply(significant_digits, axis=1)
-    data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
+    # Lower bound of the confidence interval using the sigdigits module
+    data["s2_lower_bound"] = data.apply(significant_digits, axis=1)
+    data["s10_lower_bound"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
 
 
     data["values"] = data["values"].apply(np.sort)

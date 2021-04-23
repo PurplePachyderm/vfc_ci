@@ -35,7 +35,7 @@
                 margin-top: 1em;
             }
 
-            #compare-variables-container {
+            #inspect-runs-container {
                 margin-top: 1em;
                 display : none; /* This one is hidden by default */
             }
@@ -118,7 +118,7 @@
             <!-- MENU (content) -->
             <div id="navbar-content" class="navbar-menu">
 
-                <div class="navbar-start">
+                <div id="buttons-container" class="navbar-start">
                     <a class="navbar-item is-active" id="compare-runs-button">
                         Compare runs
                     </a>
@@ -170,8 +170,13 @@
                         <br>
                         <br>
                         {{ embed(roots.select_n_runs) }}
-                    </div>
 
+                        <br>
+                        <br>
+
+                        <b>Tip :</b> You can click on any of the dots or boxes
+                        on these plots to inspect the corresponding run in details.
+                    </div>
                 </div>
 
                 <div class="is-divider-vertical"></div>
@@ -204,7 +209,7 @@
 
 
         <!-- CONTENT : INSPECT RUNS -->
-        <main class="container" id="compare-variables-container">
+        <main class="container" id="inspect-runs-container">
             <div class="columns">
 
                 <!-- SELECTORS -->
@@ -374,42 +379,51 @@
 
 
 
+            // Helper function to navigate between views
+            function changeView(classPrefix) {
+
+                // Enable/disable the active class on buttons
+                let buttons = document.getElementById("buttons-container")
+                .childNodes;
+                let toggledButtonId = classPrefix + "-button";
+
+                for(let i=0; i<buttons.length; i++) {
+                    console.log()
+                    if(toggledButtonId == buttons[i].id) {
+                        buttons[i].classList.add("is-active");
+                    }
+                    else if(buttons[i].classList != undefined) {
+                        buttons[i].classList.remove("is-active");
+                    }
+                }
+
+                // Show hide the containers
+                let containers = document.getElementsByTagName("MAIN");
+                let toggledContainerId = classPrefix + "-container"
+
+                for(let i=0; i<containers.length; i++) {
+                    if(toggledContainerId == containers[i].id) {
+                        containers[i].style.display = "block";
+                    }
+                    else {
+                        containers[i].style.display = "none";
+                    }
+                }
+            }
+
             // Listen to clicks on "Compare runs" button
             document.getElementById("compare-runs-button")
             .addEventListener("click", () => {
-
-                document.getElementById("compare-variables-container")
-                .style.display = "none";
-
-                document.getElementById("inspect-runs-button")
-                .classList.toggle("is-active");
-
-
-                document.getElementById("compare-runs-container")
-                .style.display = "block";
-
-                document.getElementById("compare-runs-button")
-                .classList.toggle("is-active");
-
+                // Nothing else to do for this button
+                changeView("compare-runs");
             });
 
             // Listen to clicks on "Inspect runs" button
-            // (dedicated function as this is needs to be called in a CustomJS callback)
+            // (dedicated function as this needs to be called in a CustomJS callback)
             function goToInspectRuns() {
-                window.scrollTo(0,0);
+                window.scrollTo(0, 0);
 
-                document.getElementById("compare-runs-container")
-                .style.display = "none";
-
-                document.getElementById("compare-runs-button")
-                .classList.toggle("is-active");
-
-
-                document.getElementById("compare-variables-container")
-                .style.display = "block";
-
-                document.getElementById("inspect-runs-button")
-                .classList.toggle("is-active");
+                changeView("inspect-runs");
             }
 
             document.getElementById("inspect-runs-button")
@@ -425,8 +439,6 @@
                 document.getElementById("report")
                 .style.display = "";
             }
-
-
 
             // To detect the end of Bokeh initialization and remove the loader,
             // we look at the number of children of a div containing widgets
@@ -466,7 +478,7 @@
 
                 // Loop through all elements, enable display if they have the
                 // correct class, disable otherwise
-                for (let i = 0; i < elements.length; i++) {
+                for (let i=0; i<elements.length; i++) {
                     elements[i].style.display =
                     elements[i].className.includes(classNames[id]) ? "" : "none";
                 }

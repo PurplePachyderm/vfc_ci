@@ -67,7 +67,7 @@ class CompareRuns:
     # Update plots based on current test/var/backend combination
     def update_plots(self):
 
-        # Select all data matching current test/var/backend
+            # Select all data matching current test/var/backend
         runs = self.data.loc[
             [self.widgets["select_test"].value],
             self.widgets["select_var"].value, self.widgets["select_backend"].value
@@ -77,36 +77,18 @@ class CompareRuns:
 
         x, x_metadata = self.gen_x_series(timestamps.sort_values())
 
-        # Update x_ranges
+            # Update x_ranges
         helper.reset_x_ranges(self.plots, list(x))
 
-
-        # Update source
-
+            # Update source
+        source_dict = runs.to_dict("series")
+        # Add x series
+        source_dict["x"] = x
+        # Add metadata (for tooltip)
+        source_dict.update(x_metadata)
         # Select the last n runs only
         n = self.current_n_runs
-        self.source.data = dict(
-            # Metadata
-            x = x[-n:],
-            is_git_commit = x_metadata["is_git_commit"][-n:],
-            date = x_metadata["date"][-n:],
-            hash = x_metadata["hash"][-n:],
-            author = x_metadata["author"][-n:],
-            message = x_metadata["message"][-n:],
-
-            # Data
-            sigma = runs["sigma"][-n:],
-            s10 = runs["s10"][-n:],
-            s2 = runs["s2"][-n:],
-            min = runs["min"][-n:],
-            quantile25 = runs["quantile25"][-n:],
-            quantile50 = runs["quantile50"][-n:],
-            quantile75 = runs["quantile75"][-n:],
-            max = runs["max"][-n:],
-            mu = runs["mu"][-n:],
-            pvalue = runs["pvalue"][-n:],
-            nsamples = runs["nsamples"][-n:]
-        )
+        self.source.data = {key:value[-n:] for key, value in source_dict.items()}
 
 
 
@@ -161,17 +143,17 @@ class CompareRuns:
         # New list of available backends
         self.backends = self.data.loc[self.widgets["select_test"].value, self.widgets["select_var"].value]\
         .index.get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.plots["select_backend"].options = self.backends
+        self.widgets["select_backend"].options = self.backends
 
         # Reset backend selection if old one is not available in new backends
-        if self.plots["select_backend"].value not in self.backends:
-            self.plots["select_backend"].value = self.backends[0]
+        if self.widgets["select_backend"].value not in self.backends:
+            self.widgets["select_backend"].value = self.backends[0]
             # The update_backend callback will be triggered by the assignment
 
         else:
             # Trigger the callback manually (since the plots need to be updated
             # anyway)
-            self.update_backend("", "", self.plots["select_backend"].value)
+            self.update_backend("", "", self.widgets["select_backend"].value)
 
 
     def update_backend(self, attrname, old, new):
@@ -283,6 +265,7 @@ class CompareRuns:
             ("Author", "@author"),
             ("Message", "@message"),
             ("s", "@s10"),
+            ("s lower bound", "@s10_lower_bound"),
             ("Number of samples", "@nsamples")
         ]
 
@@ -291,7 +274,8 @@ class CompareRuns:
             tooltips = s10_tooltips,
             js_tap_callback = js_tap_callback,
             server_tap_callback = self.inspect_run_callback,
-            lines = True
+            lines = True,
+            lower_bound=True
         )
         s10_tab = Panel(child=self.plots["s10_plot"], title="Base 10")
 
@@ -309,6 +293,7 @@ class CompareRuns:
             ("Author", "@author"),
             ("Message", "@message"),
             ("s", "@s2"),
+            ("s lower bound", "@s2_lower_bound"),
             ("Number of samples", "@nsamples")
         ]
 
@@ -317,7 +302,8 @@ class CompareRuns:
             tooltips = s2_tooltips,
             js_tap_callback = js_tap_callback,
             server_tap_callback = self.inspect_run_callback,
-            lines = True
+            lines = True,
+            lower_bound=True
         )
         s2_tab = Panel(child=self.plots["s2_plot"], title="Base 2")
 

@@ -10,7 +10,8 @@ def fill_dotplot(
     plot, source, data_field,
     tooltips=None, tooltips_formatters=None,
     js_tap_callback=None, server_tap_callback=None,
-    lines=False
+    lines=False,
+    lower_bound=False
 ):
 
     # (Optional) Tooltip and tooltip formatters
@@ -36,6 +37,15 @@ def fill_dotplot(
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="x", y=data_field, source=source)
+
+
+        # (Optional) Add segment to represent a lower bound
+    if lower_bound:
+        lower_segment = plot.segment(
+            x0="x", y0=data_field,
+            x1="x", y1="%s_lower_bound" % data_field,
+            source=source, line_color="black"
+        )
 
 
     # (Optional) Add server tap callback
