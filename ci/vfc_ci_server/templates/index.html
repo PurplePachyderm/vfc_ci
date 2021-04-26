@@ -168,8 +168,11 @@
                         <br>
                         {{ embed(roots.select_backend) }}
                         <br>
+                        {{ embed(roots.outliers_filtering_compare) }}
+                        <br>
                         <br>
                         {{ embed(roots.select_n_runs) }}
+
 
                         <br>
                         <br>
@@ -216,9 +219,8 @@
                 <div class="column">
                     <h4 class="title is-4">Selectors</h4>
                     {{ embed(roots.select_run) }}
-                    <br>
 
-                    {{ embed(roots.toggle_outliers_filtering) }}
+                    <br>
 
                     Group by :
                     {{ embed(roots.radio) }}
@@ -234,6 +236,10 @@
                     <div class="group-by-test" style="display: none;">
                         {{ embed(roots.select_backend_by_test) }}
                     </div>
+
+                    <br>
+
+                    {{ embed(roots.outliers_filtering_inspect) }}
 
                     <br>
                     <br>

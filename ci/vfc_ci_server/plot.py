@@ -30,6 +30,15 @@ def fill_dotplot(
         plot.add_tools(tap)
 
 
+    # (Optional) Add segment to represent a lower bound
+    if lower_bound:
+        lower_segment = plot.segment(
+            x0="x", y0=data_field,
+            x1="x", y1="%s_lower_bound" % data_field,
+            source=source, line_color="black"
+        )
+
+
     # Draw dots (actually Bokeh circles)
     circle = plot.circle(x="x", y=data_field, source=source, size=12)
 
@@ -37,15 +46,6 @@ def fill_dotplot(
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="x", y=data_field, source=source)
-
-
-        # (Optional) Add segment to represent a lower bound
-    if lower_bound:
-        lower_segment = plot.segment(
-            x0="x", y0=data_field,
-            x1="x", y1="%s_lower_bound" % data_field,
-            source=source, line_color="black"
-        )
 
 
     # (Optional) Add server tap callback

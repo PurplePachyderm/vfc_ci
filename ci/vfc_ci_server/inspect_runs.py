@@ -4,7 +4,6 @@ import json
 
 import pandas as pd
 import numpy as np
-import scipy.stats
 
 from math import pi
 from bokeh.plotting import figure, curdoc
@@ -15,8 +14,6 @@ RadioButtonGroup, CheckboxGroup, CustomJS
 import helper
 import plot
 
-# Magic numbers
-max_zscore=3
 
 ################################################################################
 
@@ -68,18 +65,25 @@ class InspectRuns:
 
 
     # Data processing for all modes
+    # (computes new distributions for sigma, s2, s10)
     def data_processing(self, dataframe):
 
+        # Compute aggragated mu
         dataframe["mu"] = np.vectorize(np.average)(dataframe["mu"], weights=dataframe["nsamples"])
 
-        # Now that aggregated mu has been computed, nsamples is the number of
-        # aggregated tests (which is the number of samples for our new sigma
-        # and s distributions)
+        # nsamples is the number of aggregated elements (as well as the number
+        # of samples for our new sigma and s distributions)
         dataframe["nsamples"] = dataframe["nsamples"].apply(lambda x: len(x))
 
         # Get quantiles and mu for sigma, s10, s2
         for stat in ["sigma", "s10", "s2"]:
+
             dataframe[stat] = dataframe[stat].apply(np.sort)
+
+            # Filter outliers if the box is checked
+            if len(self.widgets["outliers_filtering_inspect"].active) > 0:
+                dataframe[stat] = dataframe[stat].apply(helper.filter_outliers)
+
             dataframe["%s_min" % stat] = dataframe[stat].apply(np.min)
             dataframe["%s_quantile25" % stat] = dataframe[stat].apply(np.quantile, args=(0.25,))
             dataframe["%s_quantile50" % stat] = dataframe[stat].apply(np.quantile, args=(0.50,))
@@ -117,6 +121,7 @@ class InspectRuns:
             "nsamples": lambda x: x.tolist()
         })
 
+        # Compute the new distributions, ...
         backends = self.data_processing(backends)
 
         self.backend_source.data = backends.to_dict("list")
@@ -235,6 +240,12 @@ class InspectRuns:
         self.update_backend_plots()
 
     def update_test(self, attrname, old, new):
+        self.update_test_plots()
+
+
+    def update_outliers_filtering(self, attrname, old, new):
+        self.update_var_plots()
+        self.update_backend_plots()
         self.update_test_plots()
 
 
@@ -506,11 +517,13 @@ class InspectRuns:
 
             # Toggle for outliers filtering
 
-        self.widgets["toggle_outliers_filtering"] = CheckboxGroup(
-            name="toggle_outliers_filtering",
-            labels=["Filter outliers"], active =[]
+        self.widgets["outliers_filtering_inspect"] = CheckboxGroup(
+            name="outliers_filtering_inspect",
+            labels=["Filter outliers"], active = []
         )
-        self.doc.add_root(self.widgets["toggle_outliers_filtering"])
+        self.doc.add_root(self.widgets["outliers_filtering_inspect"])
+        self.widgets["outliers_filtering_inspect"]\
+        .on_change("active", self.update_outliers_filtering)
 
 
             # Plotting mode radio
@@ -537,8 +550,8 @@ class InspectRuns:
             # Group by backends (mode 0)
             # (and select a variable)
 
-        vars = self.filtered_data.index.\
-        get_level_values("variable").drop_duplicates().tolist()
+        vars = self.filtered_data.index\
+        .get_level_values("variable").drop_duplicates().tolist()
 
         self.widgets["select_var_by_backend"] = Select(
             # We need a different name to avoid collision in the template with
@@ -547,14 +560,15 @@ class InspectRuns:
             value=vars[0], options=vars
         )
         self.doc.add_root(self.widgets["select_var_by_backend"])
-        self.widgets["select_var_by_backend"].on_change("value", self.update_backend)
+        self.widgets["select_var_by_backend"]\
+        .on_change("value", self.update_backend)
 
 
             # Group by variables (mode 1)
             # (and select a backend)
 
-        backends = self.filtered_data.index.\
-        get_level_values("vfc_backend").drop_duplicates().tolist()
+        backends = self.filtered_data.index\
+        .get_level_values("vfc_backend").drop_duplicates().tolist()
 
         self.widgets["select_backend_by_var"] = Select(
             # We need a different name to avoid collision in the template with

@@ -20,6 +20,7 @@ import sigdigits as sd
 
 # Magic numbers
 min_pvalue = 0.05
+max_zscore = 3
 
 
 ################################################################################
@@ -93,6 +94,21 @@ def significant_digits(x):
 
     return s[0]
 
+
+# Remove outliers from an array
+def filter_outliers(array):
+    if len(array) <= 2:
+        return array
+
+    mean = np.mean(array)
+    std = np.std(array)
+    if std == 0:
+        return array
+    distance = abs(array - mean)
+    # Array of booleans with elements to be filtered
+    filtered = distance < max_zscore * std
+
+    return array[filtered]
 
 
 ################################################################################
@@ -274,21 +290,30 @@ def run(is_git_commit, export_raw_values):
 
 
     data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
-    data["s10"] = - np.log10(np.absolute( data["sigma"] / data["mu"] ))
+    data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
 
     # Lower bound of the confidence interval using the sigdigits module
     data["s2_lower_bound"] = data.apply(significant_digits, axis=1)
-    data["s10_lower_bound"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
+    data["s10_lower_bound"] = data["s2_lower_bound"].apply(lambda x: sd.change_base(x, 10))
+
 
 
     data["values"] = data["values"].apply(np.sort)
-    data["min"] = data["values"].apply(np.min)
-    data["quantile25"] = data["values"].apply(np.quantile, args=(0.25,))
-    data["quantile50"] = data["values"].apply(np.quantile, args=(0.50,))
-    data["quantile75"] = data["values"].apply(np.quantile, args=(0.75,))
-    data["max"] = data["values"].apply(np.max)
-    data["nsamples"] = data["values"].apply(len)
+    data["filtered_values"] = data["values"].apply(filter_outliers)
 
+    # Get moments of distribution and outliers-filtered distribution
+    for prefix in ["", "filtered_"]:
+
+        data["%smu"%prefix] = data["%svalues"%prefix].apply(np.average)
+        data["%smin"%prefix] = data["%svalues"%prefix].apply(np.min)
+        data["%squantile25"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.25,))
+        data["%squantile50"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.50,))
+        data["%squantile75"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.75,))
+        data["%smax"%prefix] = data["%svalues"%prefix].apply(np.max)
+
+    del data["filtered_values"]
+
+    data["nsamples"] = data["values"].apply(len)
 
     # Prepare data for export
     data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()

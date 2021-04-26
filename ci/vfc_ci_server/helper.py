@@ -3,8 +3,11 @@
 import calendar
 import time
 
+import numpy as np
+
 # Magic numbers
 max_ticks = 15
+max_zscore = 3
 
 ################################################################################
 
@@ -122,3 +125,19 @@ def reset_x_ranges(plots, x_range):
             value.xaxis.minor_tick_line_color = None
 
             value.xaxis.major_label_text_font_size = "0pt"
+
+
+# Remove outliers from an array
+def filter_outliers(array):
+    if len(array) <= 2:
+        return array
+
+    mean = np.mean(array)
+    std = np.std(array)
+    if std == 0:
+        return array
+    distance = abs(array - mean)
+    # Array of booleans with elements to be filtered
+    filtered = distance < max_zscore * std
+
+    return array[filtered]

@@ -9,10 +9,11 @@ from math import pi
 from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool, \
-TextInput, TapTool, CustomJS
+TextInput, CheckboxGroup, TapTool, CustomJS
 
 import helper
 import plot
+
 
 ################################################################################
 
@@ -68,27 +69,51 @@ class CompareRuns:
     def update_plots(self):
 
             # Select all data matching current test/var/backend
+
         runs = self.data.loc[
             [self.widgets["select_test"].value],
             self.widgets["select_var"].value, self.widgets["select_backend"].value
         ]
 
         timestamps = runs["timestamp"]
-
         x, x_metadata = self.gen_x_series(timestamps.sort_values())
 
+
             # Update x_ranges
+
         helper.reset_x_ranges(self.plots, list(x))
 
             # Update source
+
         source_dict = runs.to_dict("series")
         # Add x series
         source_dict["x"] = x
         # Add metadata (for tooltip)
         source_dict.update(x_metadata)
+
         # Select the last n runs only
         n = self.current_n_runs
-        self.source.data = {key:value[-n:] for key, value in source_dict.items()}
+
+        dict = {key:value[-n:] for key, value in source_dict.items()}
+
+        # If we want to filter the series, replace moments by the "filtered" ones
+        if len(self.widgets["outliers_filtering_compare"].active) > 0:
+            dict["min"] = dict["filtered_min"]
+            dict["quantile25"] = dict["filtered_quantile25"]
+            dict["quantile50"] = dict["filtered_quantile50"]
+            dict["quantile75"] = dict["filtered_quantile75"]
+            dict["max"] = dict["filtered_max"]
+            dict["mu"] = dict["filtered_mu"]
+
+        # Remove outliers-filtered moments (they have just been replaced if needed)
+        del dict["filtered_min"]
+        del dict["filtered_quantile25"]
+        del dict["filtered_quantile50"]
+        del dict["filtered_quantile75"]
+        del dict["filtered_max"]
+        del dict["filtered_mu"]
+
+        self.source.data = dict
 
 
 
@@ -167,6 +192,10 @@ class CompareRuns:
         self.select_n_runs.value = new
         self.current_n_runs = self.n_runs_dict[self.select_n_runs.value]
 
+        self.update_plots()
+
+
+    def update_outliers_filtering(self, attrname, old, new):
         self.update_plots()
 
 
@@ -404,6 +433,17 @@ class CompareRuns:
         )
         self.doc.add_root(self.widgets["select_backend"])
         self.widgets["select_backend"].on_change("value", self.update_backend)
+
+
+            # Outliers filtering checkbox
+
+        self.widgets["outliers_filtering_compare"] = CheckboxGroup(
+            name="outliers_filtering_compare",
+            labels=["Filter outliers"], active =[]
+        )
+        self.doc.add_root(self.widgets["outliers_filtering_compare"])
+        self.widgets["outliers_filtering_compare"]\
+        .on_change("active", self.update_outliers_filtering)
 
 
 
