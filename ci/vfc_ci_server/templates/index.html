@@ -223,19 +223,13 @@
                     <br>
 
                     Group by :
-                    {{ embed(roots.radio) }}
+                    {{ embed(roots.groupby_radio) }}
 
-                    <div class="group-by-backend">
-                        {{ embed(roots.select_var_by_backend) }}
-                    </div>
+                    <br>
 
-                    <div class="group-by-variable" style="display: none;">
-                        {{ embed(roots.select_backend_by_var) }}
-                    </div>
-
-                    <div class="group-by-test" style="display: none;">
-                        {{ embed(roots.select_backend_by_test) }}
-                    </div>
+                    Filter by :
+                    {{ embed(roots.filterby_radio) }}
+                    {{ embed(roots.select_filter) }}
 
                     <br>
 
@@ -297,61 +291,23 @@
                 <!-- PLOTS -->
                 <div class="column is-9">
                     <h3 class="title is-3">Plots</h3>
-                    <div class="container group-by-backend">
                         <div class="card plot-card">
-                            {{ embed(roots.s_tabs_backend) }}
+                            {{ embed(roots.s_tabs_inspect) }}
                         </div>
 
                         <br>
 
                         <div class="card plot-card">
-                            {{ embed(roots.sigma_backend) }}
+                            {{ embed(roots.sigma_inspect) }}
                         </div>
 
                         <br>
 
                         <div class="card plot-card">
-                            {{ embed(roots.mu_backend) }}
+                            {{ embed(roots.mu_inspect) }}
                         </div>
                     </div>
 
-                    <div class="container group-by-variable" style="display: none;">
-                        <div class="card plot-card">
-                            {{ embed(roots.s_tabs_var) }}
-                        </div>
-
-                        <br>
-
-                        <div class="card plot-card">
-                            {{ embed(roots.sigma_var) }}
-                        </div>
-
-                        <br>
-
-                        <div class="card plot-card">
-                            {{ embed(roots.mu_var) }}
-                        </div>
-                    </div>
-
-                    <div class="container group-by-test" style="display: none;">
-                        <div class="card plot-card">
-                            {{ embed(roots.s_tabs_test) }}
-                        </div>
-
-                        <br>
-
-                        <div class="card plot-card">
-                            {{ embed(roots.sigma_test) }}
-                        </div>
-
-                        <br>
-
-                        <div class="card plot-card">
-                            {{ embed(roots.mu_test) }}
-                        </div>
-                    </div>
-
-                    </div>
             </div>
         </main>
 
@@ -463,32 +419,6 @@
                 }
             }
             setTimeout(pollBokehLoading, 100);
-
-
-
-            // Change plotting mode in runs inspection
-            function changePlottingMode(id) {
-
-                // Hardcoding the ID/class name correspondance is probably the
-                // best way, since this is server dependent (apart from passing
-                // the array< as a template parameter ?)
-                let classNames = [
-                    "group-by-backend",
-                    "group-by-variable",
-                    "group-by-test"
-                ]
-
-                let elements = document.querySelectorAll(
-                    ".group-by-backend, .group-by-variable, .group-by-test"
-                );
-
-                // Loop through all elements, enable display if they have the
-                // correct class, disable otherwise
-                for (let i=0; i<elements.length; i++) {
-                    elements[i].style.display =
-                    elements[i].className.includes(classNames[id]) ? "" : "none";
-                }
-            }
 
 
 

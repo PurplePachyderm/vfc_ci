@@ -124,9 +124,14 @@ class CompareRuns:
         # If the value is updated by the CustomJS, self.widgets["select_var"].value
         # won't be updated, so we have to look for that case and assign it manually
 
-        # new should be a list when updated by CustomJS
+        # "new" should be a list when updated by CustomJS
         if type(new) == list:
-            new = new[0]
+            # If filtering removed all options, we might have an empty list
+            # (in this case, we just skip the callback and do nothing)
+            if len(new) > 0:
+                new = new[0]
+            else:
+                return
 
         if new != self.widgets["select_test"].value:
             # The callback will be triggered again with the updated value

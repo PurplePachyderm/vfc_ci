@@ -100,18 +100,25 @@ class InspectRuns:
         return dataframe
 
 
-    # It's better to have one update_plots function for each mode since most of
-    # the time we will likely update only one view
+    def update_plots(self):
 
-    # Update plots ("Group by backends" mode only)
-    def update_backend_plots(self):
+        groupby_display = self.widgets["groupby_radio"].labels[
+            self.widgets["groupby_radio"].active
+        ]
+        groupby = self.factors_dict[groupby_display]
+
+        filterby_display = self.widgets["filterby_radio"].labels[
+            self.widgets["filterby_radio"].active
+        ]
+        filterby = self.factors_dict[filterby_display]
+
 
         # For a given variable, get all backends (across all tests)
-        backends = self.filtered_data[
-            self.filtered_data.index.isin([self.widgets["select_var_by_backend"].value], level=1)
-        ].groupby("vfc_backend")
+        groups = self.run_data[
+            self.run_data.index.isin([self.widgets["select_filter"].value], level=filterby)
+        ].groupby(groupby)
 
-        backends = backends.agg({
+        groups = groups.agg({
             "sigma": lambda x: x.tolist(),
             "s10": lambda x: x.tolist(),
             "s2": lambda x: x.tolist(),
@@ -122,131 +129,146 @@ class InspectRuns:
         })
 
         # Compute the new distributions, ...
-        backends = self.data_processing(backends)
+        groups = self.data_processing(groups)
 
-        self.backend_source.data = backends.to_dict("list")
-
-        # Update x_ranges
-        self.backend_plots["mu_backend"].x_range.factors = list(backends["x"])
-        self.backend_plots["sigma_backend"].x_range.factors = list(backends["x"])
-        self.backend_plots["s10_backend"].x_range.factors = list(backends["x"])
-        self.backend_plots["s2_backend"].x_range.factors = list(backends["x"])
-
-        helper.reset_x_ranges(self.backend_plots, list(backends["x"]))
+        self.source.data = groups.to_dict("list")
 
 
-    # Update plots ("Group by variables" mode only)
-    def update_var_plots(self):
+        # Update plots
+        # Get remaining display
+        factors_dict = self.factors_dict.copy()
+        del factors_dict[groupby_display]
+        del factors_dict[filterby_display]
+        over_all = list(factors_dict.keys())[0]
 
-        # For a given backend, get all variables (across all tests)
-        vars = self.filtered_data[
-            self.filtered_data.index.isin([self.widgets["select_backend_by_var"].value], level=2)
-        ].groupby("variable")
+        # Get all display strings to update title
+        groupby_display = groupby_display.lower()
+        filterby_display = filterby_display.lower()[:-1]
+        over_all = over_all.lower()
 
-        vars = vars.agg({
-            "sigma": lambda x: x.tolist(),
-            "s10": lambda x: x.tolist(),
-            "s2": lambda x: x.tolist(),
-            "mu": lambda x: x.tolist(),
-
-            # Used for mu weighted average first, then will be replaced
-            "nsamples": lambda x: x.tolist()
-        })
-
-        vars = self.data_processing(vars)
-
-        self.var_source.data = vars.to_dict("list")
+        self.plots["mu_inspect"].title.text = \
+        "Empirical average μ of %s (groupped by %s, for all %s)" \
+        % (filterby_display, groupby_display, over_all)
+        self.plots["sigma_inspect"].title.text = \
+        "Standard deviation σ of %s (groupped by %s, for all %s)" \
+        % (filterby_display, groupby_display, over_all)
+        self.plots["s10_inspect"].title.text = \
+        "Significant digits s of %s (groupped by %s, for all %s)" \
+        % (filterby_display, groupby_display, over_all)
+        self.plots["s2_inspect"].title.text = \
+        "Significant digits s of %s (groupped by %s, for all %s)" \
+        % (filterby_display, groupby_display, over_all)
 
         # Update x_ranges
-        helper.reset_x_ranges(self.var_plots, list(vars["x"]))
+        self.plots["mu_inspect"].x_range.factors = list(groups["x"])
+        self.plots["sigma_inspect"].x_range.factors = list(groups["x"])
+        self.plots["s10_inspect"].x_range.factors = list(groups["x"])
+        self.plots["s2_inspect"].x_range.factors = list(groups["x"])
 
-
-    # Update plots ("Group by tests" mode only)
-    def update_test_plots(self):
-
-        # For a given backend, get all tests (across all variables)
-        tests = self.filtered_data[
-            self.filtered_data.index.isin([self.widgets["select_backend_by_test"].value], level=2)
-        ].groupby("test")
-
-        tests = tests.agg({
-            "sigma": lambda x: x.tolist(),
-            "s10": lambda x: x.tolist(),
-            "s2": lambda x: x.tolist(),
-            "mu": lambda x: x.tolist(),
-
-            # Used for mu weighted average first, then will be replaced
-            "nsamples": lambda x: x.tolist()
-        })
-
-        tests = self.data_processing(tests)
-
-        self.test_source.data = tests.to_dict("list")
-
-        # Update x_ranges
-        helper.reset_x_ranges(self.test_plots, list(tests["x"]))
+        helper.reset_x_ranges(self.plots, list(groups["x"]))
 
 
 
         # Widets' callback functions
 
+    # Run selector callback
     def update_run(self, attrname, old, new):
 
-        # Update_run selection (both display and timestamp by using dict mapping)
-        self.current_run_display = new
+        filterby = self.widgets["filterby_radio"].labels[
+            self.widgets["filterby_radio"].active
+        ]
+        filterby = self.factors_dict[filterby]
+
+        # Update run selection (by using dict mapping)
         self.current_run = self.runs_dict[new]
 
-        # This will be reused when updating plots (to avoid filtering same data)
-        self.filtered_data = self.data[self.data["timestamp"] == self.current_run]
+        # Update run data
+        self.run_data = self.data[self.data["timestamp"] == self.current_run]
 
+        # Save old selected option
+        old_value = self.widgets["select_filter"].value
 
-        # New list of available vars
-        vars = self.filtered_data.index.\
-        get_level_values("variable").drop_duplicates().tolist()
-        self.widgets["select_var_by_backend"].options = vars
+        # Update filter options
+        options = self.run_data.index\
+        .get_level_values(filterby).drop_duplicates().tolist()
+        self.widgets["select_filter"].options = options
 
-        # Reset variable selection if old one is not available in new vars
-        if self.widgets["select_var_by_backend"].value not in vars:
-            self.widgets["select_var_by_backend"].value = vars[0]
+        if old_value not in self.widgets["select_filter"].options:
+            self.widgets["select_filter"].value = options[0]
+            # The update_var callback will be triggered by the assignment
 
         else:
-            # We still need to redraw the var plots
-            self.update_var_plots()
+            # Trigger the callback manually (since the plots need to be updated
+            # anyway)
+            self.update_filter("", "", old_value)
 
 
-        # New list of available backends
-        backends = self.filtered_data.index.\
-        get_level_values("vfc_backend").drop_duplicates().tolist()
-        self.widgets["select_backend_by_var"].options = backends
+    # "Group by" radio
+    def update_groupby(self, attrname, old, new):
 
-        # Reset backend selection if old one is not available in new backends
-        if self.widgets["select_backend_by_var"].value not in backends:
-            self.widgets["select_backend_by_var"].value = backends[0]
+        # Update "Filter by" radio list
+        filterby_list = list(self.factors_dict.keys())
+        del filterby_list[self.widgets["groupby_radio"].active]
+        self.widgets["filterby_radio"].labels = filterby_list
+
+
+        filterby = self.widgets["filterby_radio"].labels[
+            self.widgets["filterby_radio"].active
+        ]
+        filterby = self.factors_dict[filterby]
+
+        # Save old selected option
+        old_value = self.widgets["select_filter"].value
+
+        # Update filter options
+        options = self.run_data.index\
+        .get_level_values(filterby).drop_duplicates().tolist()
+        self.widgets["select_filter"].options = options
+
+        if old_value not in self.widgets["select_filter"].options:
+            self.widgets["select_filter"].value = options[0]
+            # The update_var callback will be triggered by the assignment
+
         else:
-            # We still need to redraw the backend plots
-            self.update_backend_plots()
+            # Trigger the callback manually (since the plots need to be updated
+            # anyway)
+            self.update_filter("", "", old_value)
 
-        if self.widgets["select_backend_by_test"].value not in backends:
-            self.widgets["select_backend_by_test"].value = backends[0]
+
+    # "Filter by" radio
+    def update_filterby(self, attrname, old, new):
+
+        filterby = self.widgets["filterby_radio"].labels[
+            self.widgets["filterby_radio"].active
+        ]
+        filterby = self.factors_dict[filterby]
+
+        # Save old selected option
+        old_value = self.widgets["select_filter"].value
+
+        # Update filter selector options
+        options = self.run_data.index\
+        .get_level_values(filterby).drop_duplicates().tolist()
+        self.widgets["select_filter"].options = options
+
+        if old_value not in self.widgets["select_filter"].options:
+            self.widgets["select_filter"].value = options[0]
+            # The update_var callback will be triggered by the assignment
+
         else:
-            # We still need to redraw the backend plots
-            self.update_test_plots()
+            # Trigger the callback manually (since the plots need to be updated
+            # anyway)
+            self.update_filter("", "", old_value)
 
 
-    def update_var(self, attrname, old, new):
-        self.update_var_plots()
-
-    def update_backend(self, attrname, old, new):
-        self.update_backend_plots()
-
-    def update_test(self, attrname, old, new):
-        self.update_test_plots()
+    # Filter selector callback
+    def update_filter(self, attrname, old, new):
+        self.update_plots()
 
 
+    # Filter outliers checkbox callback
     def update_outliers_filtering(self, attrname, old, new):
-        self.update_var_plots()
-        self.update_backend_plots()
-        self.update_test_plots()
+        self.update_plots()
 
 
 
@@ -278,230 +300,109 @@ class InspectRuns:
         s2_boxplot_tooltips = self.gen_boxplot_tooltips("s2")
         s2_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("s2")
 
-            # "Group by backends" plots
+
+            # Plots
 
         # Mu plot
-        self.backend_plots["mu_backend"] = figure(
-            name="mu_backend",
+        self.plots["mu_inspect"] = figure(
+            name="mu_inspect",
             title="Empirical average μ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
         plot.fill_dotplot(
-            self.backend_plots["mu_backend"], self.backend_source, "mu",
+            self.plots["mu_inspect"], self.source, "mu",
             tooltips = dotplots_tooltips,
             tooltips_formatters = dotplot_formatters
         )
-        self.doc.add_root(self.backend_plots["mu_backend"])
+        self.doc.add_root(self.plots["mu_inspect"])
 
 
         # Sigma plot
-        self.backend_plots["sigma_backend"] = figure(
-            name="sigma_backend",
+        self.plots["sigma_inspect"] = figure(
+            name="sigma_inspect",
             title="Standard deviation σ of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
         plot.fill_boxplot(
-            self.backend_plots["sigma_backend"], self.backend_source, prefix="sigma",
+            self.plots["sigma_inspect"], self.source, prefix="sigma",
             tooltips = sigma_boxplot_tooltips,
             tooltips_formatters = sigma_boxplot_tooltips_formatters
         )
-        self.doc.add_root(self.backend_plots["sigma_backend"])
+        self.doc.add_root(self.plots["sigma_inspect"])
 
 
         # s plots
-        self.backend_plots["s10_backend"] = figure(
-            name="s10_backend",
+        self.plots["s10_inspect"] = figure(
+            name="s10_inspect",
             title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
         plot.fill_boxplot(
-            self.backend_plots["s10_backend"], self.backend_source, prefix="s10",
+            self.plots["s10_inspect"], self.source, prefix="s10",
             tooltips = s10_boxplot_tooltips,
             tooltips_formatters = s10_boxplot_tooltips_formatters
         )
-        s10_tab_backend = Panel(child=self.backend_plots["s10_backend"], title="Base 10")
+        s10_tab_inspect = Panel(child=self.plots["s10_inspect"], title="Base 10")
 
-        self.backend_plots["s2_backend"] = figure(
-            name="s2_backend",
+        self.plots["s2_inspect"] = figure(
+            name="s2_inspect",
             title="Significant digits s of variable (groupped by backends)",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
         plot.fill_boxplot(
-            self.backend_plots["s2_backend"], self.backend_source, prefix="s2",
+            self.plots["s2_inspect"], self.source, prefix="s2",
             tooltips = s2_boxplot_tooltips,
             tooltips_formatters = s2_boxplot_tooltips_formatters
         )
-        s2_tab_backend = Panel(child=self.backend_plots["s2_backend"], title="Base 2")
+        s2_tab_inspect = Panel(child=self.plots["s2_inspect"], title="Base 2")
 
-        s_tabs_backend = Tabs(
-            name = "s_tabs_backend",
-            tabs=[s10_tab_backend, s2_tab_backend], tabs_location = "below"
+        s_tabs_inspect = Tabs(
+            name = "s_tabs_inspect",
+            tabs=[s10_tab_inspect, s2_tab_inspect], tabs_location = "below"
         )
-        self.doc.add_root(s_tabs_backend)
+        self.doc.add_root(s_tabs_inspect)
 
-
-
-            # "Group by variables" plots
-
-        # Mu plot
-        self.var_plots["mu_var"] = figure(
-            name="mu_var",
-            title="Empirical average μ of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode="scale_width"
-        )
-        plot.fill_dotplot(
-            self.var_plots["mu_var"], self.var_source, "mu",
-            tooltips = dotplots_tooltips,
-            tooltips_formatters = dotplot_formatters
-        )
-        self.doc.add_root(self.var_plots["mu_var"])
-
-
-        # Sigma plot
-        self.var_plots["sigma_var"] = figure(
-            name="sigma_var",
-            title="Standard deviation σ of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode="scale_width"
-        )
-        plot.fill_boxplot(
-            self.var_plots["sigma_var"], self.var_source, prefix="sigma",
-            tooltips = sigma_boxplot_tooltips,
-            tooltips_formatters = sigma_boxplot_tooltips_formatters
-        )
-        self.doc.add_root(self.var_plots["sigma_var"])
-
-
-        # s plots
-        self.var_plots["s10_var"] = figure(
-            name="s10_var",
-            title="Significant digits s of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
-        )
-        plot.fill_boxplot(
-            self.var_plots["s10_var"], self.var_source, prefix="s10",
-            tooltips = s10_boxplot_tooltips,
-            tooltips_formatters = s10_boxplot_tooltips_formatters
-        )
-        s10_tab_var = Panel(child=self.var_plots["s10_var"], title="Base 10")
-
-        self.var_plots["s2_var"] = figure(
-            name="s2_var",
-            title="Significant digits s of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
-        )
-        plot.fill_boxplot(
-            self.var_plots["s2_var"], self.var_source, prefix="s2",
-            tooltips = s2_boxplot_tooltips,
-            tooltips_formatters = s2_boxplot_tooltips_formatters
-        )
-        s2_tab_var = Panel(child=self.var_plots["s2_var"], title="Base 2")
-
-        s_tabs_var = Tabs(
-            name = "s_tabs_var", tabs=[s10_tab_var, s2_tab_var],
-            tabs_location = "below"
-        )
-        self.doc.add_root(s_tabs_var)
-
-
-
-            # "Group by tests" plots
-
-        # Mu plot
-        self.test_plots["mu_test"] = figure(
-            name="mu_test",
-            title="Empirical average μ of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode="scale_width"
-        )
-        plot.fill_dotplot(
-            self.test_plots["mu_test"], self.test_source, "mu",
-            tooltips = dotplots_tooltips,
-            tooltips_formatters = dotplot_formatters
-        )
-        self.doc.add_root(self.test_plots["mu_test"])
-
-
-        # Sigma plot
-        self.test_plots["sigma_test"] = figure(
-            name="sigma_test",
-            title="Standard deviation σ of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode="scale_width"
-        )
-        plot.fill_boxplot(
-            self.test_plots["sigma_test"], self.test_source, prefix="sigma",
-            tooltips = sigma_boxplot_tooltips,
-            tooltips_formatters = sigma_boxplot_tooltips_formatters
-        )
-        self.doc.add_root(self.test_plots["sigma_test"])
-
-
-        # s plots
-        self.test_plots["s10_test"] = figure(
-            name="s10_test",
-            title="Significant digits s of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
-        )
-        plot.fill_boxplot(
-            self.test_plots["s10_test"], self.test_source, prefix="s10",
-            tooltips = s10_boxplot_tooltips,
-            tooltips_formatters = s10_boxplot_tooltips_formatters
-        )
-        s10_tab_test = Panel(child=self.test_plots["s10_test"], title="Base 10")
-
-        self.test_plots["s2_test"] = figure(
-            name="s2_test",
-            title="Significant digits s of backend (groupped by variables)",
-            plot_width=900, plot_height=400, x_range=[""],
-            tools=tools, sizing_mode='scale_width'
-        )
-        plot.fill_boxplot(
-            self.test_plots["s2_test"], self.test_source, prefix="s2",
-            tooltips = s2_boxplot_tooltips,
-            tooltips_formatters = s2_boxplot_tooltips_formatters
-        )
-        s2_tab_test = Panel(child=self.test_plots["s2_test"], title="Base 2")
-
-        s_tabs_test = Tabs(
-            name = "s_tabs_test", tabs=[s10_tab_test, s2_tab_test],
-            tabs_location = "below"
-        )
-        self.doc.add_root(s_tabs_test)
 
 
     def setup_widgets(self):
 
-            # Run selection
+            # Generation of selectable items
 
         # Dict contains all inspectable runs (maps display strings to timestamps)
         # The dict structure allows to get the timestamp from the display string
         # in O(1)
         self.runs_dict = self.gen_runs_selection()
 
+        # Dict maps display strings to column names for the different factors
+        # (var, backend, test)
+        self.factors_dict = {
+            "Variables": "variable",
+            "Backends": "vfc_backend",
+            "Tests": "test"
+        }
+
+
+            # Run selection
+
         # Contains all options strings
         runs_display = list(self.runs_dict.keys())
-
         # Will be used when updating plots (contains actual number)
         self.current_run = self.runs_dict[runs_display[-1]]
-
         # Contains the selected option string, used to update current_n_runs
-        self.current_run_display = runs_display[-1]
+        current_run_display = runs_display[-1]
+        # This contains only entries matching the run
+        self.run_data = self.data[self.data["timestamp"] == self.current_run]
 
 
         change_run_callback_js="updateRunMetadata(cb_obj.value);"
 
         self.widgets["select_run"] = Select(
             name="select_run", title="Run :",
-            value=self.current_run_display, options=runs_display
+            value=current_run_display, options=runs_display
         )
         self.doc.add_root(self.widgets["select_run"])
         self.widgets["select_run"].on_change("value", self.update_run)
@@ -515,6 +416,61 @@ class InspectRuns:
         ))
 
 
+            # Factors selection
+
+        # "Group by" radio
+        self.widgets["groupby_radio"] = RadioButtonGroup(
+            name="groupby_radio",
+            labels=list(self.factors_dict.keys()), active=0
+        )
+        self.doc.add_root(self.widgets["groupby_radio"])
+        # The functions are defined inside the template to avoid writing too
+        # much JS server side
+        self.widgets["groupby_radio"].on_change(
+            "active",
+            self.update_groupby
+        )
+
+
+        # "Filter by" radio
+        # Get all possible factors, and remove the one selected in "Group by"
+        filterby_list = list(self.factors_dict.keys())
+        del filterby_list[self.widgets["groupby_radio"].active]
+
+        self.widgets["filterby_radio"] = RadioButtonGroup(
+            name="filterby_radio",
+            labels=filterby_list, active=0
+        )
+        self.doc.add_root(self.widgets["filterby_radio"])
+        # The functions are defined inside the template to avoid writing too
+        # much JS server side
+        self.widgets["filterby_radio"].on_change(
+            "active",
+            self.update_filterby
+        )
+
+
+        # Filter selector
+
+        filterby = self.widgets["filterby_radio"].labels[
+            self.widgets["filterby_radio"].active
+        ]
+        filterby = self.factors_dict[filterby]
+
+        options = self.run_data.index\
+        .get_level_values(filterby).drop_duplicates().tolist()
+
+        self.widgets["select_filter"] = Select(
+            # We need a different name to avoid collision in the template with
+            # the runs comparison's widget
+            name="select_filter", title="Select a filter :",
+            value=options[0], options=options
+        )
+        self.doc.add_root(self.widgets["select_filter"])
+        self.widgets["select_filter"]\
+        .on_change("value", self.update_filter)
+
+
             # Toggle for outliers filtering
 
         self.widgets["outliers_filtering_inspect"] = CheckboxGroup(
@@ -524,73 +480,6 @@ class InspectRuns:
         self.doc.add_root(self.widgets["outliers_filtering_inspect"])
         self.widgets["outliers_filtering_inspect"]\
         .on_change("active", self.update_outliers_filtering)
-
-
-            # Plotting mode radio
-
-        # Once a run is selected, it is possible to group either by backend
-        # or variable to obtain plots (via a radio button to switch modes)
-        modes = ["Backends", "Variables", "Tests"]
-
-        self.widgets["radio"] = RadioButtonGroup(
-            name="radio",
-            labels=modes, active=0
-        )
-        self.doc.add_root(self.widgets["radio"])
-        # The functions are defined inside the template to avoid writing too
-        # much JS server side
-        radio_callback_js = "changePlottingMode(cb_obj.active);"
-        self.widgets["radio"].js_on_change("active", CustomJS(code=radio_callback_js))
-
-
-        # This will be reused when updating plots (to avoid filtering same data)
-        self.filtered_data = self.data[self.data["timestamp"] == self.current_run]
-
-
-            # Group by backends (mode 0)
-            # (and select a variable)
-
-        vars = self.filtered_data.index\
-        .get_level_values("variable").drop_duplicates().tolist()
-
-        self.widgets["select_var_by_backend"] = Select(
-            # We need a different name to avoid collision in the template with
-            # the runs comparison's widget
-            name="select_var_by_backend", title="Select a variable :",
-            value=vars[0], options=vars
-        )
-        self.doc.add_root(self.widgets["select_var_by_backend"])
-        self.widgets["select_var_by_backend"]\
-        .on_change("value", self.update_backend)
-
-
-            # Group by variables (mode 1)
-            # (and select a backend)
-
-        backends = self.filtered_data.index\
-        .get_level_values("vfc_backend").drop_duplicates().tolist()
-
-        self.widgets["select_backend_by_var"] = Select(
-            # We need a different name to avoid collision in the template with
-            # the runs comparison's widget
-            name="select_backend_by_var", title="Select a backend :",
-            value=backends[0], options=backends
-        )
-        self.doc.add_root(self.widgets["select_backend_by_var"])
-        self.widgets["select_backend_by_var"].on_change("value", self.update_var)
-
-
-            # Group by tests (mode 2)
-            # (and select a backend)
-
-        self.widgets["select_backend_by_test"] = Select(
-            # We need a different name to avoid collision in the template with
-            # the runs comparison's widget
-            name="select_backend_by_test", title="Select a backend :",
-            value=backends[0], options=backends
-        )
-        self.doc.add_root(self.widgets["select_backend_by_test"])
-        self.widgets["select_backend_by_test"].on_change("value", self.update_test)
 
 
 
@@ -617,13 +506,9 @@ class InspectRuns:
         # Having separate ColumnDataSources will prevent many useless
         # operations when updating only one view
         # (will be filled/updated in update_..._plots())
-        self.backend_source = ColumnDataSource(data={})
-        self.var_source = ColumnDataSource(data={})
-        self.test_source = ColumnDataSource(data={})
+        self.source = ColumnDataSource(data={})
 
-        self.backend_plots = {}
-        self.var_plots = {}
-        self.test_plots = {}
+        self.plots = {}
         self.widgets = {}
 
         # Setup Bokeh objects
@@ -633,9 +518,7 @@ class InspectRuns:
 
         # At this point, everything should have been initialized, so we can
         # show the plots for the first time
-        self.update_backend_plots()
-        self.update_var_plots()
-        self.update_test_plots()
+        self.update_plots()
 
 
         # Pass the initial metadata to the template (will be updated in CustomJS
