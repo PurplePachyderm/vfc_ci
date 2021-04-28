@@ -124,9 +124,14 @@ class CompareRuns:
         # If the value is updated by the CustomJS, self.widgets["select_var"].value
         # won't be updated, so we have to look for that case and assign it manually
 
-        # new should be a list when updated by CustomJS
+        # "new" should be a list when updated by CustomJS
         if type(new) == list:
-            new = new[0]
+            # If filtering removed all options, we might have an empty list
+            # (in this case, we just skip the callback and do nothing)
+            if len(new) > 0:
+                new = new[0]
+            else:
+                return
 
         if new != self.widgets["select_test"].value:
             # The callback will be triggered again with the updated value
@@ -474,17 +479,14 @@ class CompareRuns:
         self.data = data
         self.metadata = metadata
 
-        # Will be filled/updated in update_plots()
+
         self.source = ColumnDataSource(data={})
-
-
         self.plots = {}
         self.widgets = {}
 
         # Setup Bokeh objects
         self.setup_plots()
         self.setup_widgets()
-
 
         # At this point, everything should have been initialized, so we can
         # show the plots for the first time

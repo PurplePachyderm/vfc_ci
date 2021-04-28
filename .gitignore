@@ -3,3 +3,4 @@ test
 *.csv
 *.hd5
 __pycache__
+ci/__pycache__

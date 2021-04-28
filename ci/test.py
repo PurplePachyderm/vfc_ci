@@ -96,19 +96,18 @@ def significant_digits(x):
 
 
 # Remove outliers from an array
-def filter_outliers(array):
-    if len(array) <= 2:
-        return array
+def filter_outliers(x):
+    values = x.values[3]
 
-    mean = np.mean(array)
-    std = np.std(array)
-    if std == 0:
-        return array
-    distance = abs(array - mean)
+    if len(values) <= 2:
+        return values
+
+    if x.mu == 0:
+        return values
+    distance = abs(x.sigma - x.mu)
     # Array of booleans with elements to be filtered
-    filtered = distance < max_zscore * std
-
-    return array[filtered]
+    filtered = distance < max_zscore * x.mu
+    return values[filtered]
 
 
 ################################################################################
@@ -299,7 +298,7 @@ def run(is_git_commit, export_raw_values):
 
 
     data["values"] = data["values"].apply(np.sort)
-    data["filtered_values"] = data["values"].apply(filter_outliers)
+    data["filtered_values"] = data.apply(filter_outliers, axis=1)
 
     # Get moments of distribution and outliers-filtered distribution
     for prefix in ["", "filtered_"]:
