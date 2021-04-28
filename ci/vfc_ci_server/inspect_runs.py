@@ -64,7 +64,7 @@ class InspectRuns:
         }
 
 
-    # Data processing for all modes
+    # Data processing helper
     # (computes new distributions for sigma, s2, s10)
     def data_processing(self, dataframe):
 
@@ -93,6 +93,7 @@ class InspectRuns:
             del dataframe[stat]
 
         dataframe["x"] = dataframe.index
+        # Make sure that strings don't excede a certain length
         dataframe["x"] = dataframe["x"].apply(
             lambda x: x[:17] + "[...]" + x[-17:] if len(x) > 39 else x
         )
@@ -113,9 +114,12 @@ class InspectRuns:
         filterby = self.factors_dict[filterby_display]
 
 
-        # For a given variable, get all backends (across all tests)
+        # Groupby and aggregate lines belonging to the same group in lists
         groups = self.run_data[
-            self.run_data.index.isin([self.widgets["select_filter"].value], level=filterby)
+            self.run_data.index.isin(
+                [self.widgets["select_filter"].value],
+                level=filterby
+            )
         ].groupby(groupby)
 
         groups = groups.agg({
@@ -128,6 +132,7 @@ class InspectRuns:
             "nsamples": lambda x: x.tolist()
         })
 
+
         # Compute the new distributions, ...
         groups = self.data_processing(groups)
 
@@ -135,13 +140,14 @@ class InspectRuns:
 
 
         # Update plots
-        # Get remaining display
+
+        # Get display string of the last (unselected) factor
         factors_dict = self.factors_dict.copy()
         del factors_dict[groupby_display]
         del factors_dict[filterby_display]
         over_all = list(factors_dict.keys())[0]
 
-        # Get all display strings to update title
+        # Update all display strings for plot title (remove caps, plural)
         groupby_display = groupby_display.lower()
         filterby_display = filterby_display.lower()[:-1]
         over_all = over_all.lower()
@@ -149,12 +155,15 @@ class InspectRuns:
         self.plots["mu_inspect"].title.text = \
         "Empirical average μ of %s (groupped by %s, for all %s)" \
         % (filterby_display, groupby_display, over_all)
+
         self.plots["sigma_inspect"].title.text = \
         "Standard deviation σ of %s (groupped by %s, for all %s)" \
         % (filterby_display, groupby_display, over_all)
+
         self.plots["s10_inspect"].title.text = \
         "Significant digits s of %s (groupped by %s, for all %s)" \
         % (filterby_display, groupby_display, over_all)
+
         self.plots["s2_inspect"].title.text = \
         "Significant digits s of %s (groupped by %s, for all %s)" \
         % (filterby_display, groupby_display, over_all)
@@ -488,7 +497,7 @@ class InspectRuns:
 
     # When received, switch to the run_name in parameter
     def switch_view(self, run_name):
-        self.select_run.value = run_name
+        self.widgets["select_run"].value = run_name
 
 
 
@@ -503,11 +512,7 @@ class InspectRuns:
         self.metadata = metadata
 
 
-        # Having separate ColumnDataSources will prevent many useless
-        # operations when updating only one view
-        # (will be filled/updated in update_..._plots())
         self.source = ColumnDataSource(data={})
-
         self.plots = {}
         self.widgets = {}
 
@@ -515,14 +520,12 @@ class InspectRuns:
         self.setup_plots()
         self.setup_widgets()
 
-
-        # At this point, everything should have been initialized, so we can
-        # show the plots for the first time
-        self.update_plots()
-
-
         # Pass the initial metadata to the template (will be updated in CustomJS
         # callbacks). This is required because metadata is not displayed in a
         # Bokeh widget, so we can't update this with a server callback.
         initial_run = helper.get_metadata(self.metadata, self.current_run)
         self.doc.template_variables["initial_timestamp"] = self.current_run
+
+        # At this point, everything should have been initialized, so we can
+        # show the plots for the first time
+        self.update_plots()

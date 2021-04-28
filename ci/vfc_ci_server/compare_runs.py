@@ -479,17 +479,14 @@ class CompareRuns:
         self.data = data
         self.metadata = metadata
 
-        # Will be filled/updated in update_plots()
+
         self.source = ColumnDataSource(data={})
-
-
         self.plots = {}
         self.widgets = {}
 
         # Setup Bokeh objects
         self.setup_plots()
         self.setup_widgets()
-
 
         # At this point, everything should have been initialized, so we can
         # show the plots for the first time
