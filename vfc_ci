@@ -86,7 +86,7 @@ def setup(args):
         argument(
             "-g", "--is-git-commit",
             help="""
-            when specified, the last Git commit of the local repository (working
+            When specified, the last Git commit of the local repository (working
             directory) will be fetched and associated with the run
             """,
             action="store_true"
@@ -98,12 +98,19 @@ def setup(args):
             exported.
             """,
             action="store_true"
+        ),
+        argument(
+            "-d", "--dry-run",
+            help="""
+            Perform a dry run by not saving the test results.
+            """,
+            action="store_true"
         )
     ]
 )
 def test(args):
     import ci.test
-    ci.test.run(args.is_git_commit, args.export_raw_results)
+    ci.test.run(args.is_git_commit, args.export_raw_results, args.dry_run)
 
 
 

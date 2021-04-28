@@ -130,7 +130,8 @@ def setup(git_host):
     )
     print(
         "Info [vfc_ci]: Make sure that you have a vfc_tests_config.json on " \
-        "this branch."
+        "this branch. You can also perform a 'vfc_ci test' dry run before "\
+        "pushing other commits."
     )
 
     if git_host == "gitlab":

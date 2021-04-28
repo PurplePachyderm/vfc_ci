@@ -265,7 +265,7 @@ def show_warnings(warnings):
 
     # Main function
 
-def run(is_git_commit, export_raw_values):
+def run(is_git_commit, export_raw_values, dry_run):
 
     # Get config, metadata and data
     print("Info [vfc_ci]: Reading tests config file...")
@@ -329,19 +329,21 @@ def run(is_git_commit, export_raw_values):
     # NOTE : Exporting to HDF5 requires to install "tables" on the system
 
     # Export raw data if needed
-    if export_raw_values:
+    if export_raw_values and not dry_run:
         data.to_hdf(filename + ".vfcraw.hd5", key="data")
         metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
 
     # Export data
     del data["values"]
-    data.to_hdf(filename + ".vfcrun.hd5", key="data")
-    metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
+    if not dry_run:
+        data.to_hdf(filename + ".vfcrun.hd5", key="data")
+        metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
 
 
     # Print termination messages
     print(
-        "Info [vfc_ci]: The results have been successfully written to %s.vfcrun.hd5." \
+        "Info [vfc_ci]: The results have been successfully written to " \
+        "%s.vfcrun.hd5." \
          % filename
      )
 
@@ -350,4 +352,10 @@ def run(is_git_commit, export_raw_values):
             "Info [vfc_ci]: A file containing the raw values has also been " \
             "created : %s.vfcraw.hd5."
             % filename
+        )
+
+    if dry_run:
+        print(
+            "Info [vfc_ci]: The dry run flag was enabled, so no files were " \
+            "actually created."
         )
