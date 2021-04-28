@@ -36,7 +36,9 @@ def is_directory(string):
 
     # Subcommand decorator
 
-cli = argparse.ArgumentParser()
+cli = argparse.ArgumentParser(
+    description="Define, run, automatize, and visualize custom Verificarlo tests."
+)
 subparsers = cli.add_subparsers(dest="subcommand")
 
 def subcommand(description="", args=[], parent=subparsers):
