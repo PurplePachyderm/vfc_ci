@@ -27,7 +27,7 @@ def gen_readme(dev_branch, ci_branch):
 
 
 
-def gen_workflow(git_host, dev_branch, ci_branch):
+def gen_workflow(git_host, dev_branch, ci_branch, repo):
 
     # Init template loader
     path = os.path.dirname(os.path.abspath(__file__))
@@ -52,10 +52,22 @@ def gen_workflow(git_host, dev_branch, ci_branch):
         template = env.get_template("workflow_templates/gitlab-ci.j2.yml")
 
         # Ask for the user that will run the jobs (Gitlab specific)
-        user = input("Enter the name of the user who will run the CI jobs:")
-        render = template.render(dev_branch=dev_branch, ci_branch=ci_branch, user=user)
+        username = input("[vfc_ci] Enter the name of the user who will run the CI jobs:")
+        email = input("[vfc_ci] Enter the e-mail of the user who will run the CI jobs:")
 
-        filename = ".gitlab-ci.j2.yml"
+        remote_url = repo.remotes[0].config_reader.get("url")
+        remote_url = remote_url.replace("http://", "")
+        remote_url = remote_url.replace("https://", "")
+
+        render = template.render(
+            dev_branch=dev_branch,
+            ci_branch=ci_branch,
+            username=username,
+            email=email,
+            remote_url = remote_url
+        )
+
+        filename = ".gitlab-ci.yml"
         with open(filename, "w") as fh:
             fh.write(render)
 
@@ -93,7 +105,7 @@ def setup(git_host):
         # Commit the workflow on the current (dev) branch
 
     ci_branch_name = "vfc_ci_%s" % dev_branch_name
-    gen_workflow(git_host, dev_branch_name, ci_branch_name)
+    gen_workflow(git_host, dev_branch_name, ci_branch_name, repo)
     repo.git.add(".")
     repo.index.commit("[auto] Set up Verificarlo CI on this branch")
     repo.remote(name="origin").push()
@@ -137,5 +149,6 @@ def setup(git_host):
     if git_host == "gitlab":
         print(
             "Info [vfc_ci]: Since you are using GitLab, make sure that you " \
-            " have created a CI_PUSH_TOKEN for the user you specified."
+            "have created an access token for the user you specified (registered "\
+            "as a variable called \"CI_PUSH_TOKEN\" in your repository)."
         )
