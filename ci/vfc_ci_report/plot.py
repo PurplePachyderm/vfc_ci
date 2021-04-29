@@ -16,7 +16,7 @@ def fill_dotplot(
 
     # (Optional) Tooltip and tooltip formatters
     if tooltips != None:
-        hover = HoverTool(tooltips = tooltips)
+        hover = HoverTool(tooltips = tooltips, mode="vline", names=["circle"])
 
         if tooltips_formatters != None:
             hover.formatters = tooltips_formatters
@@ -40,7 +40,10 @@ def fill_dotplot(
 
 
     # Draw dots (actually Bokeh circles)
-    circle = plot.circle(x="x", y=data_field, source=source, size=12)
+    circle = plot.circle(
+        name="circle",
+        x="x", y=data_field, source=source, size=12
+    )
 
 
     # (Optional) Draw lines between dots
@@ -74,7 +77,7 @@ def fill_boxplot(
 
     # (Optional) Tooltip and tooltip formatters
     if tooltips != None:
-        hover = HoverTool(tooltips = tooltips)
+        hover = HoverTool(tooltips = tooltips, mode="vline", names=["full_box"])
 
         if tooltips_formatters != None:
             hover.formatters = tooltips_formatters
@@ -107,9 +110,10 @@ def fill_boxplot(
     )
 
     # Boxes
-    top_box = plot.vbar(
+    full_box = plot.vbar(
+        name="full_box",
         x="x", width=0.5,
-        top="%squantile75" % prefix, bottom="%squantile50" % prefix,
+        top="%squantile75" % prefix, bottom="%squantile25" % prefix,
         source=source, line_color="black"
     )
     bottom_box = plot.vbar(
@@ -130,7 +134,7 @@ def fill_boxplot(
         top_stem.data_source.selected.on_change("indices", server_tap_callback)
         bottom_stem.data_source.selected.on_change("indices", server_tap_callback)
 
-        top_box.data_source.selected.on_change("indices", server_tap_callback)
+        full_box.data_source.selected.on_change("indices", server_tap_callback)
         bottom_box.data_source.selected.on_change("indices", server_tap_callback)
 
         mu_dot.data_source.selected.on_change("indices", server_tap_callback)
