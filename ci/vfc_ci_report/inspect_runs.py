@@ -1,11 +1,11 @@
 # Manage the view comparing the variables of a run
 
-import json
+from math import pi
+from functools import partial
 
 import pandas as pd
 import numpy as np
 
-from math import pi
 from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool,\
@@ -43,7 +43,7 @@ class InspectRuns:
 
     def gen_boxplot_tooltips(self, prefix):
         return [
-            ("Name", "@x"),
+            ("Name", "@%s_x" % prefix),
             ("Min", "@" + prefix + "_min{%0.18e}"),
             ("Max", "@" + prefix + "_max{%0.18e}"),
             ("1st quartile", "@" + prefix + "_quantile25{%0.18e}"),
@@ -75,28 +75,29 @@ class InspectRuns:
         # of samples for our new sigma and s distributions)
         dataframe["nsamples"] = dataframe["nsamples"].apply(lambda x: len(x))
 
-        # Get quantiles and mu for sigma, s10, s2
-        for stat in ["sigma", "s10", "s2"]:
 
-            dataframe[stat] = dataframe[stat].apply(np.sort)
-
-            # Filter outliers if the box is checked
-            if len(self.widgets["outliers_filtering_inspect"].active) > 0:
-                dataframe[stat] = dataframe[stat].apply(helper.filter_outliers)
-
-            dataframe["%s_min" % stat] = dataframe[stat].apply(np.min)
-            dataframe["%s_quantile25" % stat] = dataframe[stat].apply(np.quantile, args=(0.25,))
-            dataframe["%s_quantile50" % stat] = dataframe[stat].apply(np.quantile, args=(0.50,))
-            dataframe["%s_quantile75" % stat] = dataframe[stat].apply(np.quantile, args=(0.75,))
-            dataframe["%s_max" % stat] = dataframe[stat].apply(np.max)
-            dataframe["%s_mu" % stat] = dataframe[stat].apply(np.average)
-            del dataframe[stat]
-
-        dataframe["x"] = dataframe.index
+        dataframe["mu_x"] = dataframe.index
         # Make sure that strings don't excede a certain length
-        dataframe["x"] = dataframe["x"].apply(
+        dataframe["mu_x"] = dataframe["mu_x"].apply(
             lambda x: x[:17] + "[...]" + x[-17:] if len(x) > 39 else x
         )
+
+
+        # Get quantiles and mu for sigma, s10, s2
+        for prefix in ["sigma", "s10", "s2"]:
+
+            dataframe["%s_x" % prefix] = dataframe["mu_x"]
+
+            dataframe[prefix] = dataframe[prefix].apply(np.sort)
+
+            dataframe["%s_min" % prefix] = dataframe[prefix].apply(np.min)
+            dataframe["%s_quantile25" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.25,))
+            dataframe["%s_quantile50" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.50,))
+            dataframe["%s_quantile75" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.75,))
+            dataframe["%s_max" % prefix] = dataframe[prefix].apply(np.max)
+            dataframe["%s_mu" % prefix] = dataframe[prefix].apply(np.average)
+            del dataframe[prefix]
+
 
         return dataframe
 
@@ -117,7 +118,8 @@ class InspectRuns:
         filterby = self.factors_dict[filterby_display]
 
 
-        # Groupby and aggregate lines belonging to the same group in lists
+            # Groupby and aggregate lines belonging to the same group in lists
+
         groups = self.run_data[
             self.run_data.index.isin(
                 [self.widgets["select_filter"].value],
@@ -136,13 +138,58 @@ class InspectRuns:
         })
 
 
-        # Compute the new distributions, ...
-        groups = self.data_processing(groups)
-
-        self.source.data = groups.to_dict("list")
+            # Compute the new distributions, ...
+        groups = self.data_processing(groups).to_dict("list")
 
 
-        # Update plots
+            # Update source
+
+        # Assign each ColumnDataSource, starting with the boxplots
+        for prefix in ["sigma", "s10", "s2"]:
+
+            dict = {
+                    "%s_x" % prefix: groups["%s_x" % prefix],
+                    "%s_min" % prefix: groups["%s_min" % prefix],
+                    "%s_quantile25" % prefix: groups["%s_quantile25" % prefix],
+                    "%s_quantile50" % prefix: groups["%s_quantile50" % prefix],
+                    "%s_quantile75" % prefix: groups["%s_quantile75" % prefix],
+                    "%s_max" % prefix: groups["%s_max" % prefix],
+                    "%s_mu" % prefix: groups["%s_mu" % prefix],
+
+                    "nsamples": groups["nsamples"]
+            }
+
+            # Filter outliers if the box is checked
+            if len(self.widgets["outliers_filtering_inspect"].active) > 0:
+
+                # Boxplots will be filtered by max then min
+                top_outliers = helper.detect_outliers(dict["%s_max" % prefix])
+                helper.remove_boxplot_outliers(dict, top_outliers, prefix)
+
+                bottom_outliers = helper.detect_outliers(dict["%s_min" % prefix])
+                helper.remove_boxplot_outliers(dict, bottom_outliers, prefix)
+
+            self.sources["%s_source" % prefix].data = dict
+
+
+        # Finish with the mu plot
+        dict = {
+            "mu_x": groups["mu_x"],
+            "mu": groups["mu"],
+
+            "nsamples": groups["nsamples"]
+        }
+
+        self.sources["mu_source"].data = dict
+
+        # Filter outliers if the box is checked
+        if len(self.widgets["outliers_filtering_inspect"].active) > 0:
+            mu_outliers = helper.detect_outliers(groups["mu"])
+            groups["mu"] = helper.remove_outliers(groups["mu"], mu_outliers)
+            groups["mu_x"] = helper.remove_outliers(groups["mu_x"], mu_outliers)
+
+
+            # Update plots axis/titles
 
         # Get display string of the last (unselected) factor
         factors_dict = self.factors_dict.copy()
@@ -171,13 +218,13 @@ class InspectRuns:
         "Significant digits s of %s (groupped by %s, for all %s)" \
         % (filterby_display, groupby_display, over_all)
 
-        # Update x_ranges
-        self.plots["mu_inspect"].x_range.factors = list(groups["x"])
-        self.plots["sigma_inspect"].x_range.factors = list(groups["x"])
-        self.plots["s10_inspect"].x_range.factors = list(groups["x"])
-        self.plots["s2_inspect"].x_range.factors = list(groups["x"])
 
-        helper.reset_x_ranges(self.plots, list(groups["x"]))
+            # Update x_ranges
+
+        helper.reset_x_range(self.plots["mu_inspect"], groups["mu_x"])
+        helper.reset_x_range(self.plots["sigma_inspect"], groups["sigma_x"])
+        helper.reset_x_range(self.plots["s10_inspect"], groups["s10_x"])
+        helper.reset_x_range(self.plots["s2_inspect"], groups["s2_x"])
 
 
 
@@ -296,8 +343,8 @@ class InspectRuns:
 
             # Tooltips and formatters
 
-        dotplots_tooltips = [
-            ("Name", "@x"),
+        dotplot_tooltips = [
+            ("Name", "@mu_x"),
             ("μ", "@mu{%0.18e}"),
             ("Number of samples (tests)", "@nsamples")
         ]
@@ -320,13 +367,13 @@ class InspectRuns:
         # Mu plot
         self.plots["mu_inspect"] = figure(
             name="mu_inspect",
-            title="Empirical average μ of variable (groupped by backends)",
+            title="",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
         plot.fill_dotplot(
-            self.plots["mu_inspect"], self.source, "mu",
-            tooltips = dotplots_tooltips,
+            self.plots["mu_inspect"], self.sources["mu_source"], "mu",
+            tooltips = dotplot_tooltips,
             tooltips_formatters = dotplot_formatters
         )
         self.doc.add_root(self.plots["mu_inspect"])
@@ -335,12 +382,12 @@ class InspectRuns:
         # Sigma plot
         self.plots["sigma_inspect"] = figure(
             name="sigma_inspect",
-            title="Standard deviation σ of variable (groupped by backends)",
+            title="",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode="scale_width"
         )
         plot.fill_boxplot(
-            self.plots["sigma_inspect"], self.source, prefix="sigma",
+            self.plots["sigma_inspect"], self.sources["sigma_source"], prefix="sigma",
             tooltips = sigma_boxplot_tooltips,
             tooltips_formatters = sigma_boxplot_tooltips_formatters
         )
@@ -350,12 +397,12 @@ class InspectRuns:
         # s plots
         self.plots["s10_inspect"] = figure(
             name="s10_inspect",
-            title="Significant digits s of variable (groupped by backends)",
+            title="",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
         plot.fill_boxplot(
-            self.plots["s10_inspect"], self.source, prefix="s10",
+            self.plots["s10_inspect"], self.sources["s10_source"], prefix="s10",
             tooltips = s10_boxplot_tooltips,
             tooltips_formatters = s10_boxplot_tooltips_formatters
         )
@@ -363,12 +410,12 @@ class InspectRuns:
 
         self.plots["s2_inspect"] = figure(
             name="s2_inspect",
-            title="Significant digits s of variable (groupped by backends)",
+            title="",
             plot_width=900, plot_height=400, x_range=[""],
             tools=tools, sizing_mode='scale_width'
         )
         plot.fill_boxplot(
-            self.plots["s2_inspect"], self.source, prefix="s2",
+            self.plots["s2_inspect"], self.sources["s2_source"], prefix="s2",
             tooltips = s2_boxplot_tooltips,
             tooltips_formatters = s2_boxplot_tooltips_formatters
         )
@@ -517,7 +564,13 @@ class InspectRuns:
         self.metadata = metadata
 
 
-        self.source = ColumnDataSource(data={})
+        self.sources = {
+            "mu_source": ColumnDataSource(data={}),
+            "sigma_source": ColumnDataSource(data={}),
+            "s10_source" :ColumnDataSource(data={}),
+            "s2_source": ColumnDataSource(data={})
+        }
+
         self.plots = {}
         self.widgets = {}
 

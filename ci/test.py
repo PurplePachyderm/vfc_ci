@@ -71,7 +71,8 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     return results
 
 
-# Wrapper to sd.significant_digits (returns result in base 2)
+# Wrappers to sd.significant_digits (returns results in base 2)
+
 def significant_digits(x):
 
     # In a pandas DF, "values" actually refers to the array of columns, and
@@ -79,36 +80,57 @@ def significant_digits(x):
     distribution = x.values[3]
     distribution = distribution.reshape(len(distribution), 1)
 
-    # Accept or reject the null hypothesis
-    method = sd.Method.General if x.pvalue < min_pvalue else sd.Method.CNH
-
     # The distribution's empirical average will be used as the reference
+    mu = np.array([x.mu])
+
+    # If the null hypothesis is rejected, call sigdigits with General mode:
+    if x.pvalue < min_pvalue:
+        method = sd.Method.General
+        s = sd.significant_digits(
+            distribution,
+            mu,
+            precision=sd.Precision.Absolute,
+            method=method
+        )
+
+
+    # Else, manually compute sMCA which is equivalent to a 66% confidence interval
+    else:
+        method = sd.Method.CNH
+        s = sd.significant_digits(
+            distribution,
+            mu,
+            precision=sd.Precision.Absolute,
+            method=method,
+
+            probability=0.66,
+            confidence=0.66,
+        )
+
+    # s is returned as a size 1 list
+    return s[0]
+
+
+def significant_digits_lower_bound(x):
+    # If the null hypothesis is rejected, no lower bound
+    if x.pvalue < min_pvalue:
+            return x.s2
+
+    # Else, the lower bound will be a 95% confidence interval
+
+    distribution = x.values[3]
+    distribution = distribution.reshape(len(distribution), 1)
+
     mu = np.array([x.mu])
 
     s = sd.significant_digits(
         distribution,
         mu,
         precision=sd.Precision.Absolute,
-        method=method
+        method=sd.Method.CNH,
     )
 
-    # s is returned as a size 1 list
     return s[0]
-
-
-# Remove outliers from an array
-def filter_outliers(x):
-    values = x.values[3]
-
-    if len(values) <= 2:
-        return values
-
-    if x.mu == 0:
-        return values
-    distance = abs(x.sigma - x.mu)
-    # Array of booleans with elements to be filtered
-    filtered = distance < max_zscore * x.mu
-    return values[filtered]
 
 
 ################################################################################
@@ -254,29 +276,25 @@ def data_processing(data):
 
 
     # Significant digits
-    data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
+    data["s2"] = data.apply(significant_digits, axis=1)
     data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
 
     # Lower bound of the confidence interval using the sigdigits module
-    data["s2_lower_bound"] = data.apply(significant_digits, axis=1)
+    data["s2_lower_bound"] = data.apply(significant_digits_lower_bound, axis=1)
     data["s10_lower_bound"] = data["s2_lower_bound"].apply(lambda x: sd.change_base(x, 10))
 
 
     # Compute moments of the distribution
     # (including a new distribution obtained by filtering outliers)
     data["values"] = data["values"].apply(np.sort)
-    data["filtered_values"] = data.apply(filter_outliers, axis=1)
 
-    # Get moments of both original and outliers-filtered distributions
-    for prefix in ["", "filtered_"]:
-        data["%smu"%prefix] = data["%svalues"%prefix].apply(np.average)
-        data["%smin"%prefix] = data["%svalues"%prefix].apply(np.min)
-        data["%squantile25"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.25,))
-        data["%squantile50"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.50,))
-        data["%squantile75"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.75,))
-        data["%smax"%prefix] = data["%svalues"%prefix].apply(np.max)
+    data["mu"] = data["values"].apply(np.average)
+    data["min"] = data["values"].apply(np.min)
+    data["quantile25"] = data["values"].apply(np.quantile, args=(0.25,))
+    data["quantile50"] = data["values"].apply(np.quantile, args=(0.50,))
+    data["quantile75"] = data["values"].apply(np.quantile, args=(0.75,))
+    data["max"] = data["values"].apply(np.max)
 
-    del data["filtered_values"]
     data["nsamples"] = data["values"].apply(len)
 
 

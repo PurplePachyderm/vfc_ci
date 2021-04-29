@@ -2,6 +2,7 @@
 
 import calendar
 import time
+from itertools import compress
 
 import numpy as np
 
@@ -113,34 +114,53 @@ def reset_run_strings():
 
 
 # Update all the x-ranges from a dict of plots
-def reset_x_ranges(plots, x_range):
-    for key, value in plots.items():
-        value.x_range.factors = x_range
+def reset_x_range(plot, x_range):
+    plot.x_range.factors = x_range
 
-        if len(x_range) < max_ticks:
-            value.xaxis.major_tick_line_color = "#000000"
-            value.xaxis.minor_tick_line_color = "#000000"
+    if len(x_range) < max_ticks:
+        plot.xaxis.major_tick_line_color = "#000000"
+        plot.xaxis.minor_tick_line_color = "#000000"
 
-            value.xaxis.major_label_text_font_size = "8pt"
+        plot.xaxis.major_label_text_font_size = "8pt"
 
-        else:
-            value.xaxis.major_tick_line_color = None
-            value.xaxis.minor_tick_line_color = None
+    else:
+        plot.xaxis.major_tick_line_color = None
+        plot.xaxis.minor_tick_line_color = None
 
-            value.xaxis.major_label_text_font_size = "0pt"
+        plot.xaxis.major_label_text_font_size = "0pt"
 
 
-# Remove outliers from an array of floats
-def filter_outliers(array):
+# Return an array of booleans that indicate which elements are outliers
+# (True means element is not an outlier and must be kept)
+def detect_outliers(array, max_zscore=max_zscore):
     if len(array) <= 2:
-        return array
+        return [True] * len(array)
 
-    mean = np.mean(array)
+    median = np.median(array)
     std = np.std(array)
     if std == 0:
         return array
-    distance = abs(array - mean)
+    distance = abs(array - median)
     # Array of booleans with elements to be filtered
-    filtered = distance < max_zscore * std
+    outliers_array = distance < max_zscore * std
 
-    return array[filtered]
+    return outliers_array
+
+
+def remove_outliers(array, outliers):
+    return list(compress(array, outliers))
+
+
+def remove_boxplot_outliers(dict, outliers, prefix):
+    outliers = detect_outliers(dict["%s_max" % prefix])
+
+    dict["%s_x" % prefix] = remove_outliers(dict["%s_x" % prefix], outliers)
+
+    dict["%s_min" % prefix] = remove_outliers(dict["%s_min" % prefix], outliers)
+    dict["%s_quantile25" % prefix] = remove_outliers(dict["%s_quantile25" % prefix], outliers)
+    dict["%s_quantile50" % prefix] = remove_outliers(dict["%s_quantile50" % prefix], outliers)
+    dict["%s_quantile75" % prefix] = remove_outliers(dict["%s_quantile75" % prefix], outliers)
+    dict["%s_max" % prefix] = remove_outliers(dict["%s_max" % prefix], outliers)
+    dict["%s_mu" % prefix] = remove_outliers(dict["%s_mu" % prefix], outliers)
+
+    dict["nsamples"] = remove_outliers(dict["nsamples"], outliers)

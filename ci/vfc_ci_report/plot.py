@@ -33,8 +33,8 @@ def fill_dotplot(
     # (Optional) Add segment to represent a lower bound
     if lower_bound:
         lower_segment = plot.segment(
-            x0="x", y0=data_field,
-            x1="x", y1="%s_lower_bound" % data_field,
+            x0="%s_x" % data_field, y0=data_field,
+            x1="%s_x" % data_field, y1="%s_lower_bound" % data_field,
             source=source, line_color="black"
         )
 
@@ -42,13 +42,13 @@ def fill_dotplot(
     # Draw dots (actually Bokeh circles)
     circle = plot.circle(
         name="circle",
-        x="x", y=data_field, source=source, size=12
+        x="%s_x" % data_field, y=data_field, source=source, size=12
     )
 
 
     # (Optional) Draw lines between dots
     if lines:
-        line = plot.line(x="x", y=data_field, source=source)
+        line = plot.line(x="%s_x" % data_field, y=data_field, source=source)
 
 
     # (Optional) Add server tap callback
@@ -99,32 +99,32 @@ def fill_boxplot(
 
     # Stems
     top_stem = plot.segment(
-        x0="x", y0="%smax" % prefix,
-        x1="x", y1="%squantile75" % prefix,
+        x0="%sx" % prefix, y0="%smax" % prefix,
+        x1="%sx" % prefix, y1="%squantile75" % prefix,
         source=source, line_color="black"
     )
     bottom_stem = plot.segment(
-        x0="x", y0="%smin" % prefix,
-        x1="x", y1="%squantile25" % prefix,
+        x0="%sx" % prefix, y0="%smin" % prefix,
+        x1="%sx" % prefix, y1="%squantile25" % prefix,
         source=source, line_color="black"
     )
 
     # Boxes
     full_box = plot.vbar(
         name="full_box",
-        x="x", width=0.5,
+        x="%sx" % prefix, width=0.5,
         top="%squantile75" % prefix, bottom="%squantile25" % prefix,
         source=source, line_color="black"
     )
     bottom_box = plot.vbar(
-        x="x", width=0.5,
+        x="%sx" % prefix, width=0.5,
         top="%squantile50" % prefix, bottom="%squantile25" % prefix,
         source=source, line_color="black"
     )
 
     # Mu dot
     mu_dot = plot.dot(
-        x="x", y="%smu" % prefix, size=30, source=source,
+        x="%sx" % prefix, y="%smu" % prefix, size=30, source=source,
         color="black"
     )
 

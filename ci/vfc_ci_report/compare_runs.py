@@ -29,7 +29,7 @@ class CompareRuns:
     def gen_x_series(self, timestamps):
 
         # Initialize the objects to return
-        x = []
+        x_series= []
         x_metadata = dict(
             date = [],
             is_git_commit = [],
@@ -52,7 +52,7 @@ class CompareRuns:
 
             # Fill the x series
             str = row_metadata["name"]
-            x.insert(0, helper.get_metadata(self.metadata, timestamps[-i-1])["name"])
+            x_series.insert(0, helper.get_metadata(self.metadata, timestamps[-i-1])["name"])
 
             # Fill the metadata lists
             x_metadata["date"].insert(0, date)
@@ -62,7 +62,7 @@ class CompareRuns:
             x_metadata["message"].insert(0, row_metadata["message"])
 
 
-        return x, x_metadata
+        return x_series, x_metadata
 
 
 
@@ -78,44 +78,82 @@ class CompareRuns:
         ]
 
         timestamps = runs["timestamp"]
-        x, x_metadata = self.gen_x_series(timestamps.sort_values())
+        x_series, x_metadata = self.gen_x_series(timestamps.sort_values())
 
-
-            # Update x_ranges
-
-        helper.reset_x_ranges(self.plots, list(x))
 
             # Update source
 
-        source_dict = runs.to_dict("series")
-        # Add x series
-        source_dict["x"] = x
+        main_dict = runs.to_dict("series")
+        main_dict["x"] = x_series
+
         # Add metadata (for tooltip)
-        source_dict.update(x_metadata)
+        main_dict.update(x_metadata)
 
         # Select the last n runs only
         n = self.current_n_runs
+        main_dict = {key:value[-n:] for key, value in main_dict.items()}
 
-        dict = {key:value[-n:] for key, value in source_dict.items()}
 
-        # If we want to filter the series, replace moments by the "filtered" ones
-        if len(self.widgets["outliers_filtering_compare"].active) > 0:
-            dict["min"] = dict["filtered_min"]
-            dict["quantile25"] = dict["filtered_quantile25"]
-            dict["quantile50"] = dict["filtered_quantile50"]
-            dict["quantile75"] = dict["filtered_quantile75"]
-            dict["max"] = dict["filtered_max"]
-            dict["mu"] = dict["filtered_mu"]
+        # Generate ColumnDataSources for the 3 dotplots
+        for stat in ["sigma", "s10", "s2"]:
+            dict = {
+                "%s_x" % stat: main_dict["x"],
 
-        # Remove outliers-filtered moments (they have just been replaced if needed)
-        del dict["filtered_min"]
-        del dict["filtered_quantile25"]
-        del dict["filtered_quantile50"]
-        del dict["filtered_quantile75"]
-        del dict["filtered_max"]
-        del dict["filtered_mu"]
+                "is_git_commit": main_dict["is_git_commit"],
+                "date": main_dict["date"],
+                "hash": main_dict["hash"],
+                "author": main_dict["author"],
+                "message": main_dict["message"],
 
-        self.source.data = dict
+                stat: main_dict[stat],
+
+                "nsamples": main_dict["nsamples"],
+            }
+
+            if stat == "s10" or stat == "s2":
+                dict["%s_lower_bound" % stat] = main_dict["%s_lower_bound" % stat]
+
+            # Filter outliers if the box is checked
+            if len(self.widgets["outliers_filtering_compare"].active) > 0:
+                outliers = helper.detect_outliers(dict[stat])
+                dict[stat] = helper.remove_outliers(dict[stat], outliers)
+                dict["%s_x" % stat] = helper.remove_outliers(dict["%s_x" % stat], outliers)
+
+            # Assign ColumnDataSource
+            self.sources["%s_source" % stat].data = dict
+
+
+        # Generate ColumnDataSource for the boxplot
+        dict = {
+            "is_git_commit": main_dict["is_git_commit"],
+            "date": main_dict["date"],
+            "hash": main_dict["hash"],
+            "author": main_dict["author"],
+            "message": main_dict["message"],
+
+            "x": main_dict["x"],
+            "min" : main_dict["min"],
+            "quantile25" : main_dict["quantile25"],
+            "quantile50" : main_dict["quantile50"],
+            "quantile75" : main_dict["quantile75"],
+            "max" : main_dict["max"],
+            "mu" : main_dict["mu"],
+            "pvalue" : main_dict["pvalue"],
+
+            "nsamples": main_dict["nsamples"]
+        }
+
+
+
+        self.sources["boxplot_source"].data = dict
+
+
+        # Update x_ranges
+        helper.reset_x_range(self.plots["boxplot"], self.sources["boxplot_source"].data["x"])
+        helper.reset_x_range(self.plots["sigma_plot"], self.sources["sigma_source"].data["sigma_x"])
+        helper.reset_x_range(self.plots["s10_plot"], self.sources["s10_source"].data["s10_x"])
+        helper.reset_x_range(self.plots["s2_plot"], self.sources["s2_source"].data["s2_x"])
+
 
 
 
@@ -251,11 +289,11 @@ class CompareRuns:
         }
 
         plot.fill_boxplot(
-            self.plots["boxplot"], self.source,
+            self.plots["boxplot"], self.sources["boxplot_source"],
             tooltips = box_tooltips,
             tooltips_formatters = box_tooltips_formatters,
             js_tap_callback = js_tap_callback,
-            server_tap_callback = self.inspect_run_callback,
+            server_tap_callback = self.inspect_run_callback_boxplot,
         )
         self.doc.add_root(self.plots["boxplot"])
 
@@ -278,10 +316,10 @@ class CompareRuns:
         ]
 
         plot.fill_dotplot(
-            self.plots["sigma_plot"], self.source, "sigma",
+            self.plots["sigma_plot"], self.sources["sigma_source"], "sigma",
             tooltips = sigma_tooltips,
             js_tap_callback = js_tap_callback,
-            server_tap_callback = self.inspect_run_callback,
+            server_tap_callback = self.inspect_run_callback_sigma,
             lines = True
         )
         self.doc.add_root(self.plots["sigma_plot"])
@@ -306,10 +344,10 @@ class CompareRuns:
         ]
 
         plot.fill_dotplot(
-            self.plots["s10_plot"], self.source, "s10",
+            self.plots["s10_plot"], self.sources["s10_source"], "s10",
             tooltips = s10_tooltips,
             js_tap_callback = js_tap_callback,
-            server_tap_callback = self.inspect_run_callback,
+            server_tap_callback = self.inspect_run_callback_s10,
             lines = True,
             lower_bound=True
         )
@@ -334,10 +372,10 @@ class CompareRuns:
         ]
 
         plot.fill_dotplot(
-            self.plots["s2_plot"], self.source, "s2",
+            self.plots["s2_plot"], self.sources["s2_source"], "s2",
             tooltips = s2_tooltips,
             js_tap_callback = js_tap_callback,
-            server_tap_callback = self.inspect_run_callback,
+            server_tap_callback = self.inspect_run_callback_s2,
             lines = True,
             lower_bound=True
         )
@@ -458,17 +496,34 @@ class CompareRuns:
         # (to send/receive messages to/from master)
 
     # Callback to change view of Inspect runs when data is selected
-    def inspect_run_callback(self, attr, old, new):
+    def inspect_run_callback(self, new, source_name, x_name):
 
         # In case we just unselected everything, then do nothing
         if new == []:
             return
 
         index = new[-1]
-        run_name = self.source.data["x"][index]
+        run_name = self.sources[source_name].data[x_name][index]
 
         self.master.go_to_inspect(run_name)
 
+
+    # Wrappers for each plot (since new is the index of the clicked element,
+    # it is dependent of the plot because we could have filtered some outliers)
+    # There doesn't seem to be an easy way to add custom parameters to a
+    # Bokeh callback, so using wrappers seems to be the best solution for now
+
+    def inspect_run_callback_boxplot(self, attr, old, new):
+        self.inspect_run_callback(new, "boxplot_source", "x")
+
+    def inspect_run_callback_sigma(self, attr, old, new):
+        self.inspect_run_callback(new, "sigma_source", "sigma_x")
+
+    def inspect_run_callback_s2(self, attr, old, new):
+        self.inspect_run_callback(new, "s2_source", "s2_x")
+
+    def inspect_run_callback_s10(self, attr, old, new):
+        self.inspect_run_callback(new, "s10_source", "s10_x")
 
 
         # Constructor
@@ -482,7 +537,13 @@ class CompareRuns:
         self.metadata = metadata
 
 
-        self.source = ColumnDataSource(data={})
+        self.sources = {
+            "boxplot_source": ColumnDataSource(data={}),
+            "sigma_source": ColumnDataSource(data={}),
+            "s10_source" :ColumnDataSource(data={}),
+            "s2_source": ColumnDataSource(data={})
+        }
+
         self.plots = {}
         self.widgets = {}
 
