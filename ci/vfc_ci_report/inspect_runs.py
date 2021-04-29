@@ -101,6 +101,9 @@ class InspectRuns:
         return dataframe
 
 
+
+            # Plots update function
+
     def update_plots(self):
 
         groupby_display = self.widgets["groupby_radio"].labels[
@@ -277,6 +280,8 @@ class InspectRuns:
 
     # Filter outliers checkbox callback
     def update_outliers_filtering(self, attrname, old, new):
+        # The status (checked/unchecked) of the checkbox is also verified inside
+        # self.update_plots(), so calling this function is enough
         self.update_plots()
 
 

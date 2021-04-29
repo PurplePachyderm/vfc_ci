@@ -51,7 +51,7 @@ def gen_workflow(git_host, dev_branch, ci_branch, repo):
     if git_host == "gitlab":
         template = env.get_template("workflow_templates/gitlab-ci.j2.yml")
 
-        # Ask for the user that will run the jobs (Gitlab specific)
+        # Ask for the user who will run the jobs (Gitlab specific)
         username = input("[vfc_ci] Enter the name of the user who will run the CI jobs:")
         email = input("[vfc_ci] Enter the e-mail of the user who will run the CI jobs:")
 
@@ -70,6 +70,7 @@ def gen_workflow(git_host, dev_branch, ci_branch, repo):
         filename = ".gitlab-ci.yml"
         with open(filename, "w") as fh:
             fh.write(render)
+
 
 
 ################################################################################
@@ -141,8 +142,8 @@ def setup(git_host):
         "%s." % dev_branch_name
     )
     print(
-        "Info [vfc_ci]: Make sure that you have a vfc_tests_config.json on " \
-        "this branch. You can also perform a 'vfc_ci test' dry run before "\
+        "Info [vfc_ci]: Make sure that you have a \"vfc_tests_config.json\" on " \
+        "this branch. You can also perform a \"vfc_ci test\" dry run before "\
         "pushing other commits."
     )
 

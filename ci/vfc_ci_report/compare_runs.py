@@ -65,7 +65,9 @@ class CompareRuns:
         return x, x_metadata
 
 
-    # Update plots based on current test/var/backend combination
+
+        # Plots update function
+
     def update_plots(self):
 
             # Select all data matching current test/var/backend

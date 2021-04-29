@@ -211,7 +211,7 @@ int vfc_dump_probes(vfc_probes * probes) {
     char* exportPath = getenv("VFC_PROBES_OUTPUT");
     if(!exportPath) {
         printf(
-            "Info [verificarlo]: VFC_PROBES_OUTPUT is not set, probes will \
+            "Warning [verificarlo]: VFC_PROBES_OUTPUT is not set, probes will \
             not be dumped\n"
         );
         vfc_free_probes(probes);

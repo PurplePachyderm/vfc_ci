@@ -19,8 +19,10 @@ def get_metadata(metadata, timestamp):
 
 # Convert a metadata Pandas series to a JS readable dict
 def metadata_to_dict(metadata):
-    # JS doesn't accept True for booleans
     dict = metadata.to_dict()
+
+    # JS doesn't accept True for booleans, and Python doesn't accept true
+    # (because of the caps) => using an integer is a portable solution
     dict["is_git_commit"] = 1 if dict["is_git_commit"] else 0
 
     dict["date"] = time.ctime(metadata.name)
@@ -99,7 +101,8 @@ def get_run_name(timestamp, hash):
 
     return str
 
-# This will help us store data about last generated string to avoid duplicates
+# These external variables will store data about the last generated string to
+# avoid duplicates (assuming the runs are sorted by time)
 get_run_name.counter = 0
 get_run_name.previous = ""
 
@@ -127,7 +130,7 @@ def reset_x_ranges(plots, x_range):
             value.xaxis.major_label_text_font_size = "0pt"
 
 
-# Remove outliers from an array
+# Remove outliers from an array of floats
 def filter_outliers(array):
     if len(array) <= 2:
         return array

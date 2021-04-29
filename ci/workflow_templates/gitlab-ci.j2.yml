@@ -5,11 +5,11 @@ image: verificarlo/verificarlo
 
 
 stages:
-  - run_tests
+  - run_verificarlo_tests
 
 
-run_tests:
-  stage: run_tests
+run_verificarlo_tests:
+  stage: run_verificarlo_tests
 
   before_script:
   - git remote set-url origin https://{{username}}:${CI_PUSH_TOKEN}@{{remote_url}}.git
@@ -17,6 +17,8 @@ run_tests:
   - git config --global user.name "{{username}}"
 
   script:
+  # We will probably drop these installations when integrating CI into
+  # Verificarlo
   - pip install numpy scipy pandas bokeh jinja2 tables GitPython
   - apt update
   - apt install wget

@@ -1,4 +1,4 @@
-# General functions for filling plots with data in all the report's views
+# General functions for filling plots with data in all report's views
 
 from bokeh.plotting import figure
 from bokeh.models import HoverTool, TapTool, CustomJS

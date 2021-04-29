@@ -81,13 +81,13 @@ def setup(args):
     # "test" subcommand
 
 @subcommand(
-    description="Start a server to visualize Verificarlo test results.",
+    description="Execute predefined Verificarlo tests and save their results.",
     args = [
         argument(
             "-g", "--is-git-commit",
             help="""
             When specified, the last Git commit of the local repository (working
-            directory) will be fetched and associated with the run
+            directory) will be fetched and associated with the run.
             """,
             action="store_true"
         ),
@@ -133,7 +133,7 @@ def test(args):
             "-gd", "--git-directory",
             help="""
             Path to a local Git repository. The report will be linked to the
-            remote URL (GitHub or GitLab).
+            remote URL (GitHub and GitLab are supported).
             """,
             type=is_directory
         ),
@@ -176,10 +176,8 @@ def serve(args):
     # git_directory and git_url are supposed to be exclusive
     if args.git_directory != None and args.git_url != None:
         raise argparse.ArgumentTypeError(
-            """
-            '-gd' / '--git-directory' and '-gu' / '--git-url' are mutually
-            exclusive. Please make sure to use at most one of them.
-            """
+            "\"-gd\" / \"--git-directory\" and \"-gu\" / \"--git-url\" are "\
+            "mutually exclusive. Please make sure to use at most one of them."
         )
 
     import ci.serve

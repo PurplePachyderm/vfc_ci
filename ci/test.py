@@ -1,5 +1,5 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
-# It will also generate a ... .vfcrun.json file with the results of the run
+# It will also generate a ... .vfcrun.hd5 file with the results of the run
 
 import os
 import json
@@ -62,6 +62,7 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
         warnings.append(execution_data)
 
 
+    # Once the CSV has been opened and validated, return its content
     results["value"] = results["value"].apply(lambda x: float.fromhex(x))
     results.rename(columns = {"value":"values"}, inplace = True)
 
@@ -70,28 +71,28 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     return results
 
 
-# Wrapper to sd.significant_digits  (returns result in base 2)
+# Wrapper to sd.significant_digits (returns result in base 2)
 def significant_digits(x):
 
     # In a pandas DF, "values" actually refers to the array of columns, and
     # not the column named "values"
-    values = x.values[3]
+    distribution = x.values[3]
+    distribution = distribution.reshape(len(distribution), 1)
+
+    # Accept or reject the null hypothesis
     method = sd.Method.General if x.pvalue < min_pvalue else sd.Method.CNH
 
-    values = values.reshape(len(values), 1)
-
-    # Since we will be comparing values with themselves, we need to have
-    # len(values) % 2 == 0. When it's not verified, we double the last element
-    if len(values) % 2 != 0:
-        values.append(values[:1])
+    # The distribution's empirical average will be used as the reference
+    mu = np.array([x.mu])
 
     s = sd.significant_digits(
-        values.reshape(len(values), 1),
-        None,
+        distribution,
+        mu,
         precision=sd.Precision.Absolute,
         method=method
     )
 
+    # s is returned as a size 1 list
     return s[0]
 
 
@@ -113,11 +114,11 @@ def filter_outliers(x):
 ################################################################################
 
 
+
     # Main functions
 
 
-    # Open and read the tests config file
-
+# Open and read the tests config file
 def read_config():
     try:
         with open("vfc_tests_config.json", "r") as file:
@@ -132,8 +133,7 @@ def read_config():
 
 
 
-    # Set up metadata
-
+# Set up metadata
 def generate_metadata(is_git_commit):
 
     # Metadata and filename are initiated as if no commit was associated
@@ -164,27 +164,24 @@ def generate_metadata(is_git_commit):
 
 
 
-    # Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
-
+# Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
 def run_tests(config):
 
     # Run the build command
     print("Info [vfc_ci]: Building tests...")
     os.system(config["make_command"])
 
-
     # This is an array of Pandas dataframes for now
     data = []
-
 
     # Create tmp folder to export results
     os.system("mkdir .vfcruns.tmp")
     n_files = 0
 
-
     # This will contain all executables/repetition numbers from which we could
     # not get any data
     warnings = []
+
 
     # Tests execution loop
     for executable in config["executables"]:
@@ -220,7 +217,6 @@ def run_tests(config):
                 data.append(read_probes_csv(
                     file,
                     backend["name"],
-
                     warnings,
                     execution_data
                 ))
@@ -246,6 +242,45 @@ def run_tests(config):
 
 
 
+    # Data processing
+def data_processing(data):
+
+    data["values"] = data["values"].apply(lambda x: np.array(x).astype(float))
+
+    # Get empirical average, standard deviation and p-value
+    data["mu"] = data["values"].apply(np.average)
+    data["sigma"] = data["values"].apply(np.std)
+    data["pvalue"] = data["values"].apply(lambda x: scipy.stats.shapiro(x).pvalue)
+
+
+    # Significant digits
+    data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
+    data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
+
+    # Lower bound of the confidence interval using the sigdigits module
+    data["s2_lower_bound"] = data.apply(significant_digits, axis=1)
+    data["s10_lower_bound"] = data["s2_lower_bound"].apply(lambda x: sd.change_base(x, 10))
+
+
+    # Compute moments of the distribution
+    # (including a new distribution obtained by filtering outliers)
+    data["values"] = data["values"].apply(np.sort)
+    data["filtered_values"] = data.apply(filter_outliers, axis=1)
+
+    # Get moments of both original and outliers-filtered distributions
+    for prefix in ["", "filtered_"]:
+        data["%smu"%prefix] = data["%svalues"%prefix].apply(np.average)
+        data["%smin"%prefix] = data["%svalues"%prefix].apply(np.min)
+        data["%squantile25"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.25,))
+        data["%squantile50"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.50,))
+        data["%squantile75"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.75,))
+        data["%smax"%prefix] = data["%svalues"%prefix].apply(np.max)
+
+    del data["filtered_values"]
+    data["nsamples"] = data["values"].apply(len)
+
+
+
     # Display all executions that resulted in a warning
 def show_warnings(warnings):
     if len(warnings) > 0:
@@ -263,7 +298,11 @@ def show_warnings(warnings):
             print("  Repetition: %s" % warnings[i]["repetition"])
 
 
-    # Main function
+
+################################################################################
+
+
+    # Entry point
 
 def run(is_git_commit, export_raw_values, dry_run):
 
@@ -280,41 +319,10 @@ def run(is_git_commit, export_raw_values, dry_run):
 
     # Data processing
     print("Info [vfc_ci]: Processing data...")
-
-    data["values"] = data["values"].apply(lambda x: np.array(x).astype(float))
-
-    data["mu"] = data["values"].apply(np.average)
-    data["sigma"] = data["values"].apply(np.std)
-    data["pvalue"] = data["values"].apply(lambda x: scipy.stats.shapiro(x).pvalue)
+    data_processing(data)
 
 
-    data["s2"] = - np.log2(np.absolute( data["sigma"] / data["mu"] ))
-    data["s10"] = data["s2"].apply(lambda x: sd.change_base(x, 10))
-
-    # Lower bound of the confidence interval using the sigdigits module
-    data["s2_lower_bound"] = data.apply(significant_digits, axis=1)
-    data["s10_lower_bound"] = data["s2_lower_bound"].apply(lambda x: sd.change_base(x, 10))
-
-
-
-    data["values"] = data["values"].apply(np.sort)
-    data["filtered_values"] = data.apply(filter_outliers, axis=1)
-
-    # Get moments of distribution and outliers-filtered distribution
-    for prefix in ["", "filtered_"]:
-
-        data["%smu"%prefix] = data["%svalues"%prefix].apply(np.average)
-        data["%smin"%prefix] = data["%svalues"%prefix].apply(np.min)
-        data["%squantile25"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.25,))
-        data["%squantile50"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.50,))
-        data["%squantile75"%prefix] = data["%svalues"%prefix].apply(np.quantile, args=(0.75,))
-        data["%smax"%prefix] = data["%svalues"%prefix].apply(np.max)
-
-    del data["filtered_values"]
-
-    data["nsamples"] = data["values"].apply(len)
-
-    # Prepare data for export
+    # Prepare data for export (by creating a proper index and linking run timestamp)
     data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
     data["timestamp"] = metadata["timestamp"]
 
