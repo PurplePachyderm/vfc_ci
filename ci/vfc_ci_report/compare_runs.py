@@ -148,11 +148,24 @@ class CompareRuns:
         self.sources["boxplot_source"].data = dict
 
 
-        # Update x_ranges
-        helper.reset_x_range(self.plots["boxplot"], self.sources["boxplot_source"].data["x"])
-        helper.reset_x_range(self.plots["sigma_plot"], self.sources["sigma_source"].data["sigma_x"])
-        helper.reset_x_range(self.plots["s10_plot"], self.sources["s10_source"].data["s10_x"])
-        helper.reset_x_range(self.plots["s2_plot"], self.sources["s2_source"].data["s2_x"])
+            # Update x axis
+
+        helper.reset_x_range(
+            self.plots["boxplot"],
+            self.sources["boxplot_source"].data["x"]
+        )
+        helper.reset_x_range(
+            self.plots["sigma_plot"],
+            self.sources["sigma_source"].data["sigma_x"]
+        )
+        helper.reset_x_range(
+            self.plots["s10_plot"],
+            self.sources["s10_source"].data["s10_x"]
+        )
+        helper.reset_x_range(
+            self.plots["s2_plot"],
+            self.sources["s2_source"].data["s2_x"]
+        )
 
 
 
@@ -524,6 +537,7 @@ class CompareRuns:
 
     def inspect_run_callback_s10(self, attr, old, new):
         self.inspect_run_callback(new, "s10_source", "s10_x")
+
 
 
         # Constructor

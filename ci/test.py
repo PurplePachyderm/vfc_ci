@@ -365,7 +365,6 @@ def run(is_git_commit, export_raw_values, dry_run):
         data.to_hdf(filename + ".vfcrun.hd5", key="data")
         metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
 
-
     # Print termination messages
     print(
         "Info [vfc_ci]: The results have been successfully written to " \

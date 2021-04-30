@@ -72,7 +72,7 @@ def fill_boxplot(
     plot, source,
     prefix="",
     tooltips=None, tooltips_formatters=None,
-    js_tap_callback=None, server_tap_callback=None,
+    js_tap_callback=None, server_tap_callback=None
 ):
 
     # (Optional) Tooltip and tooltip formatters

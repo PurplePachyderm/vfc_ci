@@ -131,6 +131,7 @@ class InspectRuns:
             "sigma": lambda x: x.tolist(),
             "s10": lambda x: x.tolist(),
             "s2": lambda x: x.tolist(),
+
             "mu": lambda x: x.tolist(),
 
             # Used for mu weighted average first, then will be replaced
@@ -195,31 +196,29 @@ class InspectRuns:
         factors_dict = self.factors_dict.copy()
         del factors_dict[groupby_display]
         del factors_dict[filterby_display]
-        over_all = list(factors_dict.keys())[0]
+        for_all = list(factors_dict.keys())[0]
 
         # Update all display strings for plot title (remove caps, plural)
         groupby_display = groupby_display.lower()
         filterby_display = filterby_display.lower()[:-1]
-        over_all = over_all.lower()
+        for_all = for_all.lower()
 
         self.plots["mu_inspect"].title.text = \
         "Empirical average μ of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+        % (filterby_display, groupby_display, for_all)
 
         self.plots["sigma_inspect"].title.text = \
         "Standard deviation σ of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+        % (filterby_display, groupby_display, for_all)
 
         self.plots["s10_inspect"].title.text = \
         "Significant digits s of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+        % (filterby_display, groupby_display, for_all)
 
         self.plots["s2_inspect"].title.text = \
         "Significant digits s of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+        % (filterby_display, groupby_display, for_all)
 
-
-            # Update x_ranges
 
         helper.reset_x_range(self.plots["mu_inspect"], groups["mu_x"])
         helper.reset_x_range(self.plots["sigma_inspect"], groups["sigma_x"])
