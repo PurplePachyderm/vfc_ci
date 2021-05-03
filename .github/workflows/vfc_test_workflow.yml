@@ -1,12 +1,12 @@
-# This workflow will be executed when {{dev_branch}} is updated:
-# it will run the configured tests and upload the results on {{ci_branch}}.
+# This workflow will be executed when master is updated:
+# it will run the configured tests and upload the results on vfc_ci_master.
 
-name: "Verificarlo CI ({{dev_branch}})"
+name: "Verificarlo CI (master)"
 
 on:
-  # Triggers the workflow when {{dev_branch}} is updated
+  # Triggers the workflow when master is updated
   push:
-    branches: [ {{dev_branch}} ]
+    branches: [ master ]
 
   workflow_dispatch:
 
@@ -43,7 +43,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          git checkout {{ci_branch}}
+          git checkout vfc_ci_master
           mkdir -p vfcruns
           mv *.vfcrun.h5 vfcruns
           git add vfcruns/*
@@ -53,5 +53,5 @@ jobs:
       - name: Upload raw results as artifacts
         uses: actions/upload-artifact@v2
         with:
-          {% raw %}name: ${{github.sha}}.vfcraw{% endraw %}
+          name: ${{github.sha}}.vfcraw
           path: ./*.vfcraw.h5

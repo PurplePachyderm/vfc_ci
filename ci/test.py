@@ -89,7 +89,7 @@ def significant_digits(x):
             distribution,
             mu,
             precision=sd.Precision.Relative,
-            method=sd.Method.General
+            method=sd.Method.General,
 
             probability=0.9,
             confidence=0.95
