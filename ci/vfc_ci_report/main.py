@@ -1,5 +1,5 @@
 # Look for and read all the run files in the current directory (ending with
-# .vfcrun.hd5), and lanch a Bokeh server for the visualization of this data.
+# .vfcrunh5), and lanch a Bokeh server for the visualization of this data.
 
 import os
 import sys
@@ -19,7 +19,7 @@ import helper
 
     # Read vfcrun files, and aggregate them in one dataset
 
-run_files = [ f for f in os.listdir(".") if f.endswith(".vfcrun.hd5") ]
+run_files = [ f for f in os.listdir(".") if f.endswith(".vfcrun.h5") ]
 
 if len(run_files) == 0:
     print(

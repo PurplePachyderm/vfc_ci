@@ -45,7 +45,7 @@ jobs:
 
           git checkout {{ci_branch}}
           mkdir -p vfcruns
-          mv *.vfcrun.hd5 vfcruns
+          mv *.vfcrun.h5 vfcruns
           git add vfcruns/*
           git commit -m "[auto] New test results for commit ${git_hash}"
           git push
@@ -54,4 +54,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           {% raw %}name: ${{github.sha}}.vfcraw{% endraw %}
-          path: ./*.vfcraw.hd5
+          path: ./*.vfcraw.h5

@@ -1,5 +1,5 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
-# It will also generate a ... .vfcrun.hd5 file with the results of the run
+# It will also generate a ... .vfcrunh5 file with the results of the run
 
 import os
 import json
@@ -75,62 +75,57 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
 
 def significant_digits(x):
 
-    # In a pandas DF, "values" actually refers to the array of columns, and
-    # not the column named "values"
-    distribution = x.values[3]
-    distribution = distribution.reshape(len(distribution), 1)
-
-    # The distribution's empirical average will be used as the reference
-    mu = np.array([x.mu])
-
-    # If the null hypothesis is rejected, call sigdigits with General mode:
+    # If the null hypothesis is rejected, call sigdigits with the General formula:
     if x.pvalue < min_pvalue:
-        method = sd.Method.General
+        # In a pandas DF, "values" actually refers to the array of columns, and
+        # not the column named "values"
+        distribution = x.values[3]
+        distribution = distribution.reshape(len(distribution), 1)
+
+        # The distribution's empirical average will be used as the reference
+        mu = np.array([x.mu])
+
         s = sd.significant_digits(
             distribution,
             mu,
-            precision=sd.Precision.Absolute,
-            method=method
+            precision=sd.Precision.Relative,
+            method=sd.Method.General
+
+            probability=0.9,
+            confidence=0.95
         )
 
+        # s is returned inside a list
+        return s[0]
 
-    # Else, manually compute sMCA which is equivalent to a 66% confidence interval
+    # Else, manually compute sMCA (Stott-Parker formula)
     else:
-        method = sd.Method.CNH
-        s = sd.significant_digits(
-            distribution,
-            mu,
-            precision=sd.Precision.Absolute,
-            method=method,
-
-            probability=0.66,
-            confidence=0.66,
-        )
-
-    # s is returned as a size 1 list
-    return s[0]
+        return -np.log2(np.absolute(x.sigma / x.mu))
 
 
 def significant_digits_lower_bound(x):
     # If the null hypothesis is rejected, no lower bound
     if x.pvalue < min_pvalue:
-            return x.s2
+        return x.s2
 
-    # Else, the lower bound will be a 95% confidence interval
+    # Else, the lower bound will be computed with p= .9 alpha-1=.95
+    else:
+        distribution = x.values[3]
+        distribution = distribution.reshape(len(distribution), 1)
 
-    distribution = x.values[3]
-    distribution = distribution.reshape(len(distribution), 1)
+        mu = np.array([x.mu])
 
-    mu = np.array([x.mu])
+        s = sd.significant_digits(
+            distribution,
+            mu,
+            precision=sd.Precision.Relative,
+            method=sd.Method.CNH,
 
-    s = sd.significant_digits(
-        distribution,
-        mu,
-        precision=sd.Precision.Absolute,
-        method=sd.Method.CNH,
-    )
+            probability=0.9,
+            confidence=0.95
+        )
 
-    return s[0]
+        return s[0]
 
 
 ################################################################################
@@ -356,26 +351,26 @@ def run(is_git_commit, export_raw_values, dry_run):
 
     # Export raw data if needed
     if export_raw_values and not dry_run:
-        data.to_hdf(filename + ".vfcraw.hd5", key="data")
-        metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
+        data.to_hdf(filename + ".vfcraw.h5", key="data")
+        metadata.to_hdf(filename + ".vfcraw.h5", key="metadata")
 
     # Export data
     del data["values"]
     if not dry_run:
-        data.to_hdf(filename + ".vfcrun.hd5", key="data")
-        metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
+        data.to_hdf(filename + ".vfcrun.h5", key="data")
+        metadata.to_hdf(filename + ".vfcrun.h5", key="metadata")
 
     # Print termination messages
     print(
         "Info [vfc_ci]: The results have been successfully written to " \
-        "%s.vfcrun.hd5." \
+        "%s.vfcrun.h5." \
          % filename
      )
 
     if export_raw_values:
         print(
             "Info [vfc_ci]: A file containing the raw values has also been " \
-            "created : %s.vfcraw.hd5."
+            "created : %s.vfcraw.h5."
             % filename
         )
 

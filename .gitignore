@@ -1,6 +1,6 @@
 test
 *.o
 *.csv
-*.hd5
+*.h5
 __pycache__
 ci/__pycache__
