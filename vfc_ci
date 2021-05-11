@@ -72,8 +72,8 @@ def argument(*name_or_flags, **kwargs):
     ]
 )
 def setup(args):
-    import ci.setup
-    ci.setup.setup(args.git_host)
+    import verificarlo.ci.setup
+    verificarlo.ci.setup.setup(args.git_host)
 
     # "test" subcommand
 
@@ -107,8 +107,8 @@ def setup(args):
     ]
 )
 def test(args):
-    import ci.test
-    ci.test.run(args.is_git_commit, args.export_raw_results, args.dry_run)
+    import verificarlo.ci.test
+    verificarlo.ci.test.run(args.is_git_commit, args.export_raw_results, args.dry_run)
 
     # "serve" subcommand
 
@@ -177,8 +177,8 @@ def serve(args):
             "mutually exclusive. Please make sure to use at most one of them."
         )
 
-    import ci.serve
-    ci.serve.serve(
+    import verificarlo.ci.serve
+    verificarlo.ci.serve.serve(
         args.show,
         args.git_directory,
         args.git_url,

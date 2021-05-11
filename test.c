@@ -1,7 +1,7 @@
 // This is a test that will be compiled with Verificarlo
 
 #include <stdio.h>
-#include "vfc_probe.h"
+#include <vfc_probes.h>
 
 int main(void) {
 

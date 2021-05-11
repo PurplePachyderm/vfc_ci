@@ -1,7 +1,7 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
 # It will also generate a ... .vfcrunh5 file with the results of the run
 
-import sigdigits as sd
+import verificarlo.sigdigits as sd
 import scipy.stats
 import numpy as np
 import pandas as pd
