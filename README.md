@@ -16,19 +16,23 @@ can be visualized by starting a server to serve an HTML report.
 
 The following installation procedure will install ```vfc_ci``` over an existing Verificarlo install.
 
-- Create a `set_install_paths.sh` file exporting ```VFC_HEADER_PATH ``` and ```VFC_PYTHON_PATH``` variables. Here is an example file with hardcoded values :
+- Create a `copy_source.sh` script variables. Here is an example file with hardcoded values :
+
 ```
 #!/usr/bin/env bash
-export VFC_INCLUDE_PATH=/usr/local/include
-export VFC_PYTHON_PATH=/usr/local/lib/python3.9/site-packages/verificarlo
-export VFC_BIN_PATH=/usr/local/bin
+VFC_INCLUDE_PATH=/usr/local/include
+VFC_PYTHON_PATH=/usr/local/lib/python3.9/site-packages/verificarlo
+VFC_BIN_PATH=/usr/local/bin
+cp vfc_hashmap.h vfc_probes.h $(VFC_INCLUDE_PATH)
+cp vfc_ci $(VFC_BIN_PATH)
+cp vfc_ci $(VFC_PYTHON_PATH)
+cp -r ci $(VFC_PYTHON_PATH)
+cp sigdigits/sigdigits.py $(VFC_PYTHON_PATH)
+
 ```
 
-- Run  
-```
-source set_install_paths.sh
-make install
-```
+- Run you script directly, or `make install` (to also download sigdigits with Git submodules).
+
 
 ### Usage
 
