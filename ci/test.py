@@ -152,7 +152,7 @@ def generate_metadata(is_git_commit):
     metadata = {
         "timestamp": calendar.timegm(time.gmtime()),
         "is_git_commit": is_git_commit,
-        "remote-url": "",
+        "remote_url": "",
         "branch": "",
         "hash": "",
         "author": "",
@@ -179,8 +179,6 @@ def generate_metadata(is_git_commit):
         metadata["author"] = "%s <%s>" \
             % (str(head_commit.author), head_commit.author.email)
         metadata["message"] = head_commit.message.split("\n")[0]
-
-        print(metadata)
 
     return metadata
 

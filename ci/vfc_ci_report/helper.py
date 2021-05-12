@@ -1,5 +1,6 @@
 # General helper functions for both compare_runs and compare_variables
 
+from urllib.parse import urlparse
 import calendar
 import time
 from itertools import compress
@@ -11,6 +12,27 @@ max_ticks = 15
 max_zscore = 3
 
 ##########################################################################
+
+
+# Generate display repository names from (sorted and equally sized) lists of
+# remote URLs and branch names
+def gen_repo_names(remote_urls, branches):
+
+    repo_names_dict = {}
+
+    for i in range(0, len(remote_urls)):
+
+        if remote_urls[i] == "":
+            repo_names_dict[remote_urls[i]] = "None"
+            continue
+
+        parsed_url = urlparse(remote_urls[i])
+        path = parsed_url.path.split("/")
+
+        repo_name = path[-2] + "/" + path[-1] + ":" + branches[i]
+        repo_names_dict[remote_urls[i]] = repo_name
+
+    return repo_names_dict
 
 
 # From a timestamp, return the associated metadata as a Pandas serie

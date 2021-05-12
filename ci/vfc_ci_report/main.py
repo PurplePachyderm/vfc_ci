@@ -8,6 +8,7 @@ import time
 import pandas as pd
 
 from bokeh.plotting import curdoc
+from bokeh.models import Select
 
 # Local imports from vfc_ci_server
 import compare_runs
@@ -178,6 +179,23 @@ class ViewsMaster:
         self.metadata = metadata
         self.git_repo_linked = git_repo_linked
         self.commit_link = commit_link
+
+        # Generate display names for repositories
+        remote_urls = metadata["remote_url"].drop_duplicates().to_list()
+        branches = metadata["branch"].drop_duplicates().to_list()
+        repo_names_dict = helper.gen_repo_names(remote_urls, branches)
+        self.metadata["repo_name"] = self.metadata["remote_url"].apply(
+            lambda x:  repo_names_dict[x]
+        )
+
+        # Add the repository selection widget
+        select_repo = Select(
+            name="select_repo", title="",
+            value=list(repo_names_dict.values())[0],
+            options=list(repo_names_dict.values())
+        )
+        curdoc().add_root(select_repo)
+
 
         # Pass metadata to the template as a JSON string
         curdoc().template_variables["metadata"] = self.metadata.to_json(
