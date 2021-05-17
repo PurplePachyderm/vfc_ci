@@ -108,7 +108,10 @@ def setup(args):
 )
 def test(args):
     import verificarlo.ci.test
-    verificarlo.ci.test.run(args.is_git_commit, args.export_raw_results, args.dry_run)
+    verificarlo.ci.test.run(
+        args.is_git_commit,
+        args.export_raw_results,
+        args.dry_run)
 
     # "serve" subcommand
 
@@ -125,22 +128,6 @@ def test(args):
             startup.
             """,
             action="store_true"
-        ),
-        argument(
-            "-gd", "--git-directory",
-            help="""
-            Path to a local Git repository. The report will be linked to the
-            remote URL (GitHub and GitLab are supported).
-            """,
-            type=is_directory
-        ),
-        argument(
-            "-gu", "--git-url",
-            help="""
-            GitHub or GitLab repository URL. The report will be linked to this
-            URL.
-            """,
-            type=str
         ),
         argument(
             "-p", "--port",

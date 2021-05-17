@@ -40,6 +40,15 @@ def get_metadata(metadata, timestamp):
     return metadata.loc[timestamp]
 
 
+# Returns a boolean to indicate if a timestamp (rather the commit linked to it)
+# belongs to a particular repository
+def filterby_repo(metadata, repo_name, timestamps):
+
+    return timestamps.apply(
+        lambda x: get_metadata(metadata, x) == repo_name
+    )["repo_name"]
+
+
 # Convert a metadata Pandas series to a JS readable dict
 def metadata_to_dict(metadata):
     dict = metadata.to_dict()

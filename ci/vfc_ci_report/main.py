@@ -4,11 +4,12 @@
 import os
 import sys
 import time
+import json
 
 import pandas as pd
 
 from bokeh.plotting import curdoc
-from bokeh.models import Select
+from bokeh.models import Select, CustomJS
 
 # Local imports from vfc_ci_server
 import compare_runs
@@ -71,78 +72,6 @@ logo_url = ""
 
 for i in range(1, len(sys.argv)):
 
-    # Look for the Git repository remote address
-    # (if a Git repo is specified, the webpage will contain hyperlinks to the
-    # repository and the different commits)
-    if sys.argv[i] == "git":
-        from urllib.parse import urlparse
-
-        method = sys.argv[i + 1]
-        address = sys.argv[i + 2]
-        url = ""
-
-        # Here, address is either the remote URL or the path to the local Git
-        # repo (depending on the method)
-
-        if method == "url":
-            # We should directly have a Git URL
-            url = address
-
-        elif method == "directory":
-            # Get the remote URL from the local repo
-            from git import Repo
-            repo = Repo(address)
-            url = repo.remotes.origin.url
-
-        else:
-            raise ValueError(
-                "Error [vfc_ci]: The specified method to get the Git "
-                "repository is invalid. Are you calling Bokeh directly "
-                "instead of using the Verificarlo wrapper ?"
-            )
-
-        # At this point, "url" should be set correctly, we can get the repo's
-        # URL and name, after making sure we're on a Git URL
-
-        parsed_url = urlparse(url)
-
-        path = parsed_url.path.split("/")
-        if len(path) < 3:
-            raise ValueError(
-                "Error [vfc_ci]: The found URL doesn't seem to be pointing "
-                "to a Git repository (path is too short)"
-            )
-
-        repo_name = path[2]
-
-        curdoc().template_variables["repo_url"] = url
-        curdoc().template_variables["repo_name"] = repo_name
-
-        # We should have a "github.com" or a "*gitlab*" URL
-
-        if parsed_url.netloc == "github.com":
-            commit_link = "https://%s%s/commit/" \
-                % (parsed_url.netloc, parsed_url.path)
-
-            curdoc().template_variables["commit_link"] = commit_link
-            curdoc().template_variables["git_host"] = "GitHub"
-
-            # Used in Bokeh tooltips
-            commit_link = commit_link + "@hash"
-
-        # We assume we have a GitLab URL
-        else:
-            commit_link = "https://%s%s/-/commit/" \
-                % (parsed_url.netloc, parsed_url.path)
-
-            curdoc().template_variables["commit_link"] = commit_link
-            curdoc().template_variables["git_host"] = "GitLab"
-
-            # Used in Bokeh tooltips
-            commit_link = commit_link + "@hash"
-
-        git_repo_linked = True
-
     # Look for a logo URL
     # If a logo URL is specified, it will be included in the report's header
     if sys.argv[i] == "logo":
@@ -150,8 +79,6 @@ for i in range(1, len(sys.argv)):
         has_logo = True
 
 
-# After the loop, we know if a repo has been linked, if we have a logo, ...
-curdoc().template_variables["git_repo_linked"] = git_repo_linked
 curdoc().template_variables["has_logo"] = has_logo
 
 
@@ -166,7 +93,22 @@ curdoc().template_variables["has_logo"] = has_logo
 
 class ViewsMaster:
 
-    # Communication functions
+    # Callbacks
+
+    def change_repo(self, attrname, old, new):
+        filtered_data = self.data[
+            helper.filterby_repo(
+                self.metadata, new, self.data["timestamp"]
+            )
+        ]
+        filtered_metadata = self.metadata[
+            self.metadata["repo_name"] == new
+        ]
+
+        self.compare.change_repo(filtered_data, filtered_metadata)
+        self.inspect.change_repo(filtered_data, filtered_metadata)
+
+        # Communication functions
 
     def go_to_inspect(self, run_name):
         self.inspect.switch_view(run_name)
@@ -181,11 +123,11 @@ class ViewsMaster:
         self.commit_link = commit_link
 
         # Generate display names for repositories
-        remote_urls = metadata["remote_url"].drop_duplicates().to_list()
-        branches = metadata["branch"].drop_duplicates().to_list()
+        remote_urls = self.metadata["remote_url"].drop_duplicates().to_list()
+        branches = self.metadata["branch"].drop_duplicates().to_list()
         repo_names_dict = helper.gen_repo_names(remote_urls, branches)
         self.metadata["repo_name"] = self.metadata["remote_url"].apply(
-            lambda x:  repo_names_dict[x]
+            lambda x: repo_names_dict[x]
         )
 
         # Add the repository selection widget
@@ -196,25 +138,52 @@ class ViewsMaster:
         )
         curdoc().add_root(select_repo)
 
+        select_repo.on_change("value", self.change_repo)
+
+        change_repo_callback_js = "changeRepository(cb_obj.value);"
+        select_repo.js_on_change(
+            "value",
+            CustomJS(code=change_repo_callback_js)
+        )
+
+        # Invert key/values for repo_names_dict and pass it to the template as
+        # a JSON string
+        repo_names_dict = {
+            value: key for key,
+            value in repo_names_dict.items()}
+        curdoc().template_variables["repo_names_dict"] = json.dumps(
+            repo_names_dict)
 
         # Pass metadata to the template as a JSON string
         curdoc().template_variables["metadata"] = self.metadata.to_json(
             orient="index")
 
-        # Runs comparison
+        repo_name = list(repo_names_dict.keys())[0]
+
+        # Filter data and metadata by repository
+        filtered_data = self.data[
+            helper.filterby_repo(
+                self.metadata, repo_name, self.data["timestamp"]
+            )
+        ]
+        filtered_metadata = self.metadata[
+            self.metadata["repo_name"] == repo_name
+        ]
+
+        # Initialize runs comparison
         self.compare = compare_runs.CompareRuns(
             master=self,
             doc=curdoc(),
-            data=data,
-            metadata=metadata,
+            data=filtered_data,
+            metadata=filtered_metadata,
         )
 
-        # Runs inspection
+        # Initialize runs inspection
         self.inspect = inspect_runs.InspectRuns(
             master=self,
             doc=curdoc(),
-            data=data,
-            metadata=metadata,
+            data=filtered_data,
+            metadata=filtered_metadata,
         )
 
 
