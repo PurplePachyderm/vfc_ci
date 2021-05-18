@@ -122,6 +122,14 @@ def test(args):
     """,
     args=[
         argument(
+            "-d", "--data-directory",
+            help="""
+            Specify where to look for the run files.
+            """,
+            type=is_directory,
+            default="."
+        ),
+        argument(
             "-s", "--show",
             help="""
             Specify if the report must be opened in the browser at server
@@ -156,19 +164,10 @@ def test(args):
     ]
 )
 def serve(args):
-
-    # git_directory and git_url are supposed to be exclusive
-    if args.git_directory is not None and args.git_url is not None:
-        raise argparse.ArgumentTypeError(
-            "\"-gd\" / \"--git-directory\" and \"-gu\" / \"--git-url\" are "
-            "mutually exclusive. Please make sure to use at most one of them."
-        )
-
     import verificarlo.ci.serve
     verificarlo.ci.serve.serve(
+        args.data_directory,
         args.show,
-        args.git_directory,
-        args.git_url,
         args.port,
         args.allow_origin,
         args.logo

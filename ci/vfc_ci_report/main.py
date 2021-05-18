@@ -18,9 +18,39 @@ import helper
 
 ##########################################################################
 
+curdoc().title = "Verificarlo Report"
+
+# Read server arguments
+# (this is quite easy because Bokeh server is called through a wrapper, so
+# we know exactly what the arguments might be)
+
+directory = "."
+
+has_logo = False
+logo_url = ""
+
+
+for i in range(1, len(sys.argv)):
+
+    # Look for a logo URL
+    # If a logo URL is specified, it will be included in the report's header
+    if sys.argv[i] == "logo":
+        curdoc().template_variables["logo_url"] = sys.argv[i + 1]
+        has_logo = True
+
+    if sys.argv[i] == "directory":
+        directory = sys.argv[i + 1]
+
+
+curdoc().template_variables["has_logo"] = has_logo
+
+
+##########################################################################
+
+
 # Read vfcrun files, and aggregate them in one dataset
 
-run_files = [f for f in os.listdir(".") if f.endswith(".vfcrun.h5")]
+run_files = [f for f in os.listdir(directory) if f.endswith(".vfcrun.h5")]
 
 if len(run_files) == 0:
     print(
@@ -32,8 +62,8 @@ metadata = []
 data = []
 
 for f in run_files:
-    metadata.append(pd.read_hdf(f, "metadata"))
-    data.append(pd.read_hdf(f, "data"))
+    metadata.append(pd.read_hdf(directory + "/" + f, "metadata"))
+    data.append(pd.read_hdf(directory + "/" + f, "data"))
 
 metadata = pd.concat(metadata).sort_index()
 data = pd.concat(data).sort_index()
@@ -53,33 +83,6 @@ helper.reset_run_strings()
 metadata["date"] = metadata.index.to_series().map(
     lambda x: time.ctime(x)
 )
-
-
-##########################################################################
-
-
-curdoc().title = "Verificarlo Report"
-
-# Read server arguments
-# (this is quite easy because Bokeh server is called through a wrapper, so
-# we know exactly what the arguments might be)
-
-git_repo_linked = False
-commit_link = ""
-
-has_logo = False
-logo_url = ""
-
-for i in range(1, len(sys.argv)):
-
-    # Look for a logo URL
-    # If a logo URL is specified, it will be included in the report's header
-    if sys.argv[i] == "logo":
-        curdoc().template_variables["logo_url"] = sys.argv[i + 1]
-        has_logo = True
-
-
-curdoc().template_variables["has_logo"] = has_logo
 
 
 ##########################################################################
@@ -115,12 +118,10 @@ class ViewsMaster:
 
         # Constructor
 
-    def __init__(self, data, metadata, git_repo_linked, commit_link):
+    def __init__(self, data, metadata):
 
         self.data = data
         self.metadata = metadata
-        self.git_repo_linked = git_repo_linked
-        self.commit_link = commit_link
 
         # Generate display names for repositories
         remote_urls = self.metadata["remote_url"].drop_duplicates().to_list()
@@ -189,7 +190,5 @@ class ViewsMaster:
 
 views_master = ViewsMaster(
     data=data,
-    metadata=metadata,
-    git_repo_linked=git_repo_linked,
-    commit_link=commit_link
+    metadata=metadata
 )

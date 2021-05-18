@@ -120,7 +120,7 @@
 
                 <div id="buttons-container" class="navbar-start">
 
-                    <div style="margin-top: 15px;">
+                    <div id="select-repo" style="margin-top: 15px;">
                     {{ embed(roots.select_repo) }}
                     </div>
 
@@ -528,6 +528,12 @@
             // Initial function calls using the template args
             metadata = {{metadata}}
             repoNamesDict = {{repo_names_dict}}
+
+            // Hide the repo selection if only one is detected
+            if(Object.keys(repoNamesDict).length == 1) {
+                document.getElementById("select-repo").style.display = "none";
+            }
+
 
             changeRepository("{{initial_repo}}");
             updateRunMetadata({{initial_timestamp}});
