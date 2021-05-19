@@ -133,7 +133,7 @@ def get_run_name(timestamp, hash):
 
 
 # These external variables will store data about the last generated string to
-# avoid duplicates (assuming the runs are sorted by time)
+# avoid duplicates (assuming the runs are sorted chronologically)
 get_run_name.counter = 0
 get_run_name.previous = ""
 
@@ -166,11 +166,11 @@ def detect_outliers(array, max_zscore=max_zscore):
     if len(array) <= 2:
         return [True] * len(array)
 
-    median = np.median(array)
+    mean = np.mean(array)
     std = np.std(array)
     if std == 0:
         return array
-    distance = abs(array - median)
+    distance = abs(array - mean)
     # Array of booleans with elements to be filtered
     outliers_array = distance < max_zscore * std
 

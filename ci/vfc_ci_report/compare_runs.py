@@ -24,7 +24,7 @@ class CompareRuns:
 
     # From an array of timestamps, returns the array of runs names (for the x
     # axis ticks), as well as the metadata (in a dict of arrays) associated to
-    # this array (for the tooltips)
+    # this array (will be used in tooltips)
     def gen_x_series(self, timestamps):
 
         # Initialize the objects to return

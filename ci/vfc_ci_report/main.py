@@ -18,7 +18,6 @@ import helper
 
 ##########################################################################
 
-curdoc().title = "Verificarlo Report"
 
 # Read server arguments
 # (this is quite easy because Bokeh server is called through a wrapper, so
@@ -120,8 +119,12 @@ class ViewsMaster:
 
     def __init__(self, data, metadata):
 
+        curdoc().title = "Verificarlo Report"
+
         self.data = data
         self.metadata = metadata
+
+        # Initialize repository selection
 
         # Generate display names for repositories
         remote_urls = self.metadata["remote_url"].drop_duplicates().to_list()
@@ -170,6 +173,8 @@ class ViewsMaster:
         filtered_metadata = self.metadata[
             self.metadata["repo_name"] == repo_name
         ]
+
+        # Initialize views
 
         # Initialize runs comparison
         self.compare = compare_runs.CompareRuns(

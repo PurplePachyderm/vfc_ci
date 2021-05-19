@@ -73,7 +73,7 @@ def argument(*name_or_flags, **kwargs):
 )
 def setup(args):
     import verificarlo.ci.setup
-    verificarlo.ci.setup.setup(args.git_host)
+    verificarlo.ci.setup.run(args.git_host)
 
     # "test" subcommand
 
@@ -165,7 +165,7 @@ def test(args):
 )
 def serve(args):
     import verificarlo.ci.serve
-    verificarlo.ci.serve.serve(
+    verificarlo.ci.serve.run(
         args.data_directory,
         args.show,
         args.port,

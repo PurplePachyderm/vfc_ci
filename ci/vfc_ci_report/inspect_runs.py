@@ -537,12 +537,12 @@ class InspectRuns:
         self.data = new_data
         self.metadata = new_metadata
 
-        # Update widgets(and automatically trigger plot updates)
         self.runs_dict = self.gen_runs_selection()
 
         runs_display = list(self.runs_dict.keys())
         current_run_display = runs_display[-1]
 
+        # Update widget (and trigger its callback)
         self.widgets["select_run"].options = runs_display
         self.widgets["select_run"].value = current_run_display
 
@@ -555,12 +555,14 @@ class InspectRuns:
         options = self.run_data.index\
             .get_level_values(filterby).drop_duplicates().tolist()
 
+        # Update widget (and trigger its callback)
         self.widgets["select_filter"].options = options
         self.widgets["select_filter"].value = options[0]
 
-    # When received, switch to the run_name in parameter
+    # When received, switch to run_name
 
     def switch_view(self, run_name):
+        # This will trigger the widget's callback
         self.widgets["select_run"].value = run_name
 
         # Constructor
