@@ -17,8 +17,8 @@ int main(void) {
     }
 
 
-    vfc_put_probe(&probes, "test", VAR_NAME(res), res);
-    vfc_put_probe(&probes, "test", VAR_NAME(varf), varf);
+    vfc_probe(&probes, "test", VAR_NAME(res), res);
+    vfc_probe(&probes, "test", VAR_NAME(varf), varf);
 
     vfc_dump_probes(&probes);
 
