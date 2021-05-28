@@ -1,4 +1,4 @@
-module vfc_probes_struct
+module vfc_probes
     use, intrinsic :: iso_c_binding
 
     ! Structures
@@ -24,14 +24,9 @@ module vfc_probes_struct
         type(vfc_hashmap_t) :: map
     end type vfc_probes
 
-end module vfc_probes_struct
 
 
-module vfc_probes
     ! Functions
-
-    use, intrinsic :: iso_c_binding
-    use vfc_probes_struct
 
     interface
 
@@ -73,7 +68,9 @@ module vfc_probes
         end function vfc_dump_probes
 
     end interface
+
 end module vfc_probes
+
 
 
 program vfc_probes
