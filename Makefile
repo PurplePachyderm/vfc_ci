@@ -13,6 +13,9 @@ install:
 
 	bash copy_source.sh
 
+vfc_probes:
+	verificarlo-c -c vfc_probes.c
+	flang vfc_probes.f90 vfc_probes.o
 
 clean:
 	rm test
