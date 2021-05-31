@@ -4,8 +4,9 @@
 import os
 
 
-# Entry point of vfc_ci serve
 def run(directory, show, port, allow_origin, logo_url):
+
+    '''Entry point of vfc_ci serve'''
 
     # Prepare arguments
     directory = "directory %s" % directory

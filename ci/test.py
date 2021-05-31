@@ -26,8 +26,9 @@ max_zscore = 3
 
 # Helper functions
 
-# Read a CSV file outputted by vfc_probe as a Pandas dataframe
 def read_probes_csv(filepath, backend, warnings, execution_data):
+
+    '''Read a CSV file outputted by vfc_probe as a Pandas dataframe'''
 
     try:
         results = pd.read_csv(filepath)
@@ -68,9 +69,10 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     return results
 
 
-# First wrapper to sd.significant_digits (returns results in base 2)
 
 def significant_digits(x):
+
+    '''First wrapper to sd.significant_digits (returns results in base 2)'''
 
     # If the null hypothesis is rejected, call sigdigits with the General
     # formula:
@@ -101,9 +103,14 @@ def significant_digits(x):
         return -np.log2(np.absolute(x.sigma / x.mu))
 
 
-# First wrapper to sd.significant_digits : assumes s2 has already been computed
 
 def significant_digits_lower_bound(x):
+
+    '''
+    First wrapper to sd.significant_digits : assumes s2 has already been
+    computed
+    '''
+
     # If the null hypothesis is rejected, no lower bound
     if x.pvalue < min_pvalue:
         return x.s2
@@ -133,8 +140,11 @@ def significant_digits_lower_bound(x):
     # Main functions
 
 
-# Open and read the tests config file
+
 def read_config():
+
+    '''Open and read the tests config file'''
+
     try:
         with open("vfc_tests_config.json", "r") as file:
             data = file.read()
@@ -185,8 +195,12 @@ def generate_metadata(is_git_commit):
     return metadata
 
 
-# Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
+
 def run_tests(config):
+
+    '''
+    Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
+    '''
 
     # Run the build command
     print("Info [vfc_ci]: Building tests...")
@@ -314,8 +328,9 @@ def show_warnings(warnings):
 
 ##########################################################################
 
-# Entry point of vfc_ci test
 def run(is_git_commit, export_raw_values, dry_run):
+
+    '''Entry point of vfc_ci test'''
 
     # Get config, metadata and data
     print("Info [vfc_ci]: Reading tests config file...")

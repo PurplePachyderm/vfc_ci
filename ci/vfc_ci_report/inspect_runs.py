@@ -22,8 +22,11 @@ class InspectRuns:
 
     # Helper functions related to InspectRun
 
-    # Returns a dictionary mapping user-readable strings to all run timestamps
     def gen_runs_selection(self):
+
+        '''
+        Returns a dictionary mapping user-readable strings to all run timestamps
+        '''
 
         runs_dict = {}
 
@@ -530,10 +533,14 @@ class InspectRuns:
         # Communication methods
         # (to send/receive messages to/from master)
 
-    # When received, update data and metadata with the new repo, and update
-    # everything
 
     def change_repo(self, new_data, new_metadata):
+
+        '''
+        When received, update data and metadata with the new repo, and update
+        everything
+        '''
+
         self.data = new_data
         self.metadata = new_metadata
 
@@ -559,9 +566,11 @@ class InspectRuns:
         self.widgets["select_filter"].options = options
         self.widgets["select_filter"].value = options[0]
 
-    # When received, switch to run_name
 
     def switch_view(self, run_name):
+
+        '''When received, switch selected run to run_name'''
+
         # This will trigger the widget's callback
         self.widgets["select_run"].value = run_name
 

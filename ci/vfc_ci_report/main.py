@@ -88,12 +88,14 @@ metadata["date"] = metadata.index.to_series().map(
 
 # Setup report views
 
-# Define a ViewsMaster class to allow two-ways communication between views.
-# This approach by classes allows us to have separate scopes for each view and
-# will be useful if we want to add new views at some point in the future
-# (instead of having n views with n-1 references each).
 
 class ViewsMaster:
+    '''
+    The ViewsMaster class allows two-ways communication between views.
+    This approach by classes allows us to have separate scopes for each view
+    and will be useful if we want to add new views at some point in the future
+    (instead of having n views with n-1 references each).
+    '''
 
     # Callbacks
 
