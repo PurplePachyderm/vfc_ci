@@ -23,7 +23,6 @@ class CompareRuns:
     # Helper functions related to CompareRuns
 
     def gen_x_series(self, timestamps):
-
         '''
         From an array of timestamps, returns the array of runs names (for the x
         axis ticks), as well as the metadata (in a dict of arrays) associated
@@ -519,9 +518,7 @@ class CompareRuns:
         # Communication methods
         # (to send/receive messages to/from master)
 
-
     def change_repo(self, new_data, new_metadata):
-
         '''
         When received, update data and metadata with the new repo, and update
         everything

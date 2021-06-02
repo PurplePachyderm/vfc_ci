@@ -15,7 +15,8 @@ install:
 
 vfc_probes:
 	verificarlo-c -c vfc_probes.c
-	flang vfc_probes.f90 vfc_probes.o
+	verificarlo-f vfc_probes.f90
 
 clean:
 	rm test
+	rm vfc_probes.o vfc_probes.mod

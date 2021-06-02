@@ -27,7 +27,6 @@ max_zscore = 3
 # Helper functions
 
 def read_probes_csv(filepath, backend, warnings, execution_data):
-
     '''Read a CSV file outputted by vfc_probe as a Pandas dataframe'''
 
     try:
@@ -69,9 +68,7 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     return results
 
 
-
 def significant_digits(x):
-
     '''First wrapper to sd.significant_digits (returns results in base 2)'''
 
     # If the null hypothesis is rejected, call sigdigits with the General
@@ -103,9 +100,7 @@ def significant_digits(x):
         return -np.log2(np.absolute(x.sigma / x.mu))
 
 
-
 def significant_digits_lower_bound(x):
-
     '''
     First wrapper to sd.significant_digits : assumes s2 has already been
     computed
@@ -140,9 +135,7 @@ def significant_digits_lower_bound(x):
     # Main functions
 
 
-
 def read_config():
-
     '''Open and read the tests config file'''
 
     try:
@@ -195,9 +188,7 @@ def generate_metadata(is_git_commit):
     return metadata
 
 
-
 def run_tests(config):
-
     '''
     Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
     '''
@@ -329,7 +320,6 @@ def show_warnings(warnings):
 ##########################################################################
 
 def run(is_git_commit, export_raw_values, dry_run):
-
     '''Entry point of vfc_ci test'''
 
     # Get config, metadata and data

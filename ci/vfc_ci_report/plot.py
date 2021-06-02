@@ -13,7 +13,6 @@ def fill_dotplot(
     lines=False,
     lower_bound=False
 ):
-
     '''
     General function for filling dotplots.
     Here are the possible parameters :
@@ -79,7 +78,6 @@ def fill_boxplot(
     tooltips=None, tooltips_formatters=None,
     js_tap_callback=None, server_tap_callback=None
 ):
-
     '''
     General function for filling boxplots.
     Here are the possible parameters :
@@ -90,7 +88,6 @@ def fill_boxplot(
     js_tap_callback: CustomJS object for client side click callback
     server_tap_callback: Callback object for server side click callback
     '''
-
 
     # (Optional) Tooltip and tooltip formatters
     if tooltips is not None:

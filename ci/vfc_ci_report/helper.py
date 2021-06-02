@@ -15,7 +15,6 @@ max_zscore = 3
 
 
 def gen_repo_names(remote_urls, branches):
-
     '''
     Generate display repository names from (sorted and equally sized) lists of
     remote URLs and branch names
@@ -39,14 +38,12 @@ def gen_repo_names(remote_urls, branches):
 
 
 def get_metadata(metadata, timestamp):
-
     '''From a timestamp, return the associated metadata as a Pandas serie'''
 
     return metadata.loc[timestamp]
 
 
 def filterby_repo(metadata, repo_name, timestamps):
-
     '''
     Returns a boolean to indicate if a timestamp (rather the commit linked to it)
     belongs to a particular repository
@@ -58,7 +55,6 @@ def filterby_repo(metadata, repo_name, timestamps):
 
 
 def metadata_to_dict(metadata):
-
     '''
     Convert a metadata Pandas series to a JS readable dict
     '''
@@ -75,7 +71,6 @@ def metadata_to_dict(metadata):
 
 
 def get_run_name(timestamp, hash):
-
     '''
     Return a string that indicates the elapsed time since the run, used as the
     x-axis tick in "Compare runs" or when selecting run in "Inspect run"
@@ -159,7 +154,6 @@ def reset_run_strings():
 
 
 def reset_x_range(plot, x_range):
-
     '''
     Update all the x-ranges from a dict of plots
     '''
@@ -180,7 +174,6 @@ def reset_x_range(plot, x_range):
 
 
 def detect_outliers(array, max_zscore=max_zscore):
-
     '''
     Return an array of booleans that indicate which elements are outliers
     (True means element is not an outlier and must be kept)

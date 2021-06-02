@@ -160,6 +160,24 @@ def test(args):
             Specify the URL of an image to be displayed in the report header.
             """,
             type=str
+        ),
+        argument(
+            "-f", "--from-timestamp",
+            help="""
+            Specify the minimum date (timestamp in seconds) for runs to appear
+            in the report. If --until-timestamp is not specified, there will be
+            no upper bound for the resulting timeframe.
+            """,
+            type=int
+        ),
+        argument(
+            "-u", "--until-timestamp",
+            help="""
+            Specify the maximum date (timestamp in seconds) for runs to appear
+            in the report. If --from-timestamp is not specified, there will be
+            no lower bound for the resulting timeframe.
+            """,
+            type=int
         )
     ]
 )
@@ -170,7 +188,8 @@ def serve(args):
         args.show,
         args.port,
         args.allow_origin,
-        args.logo
+        args.logo,
+        {"from": args.from_timestamp, "until": args.until_timestamp}
     )
 
 

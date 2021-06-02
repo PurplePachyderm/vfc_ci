@@ -27,6 +27,7 @@ directory = "."
 
 has_logo = False
 logo_url = ""
+timeframe = {}
 
 
 for i in range(1, len(sys.argv)):
@@ -37,8 +38,17 @@ for i in range(1, len(sys.argv)):
         curdoc().template_variables["logo_url"] = sys.argv[i + 1]
         has_logo = True
 
+    # By default, run files are read from ., look if specified othewise
     if sys.argv[i] == "directory":
         directory = sys.argv[i + 1]
+
+    # By default, runs from the last n days are selected, but a custom timeframe
+    # can be specified
+    if sys.argv[i] == "timeframe":
+        timeframe = {
+            "from": int(sys.argv[i + 1]),
+            "until": int(sys.argv[i + 2]),
+        }
 
 
 curdoc().template_variables["has_logo"] = has_logo
@@ -61,8 +71,23 @@ metadata = []
 data = []
 
 for f in run_files:
-    metadata.append(pd.read_hdf(directory + "/" + f, "metadata"))
-    data.append(pd.read_hdf(directory + "/" + f, "data"))
+
+    # We read the metadata of each run, and if it fits into the timeframe, the
+    # entire run is added to the report's data/metadata
+    current_metadata = pd.read_hdf(directory + "/" + f, "metadata")
+    current_timestamp = current_metadata.iloc[0].name
+
+    if current_timestamp >= timeframe["from"] and current_timestamp <= timeframe["until"]:
+        metadata.append(current_metadata)
+        data.append(pd.read_hdf(directory + "/" + f, "data"))
+
+if len(data) == 0:
+    print(
+        "Warning [vfc_ci]: No run files matched the specified timeframe. "
+        "This will result in server errors and prevent you from viewing the report."
+        "If you did not expect this, make sure that you have correctly "
+        "specified timestamps in seconds.")
+
 
 metadata = pd.concat(metadata).sort_index()
 data = pd.concat(data).sort_index()

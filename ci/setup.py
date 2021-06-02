@@ -75,7 +75,6 @@ def gen_workflow(git_host, dev_branch, ci_branch, repo):
 ##########################################################################
 
 def run(git_host):
-
     '''Entry point of vfc_ci setup'''
 
     # Init repo and make sure that the workflow setup is possible
