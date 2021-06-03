@@ -1,7 +1,10 @@
 test
+fortran_test
+
 *.o
 *.csv
 *.h5
 __pycache__
 ci/__pycache__
 set_install_paths.sh
+*.mod

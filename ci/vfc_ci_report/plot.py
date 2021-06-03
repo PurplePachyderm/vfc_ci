@@ -13,6 +13,17 @@ def fill_dotplot(
     lines=False,
     lower_bound=False
 ):
+    '''
+    General function for filling dotplots.
+    Here are the possible parameters :
+
+    tooltips: Bokeh Tooltip object to use for the plot
+    tooltips_formatters: Formatter for the tooltip
+    js_tap_callback: CustomJS object for client side click callback
+    server_tap_callback: Callback object for server side click callback
+    lines: Specify if lines should be drawn to connect the dots
+    lower_bound: Specify if a lower bound interval should be displayed
+    '''
 
     # (Optional) Tooltip and tooltip formatters
     if tooltips is not None:
@@ -67,6 +78,16 @@ def fill_boxplot(
     tooltips=None, tooltips_formatters=None,
     js_tap_callback=None, server_tap_callback=None
 ):
+    '''
+    General function for filling boxplots.
+    Here are the possible parameters :
+
+    prefix: specify which prefix to use for the name of data fields
+    tooltips: Bokeh Tooltip object to use for the plot
+    tooltips_formatters: Formatter for the tooltip
+    js_tap_callback: CustomJS object for client side click callback
+    server_tap_callback: Callback object for server side click callback
+    '''
 
     # (Optional) Tooltip and tooltip formatters
     if tooltips is not None:

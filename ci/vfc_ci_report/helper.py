@@ -14,9 +14,11 @@ max_zscore = 3
 ##########################################################################
 
 
-# Generate display repository names from (sorted and equally sized) lists of
-# remote URLs and branch names
 def gen_repo_names(remote_urls, branches):
+    '''
+    Generate display repository names from (sorted and equally sized) lists of
+    remote URLs and branch names
+    '''
 
     repo_names_dict = {}
 
@@ -35,22 +37,28 @@ def gen_repo_names(remote_urls, branches):
     return repo_names_dict
 
 
-# From a timestamp, return the associated metadata as a Pandas serie
 def get_metadata(metadata, timestamp):
+    '''From a timestamp, return the associated metadata as a Pandas serie'''
+
     return metadata.loc[timestamp]
 
 
-# Returns a boolean to indicate if a timestamp (rather the commit linked to it)
-# belongs to a particular repository
 def filterby_repo(metadata, repo_name, timestamps):
+    '''
+    Returns a boolean to indicate if a timestamp (rather the commit linked to it)
+    belongs to a particular repository
+    '''
 
     return timestamps.apply(
         lambda x: get_metadata(metadata, x) == repo_name
     )["repo_name"]
 
 
-# Convert a metadata Pandas series to a JS readable dict
 def metadata_to_dict(metadata):
+    '''
+    Convert a metadata Pandas series to a JS readable dict
+    '''
+
     dict = metadata.to_dict()
 
     # JS doesn't accept True for booleans, and Python doesn't accept true
@@ -62,9 +70,11 @@ def metadata_to_dict(metadata):
     return dict
 
 
-# Return a string that indicates the elapsed time since the run, used as the
-# x-axis tick in "Compare runs" or when selecting run in "Inspect run"
 def get_run_name(timestamp, hash):
+    '''
+    Return a string that indicates the elapsed time since the run, used as the
+    x-axis tick in "Compare runs" or when selecting run in "Inspect run"
+    '''
 
     gmt = time.gmtime()
     now = calendar.timegm(gmt)
@@ -143,8 +153,11 @@ def reset_run_strings():
     get_run_name.previous = ""
 
 
-# Update all the x-ranges from a dict of plots
 def reset_x_range(plot, x_range):
+    '''
+    Update all the x-ranges from a dict of plots
+    '''
+
     plot.x_range.factors = x_range
 
     if len(x_range) < max_ticks:
@@ -160,9 +173,12 @@ def reset_x_range(plot, x_range):
         plot.xaxis.major_label_text_font_size = "0pt"
 
 
-# Return an array of booleans that indicate which elements are outliers
-# (True means element is not an outlier and must be kept)
 def detect_outliers(array, max_zscore=max_zscore):
+    '''
+    Return an array of booleans that indicate which elements are outliers
+    (True means element is not an outlier and must be kept)
+    '''
+
     if len(array) <= 2:
         return [True] * len(array)
 
