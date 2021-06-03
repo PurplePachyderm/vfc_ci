@@ -1,4 +1,6 @@
 test
+fortran_test
+
 *.o
 *.csv
 *.h5

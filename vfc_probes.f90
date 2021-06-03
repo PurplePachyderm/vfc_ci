@@ -21,84 +21,63 @@ module vfc_probes_f
 
 
     type, bind(C) :: vfc_probes
-        type(vfc_hashmap_t) :: map
+        type(C_PTR) :: map
     end type vfc_probes
-
 
 
     ! Functions
 
     interface
 
-        function vfc_init_probes() bind(C, name = "vfc_init_probes") result(probes)
-            use, intrinsic :: iso_c_binding
-            Import :: vfc_probes
+		type(C_PTR) function test_interface() bind(C, name = "test_interface")
 
-            type(vfc_probes) :: probes
+		end function test_interface
+
+        type(vfc_probes) function vfc_init_probes() bind(C, name = "vfc_init_probes")
+
         end function vfc_init_probes
 
         function vfc_free_probes(probes) bind(C, name = "vfc_free_probes")
             use, intrinsic :: iso_c_binding
-            Import :: vfc_probes
+            import :: vfc_probes
 
             type(vfc_probes) :: probes
         end function vfc_free_probes
 
-        function vfc_probe(probes, testName, varName, val) bind(C, name = "vfc_probe") result(error)
+        integer(C_INT) function vfc_probe(probes, testName, varName, val) bind(C, name = "vfc_probe")
             use, intrinsic :: iso_c_binding
             use ISO_C_BINDING
-            Import :: vfc_probes
+            import :: vfc_probes
 
             type(vfc_probes) :: probes
             type(C_PTR) :: testName
             type(C_PTR) :: varName
             real(kind=C_DOUBLE) :: val
-
-            integer(C_INT) :: error
         end function vfc_probe
 
-        function vfc_remove_probe(probes, testName, varName) bind(C, name = "vfc_remove_probe") result(error)
+        integer(C_INT) function vfc_remove_probe(probes, testName, varName) bind(C, name = "vfc_remove_probe")
             use, intrinsic :: iso_c_binding
-            Import :: vfc_probes
+            import :: vfc_probes
 
             type(vfc_probes) :: probes
             type(C_PTR) :: testName
             type(C_PTR) :: varName
-
-            integer(C_INT) :: error
         end function vfc_remove_probe
 
-        function vfc_num_probes(probes) bind(C, name = "vfc_num_probes") result(nProbes)
+        integer(C_SIZE_T) function vfc_num_probes(probes) bind(C, name = "vfc_num_probes")
             use, intrinsic :: iso_c_binding
-            Import :: vfc_probes
+            import :: vfc_probes
 
             type(vfc_probes) :: probes
-
-            integer(C_SIZE_T) :: nProbes
         end function vfc_num_probes
 
-        function vfc_dump_probes(probes) bind(C, name = "vfc_dump_probes") result(error)
+        integer(C_INT) function vfc_dump_probes(probes) bind(C, name = "vfc_dump_probes")
             use, intrinsic :: iso_c_binding
-            Import :: vfc_probes
+            import :: vfc_probes
 
             type(vfc_probes) :: probes
-
-            integer(C_INT) :: error
         end function vfc_dump_probes
 
     end interface
 
 end module vfc_probes_f
-
-
-
-program main
-    use iso_c_binding
-    use vfc_probes_f
-
-
-    type(vfc_probes) :: probes
-    probes = vfc_init_probes()
-
-    print *, 'Hello, World!'
-end program main
