@@ -10,7 +10,7 @@ import json
 default_timeframe_width = 90 * 86400  # 90 days
 
 
-def run(directory, show, port, allow_origin, logo_url, timeframe):
+def run(directory, show, port, allow_origin, logo_url, max_files):
     '''Entry point of vfc_ci serve'''
 
     # Prepare arguments
@@ -20,27 +20,13 @@ def run(directory, show, port, allow_origin, logo_url, timeframe):
 
     logo = "logo %s" % logo_url if logo_url else ""
 
-    # If only until is specified
-    if timeframe["from"] is None and timeframe["until"] is not None:
-        timeframe["from"] = 0
-
-    # If only from is specified
-    if timeframe["until"] is None and timeframe["from"] is not None:
-        timeframe["until"] = calendar.timegm(time.gmtime())
-
-    # If nothing is specified (default behaviour)
-    if timeframe["from"] is None and timeframe["until"] is None:
-        timeframe["until"] = calendar.timegm(time.gmtime())
-        timeframe["from"] = timeframe["until"] - default_timeframe_width
-
-    timeframe = "timeframe " + \
-        str(timeframe["from"]) + " " + str(timeframe["until"])
+    max_files = "max_files %s" % max_files if max_files else ""
 
     dirname = os.path.dirname(__file__)
 
     # Call the "bokeh serve" command on the system
     command = "bokeh serve %s/vfc_ci_report %s --allow-websocket-origin=%s:%s --port %s --args %s %s %s" \
-        % (dirname, show, allow_origin, port, port, directory, logo, timeframe)
+        % (dirname, show, allow_origin, port, port, directory, logo, max_files)
     command = os.path.normpath(command)
 
     os.system(command)

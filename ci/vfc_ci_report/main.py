@@ -24,11 +24,12 @@ import helper
 # (this is quite easy because Bokeh server is called through a wrapper, so
 # we know exactly what the arguments might be)
 
-directory = "."
 
 has_logo = False
 logo_url = ""
-timeframe = {}
+
+directory = "."
+max_files = 100
 
 
 for i in range(1, len(sys.argv)):
@@ -43,14 +44,9 @@ for i in range(1, len(sys.argv)):
     if sys.argv[i] == "directory":
         directory = sys.argv[i + 1]
 
-    # By default, runs from the last n days are selected, but a custom timeframe
-    # can be specified
-    if sys.argv[i] == "timeframe":
-        timeframe = {
-            "from": int(sys.argv[i + 1]),
-            "until": int(sys.argv[i + 2]),
-        }
-
+    # By default, the n latest files are selected, but this can be modified
+    if sys.argv[i] == "max_files":
+        max_files = int(sys.argv[i + 1])
 
 curdoc().template_variables["has_logo"] = has_logo
 
@@ -71,29 +67,42 @@ if len(run_files) == 0:
 metadata = []
 data = []
 
+# First run for metadata
 for f in run_files:
-
-    # We read the metadata of each run, and if it fits into the timeframe, the
-    # entire run is added to the report's data/metadata
     path = os.path.normpath(directory + "/" + f)
+    metadata.append(pd.read_hdf(path, "metadata"))
     current_metadata = pd.read_hdf(path, "metadata")
-    current_timestamp = current_metadata.iloc[0].name
 
-    if current_timestamp >= timeframe["from"] and current_timestamp <= timeframe["until"]:
-        metadata.append(current_metadata)
-        data.append(pd.read_hdf(directory + "/" + f, "data"))
+metadata = pd.concat(metadata).sort_index()
 
-if len(data) == 0:
+if len(metadata) == 0:
     print(
         "Warning [vfc_ci]: No run files matched the specified timeframe. "
         "This will result in server errors and prevent you from viewing the report."
         "If you did not expect this, make sure that you have correctly "
-        "specified timestamps in seconds.")
+        "specified the directory containing the run files.",
+        file=sys.stderr
+        )
 
 
-metadata = pd.concat(metadata).sort_index()
+# Sort and filter metadata
+metadata.sort_index(ascending=False)
+metadata = metadata.head(max_files)
+min_timestamp = metadata.iloc[-1].name
+
+# Second run for data (now that we know which files to load entirely)
+for f in run_files:
+
+    # We have to read the metadata again to get back the timestamp. If
+    # it is most recent than min_timestamp, the data is loaded.
+    path = os.path.normpath(directory + "/" + f)
+    current_metadata = pd.read_hdf(path, "metadata")
+    current_timestamp = current_metadata.iloc[0].name
+
+    if current_timestamp >= min_timestamp:
+        data.append(pd.read_hdf(directory + "/" + f, "data"))
+
 data = pd.concat(data).sort_index()
-
 
 # Generate the display strings for runs (runs ticks)
 # By doing this in master, we ensure the homogeneity of display strings
