@@ -1,4 +1,9 @@
 # Manage the view comparing a variable over different runs
+# At its creation, a CompareRuns object will create all the needed Bokeh widgets
+# and plots, setup the callback functions (either server side or client side),
+# initialize widgets selection, and from this selection generate the first plots.
+# Then, when callback functions are triggered, widgets selections are updated,
+# and plots are re-generated with the newly selected data.
 
 import time
 
@@ -485,23 +490,25 @@ class CompareRuns:
         # Communication methods
         # (to send/receive messages to/from master)
 
-    # Callback to change view of Inspect runs when data is selected
+    # Callback to change view to "Inspect runs" when plot element is clicked
 
     def inspect_run_callback(self, new, source_name, x_name):
 
-        # In case we just unselected everything, then do nothing
-        if new == []:
+        # In case we just unselected everything on the plot, then do nothing
+        if not new:
             return
 
+        # But if an element has been selected, go to the corresponding run
         index = new[-1]
         run_name = self.sources[source_name].data[x_name][index]
 
         self.master.go_to_inspect(run_name)
 
-    # Wrappers for each plot (since new is the index of the clicked element,
-    # it is dependent of the plot because we could have filtered some outliers)
-    # There doesn't seem to be an easy way to add custom parameters to a
-    # Bokeh callback, so using wrappers seems to be the best solution for now
+    # These are wrappers (one for each plot) for the above inspect_run_callback
+    # function. Inside it, new is the index of the clicked element, and is
+    # dependent of the plot because we could have filtered different outliers.
+    # For this reason, we have one callback wrapper for each plot so we get
+    # the correct element.
 
     def inspect_run_callback_boxplot(self, attr, old, new):
         self.inspect_run_callback(new, "boxplot_source", "x")
@@ -514,9 +521,6 @@ class CompareRuns:
 
     def inspect_run_callback_s10(self, attr, old, new):
         self.inspect_run_callback(new, "s10_source", "s10_x")
-
-        # Communication methods
-        # (to send/receive messages to/from master)
 
     def change_repo(self, new_data, new_metadata):
         '''
@@ -549,6 +553,20 @@ class CompareRuns:
         # Constructor
 
     def __init__(self, master, doc, data, metadata):
+
+        '''
+        Here are the most important attributes of the CompareRuns class
+
+        master : reference to the ViewMaster class
+        doc : an object provided by Bokeh to add elements to the HTML document
+        data : pandas dataframe containing all the tests data
+        metadata : pandas dataframe containing all the tests metadata
+
+        sources : ColumnDataSource object provided by Bokeh, contains current
+        data for the plots (inside the .data attribute)
+        plots : dictionary of Bokeh plots
+        widgets : dictionary of Bokeh widgets
+        '''
 
         self.master = master
 

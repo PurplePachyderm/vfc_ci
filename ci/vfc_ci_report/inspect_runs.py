@@ -1,4 +1,11 @@
 # Manage the view comparing the variables of a run
+# Manage the view comparing a variable over different runs
+# At its creation, an InspectRuns object will create all the needed Bokeh widgets
+# and plots, setup the callback functions (either server side or client side),
+# initialize widgets selection, and from this selection generate the first plots.
+# Then, when callback functions are triggered, widgets selections are updated,
+# and plots are re-generated with the newly selected data.
+
 
 from math import pi
 from functools import partial
@@ -572,6 +579,20 @@ class InspectRuns:
         # Constructor
 
     def __init__(self, master, doc, data, metadata):
+
+        '''
+        Here are the most important attributes of the InspectRuns class
+
+        master : reference to the ViewMaster class
+        doc : an object provided by Bokeh to add elements to the HTML document
+        data : pandas dataframe containing all the tests data
+        metadata : pandas dataframe containing all the tests metadata
+
+        sources : ColumnDataSource object provided by Bokeh, contains current
+        data for the plots (inside the .data attribute)
+        plots : dictionary of Bokeh plots
+        widgets : dictionary of Bokeh widgets
+        '''
 
         self.master = master
 

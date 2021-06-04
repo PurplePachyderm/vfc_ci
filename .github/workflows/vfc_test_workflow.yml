@@ -30,7 +30,8 @@ jobs:
           git submodule init
           git submodule update
 
-          cp vfc_hashmap.h vfc_probes.h /usr/local/include
+          cp vfc_hashmap.h  /usr/local/include
+          cp vfc_probes.c /usr/local/include/vfc_probes.h
           cp vfc_ci /usr/local/lib/python3.8/site-packages/verificarlo
           cp -r ci /usr/local/lib/python3.8/site-packages/verificarlo
           cp sigdigits/sigdigits.py /usr/local/lib/python3.8/site-packages/verificarlo

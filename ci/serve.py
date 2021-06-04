@@ -18,9 +18,7 @@ def run(directory, show, port, allow_origin, logo_url, timeframe):
 
     show = "--show" if show else ""
 
-    logo = ""
-    if logo_url is not None:
-        logo = "logo %s" % logo_url
+    logo = "logo %s" % logo_url if logo_url else ""
 
     # If only until is specified
     if timeframe["from"] is None and timeframe["until"] is not None:
@@ -43,5 +41,6 @@ def run(directory, show, port, allow_origin, logo_url, timeframe):
     # Call the "bokeh serve" command on the system
     command = "bokeh serve %s/vfc_ci_report %s --allow-websocket-origin=%s:%s --port %s --args %s %s %s" \
         % (dirname, show, allow_origin, port, port, directory, logo, timeframe)
+    command = os.path.normpath(command)
 
     os.system(command)

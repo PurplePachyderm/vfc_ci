@@ -1,5 +1,5 @@
 # Look for and read all the run files in the current directory (ending with
-# .vfcrunh5), and lanch a Bokeh server for the visualization of this data.
+# .vfcrun.h5), and lanch a Bokeh server for the visualization of this data.
 
 import os
 import sys
@@ -7,6 +7,7 @@ import time
 import json
 
 import pandas as pd
+import numpy as np
 
 from bokeh.plotting import curdoc
 from bokeh.models import Select, CustomJS
@@ -74,7 +75,8 @@ for f in run_files:
 
     # We read the metadata of each run, and if it fits into the timeframe, the
     # entire run is added to the report's data/metadata
-    current_metadata = pd.read_hdf(directory + "/" + f, "metadata")
+    path = os.path.normpath(directory + "/" + f)
+    current_metadata = pd.read_hdf(path, "metadata")
     current_timestamp = current_metadata.iloc[0].name
 
     if current_timestamp >= timeframe["from"] and current_timestamp <= timeframe["until"]:
