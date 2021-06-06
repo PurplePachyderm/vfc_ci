@@ -203,7 +203,6 @@ def run_tests(config):
 
 
 def show_warnings(warnings):
-
     '''
     Display all executions that resulted in a warning
     '''
