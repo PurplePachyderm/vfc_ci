@@ -1,65 +1,73 @@
+/* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /*
- * This file defines "vfc_probes", a hashtable-based structure which can be used
- * to place "probes" in a code and store the different values of test variables.
- * These test results can then be exported in a CSV file, and used to generate a
- * Verificarlo test report.
+ *     Copyright 2012 Couchbase, Inc.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef __VFC_HASHMAP_H__
+#define __VFC_HASHMAP_H__
 
-#include <vfc_hashmap.h>
+#define __VFC_HASHMAP_HEADER__
 
-#ifndef __VFC_PROBES_H__
-#define __VFC_PROBES_H__
+struct vfc_hashmap_st {
+  size_t nbits;
+  size_t mask;
 
-#define __VFC_PROBES_HEADER__
-
-#ifndef VAR_NAME
-#define VAR_NAME(var) #var // Simply returns the name of var into a string
-#endif
-
-// A probe containing a double value as well as its key, which is needed when
-// dumping the probes
-struct vfc_probe_node {
-  char *key;
-  double value;
+  size_t capacity;
+  size_t *items;
+  size_t nitems;
+  size_t n_deleted_items;
 };
+typedef struct vfc_hashmap_st *vfc_hashmap_t;
 
-typedef struct vfc_probe_node vfc_probe_node;
+// allocate and initialize the map
+vfc_hashmap_t vfc_hashmap_create();
 
-// The probes structure. It simply acts as a wrapper for a Verificarlo hashmap.
-struct vfc_probes {
-  vfc_hashmap_t map;
-};
+// get the value at an index of a map
+size_t get_value_at(size_t *items, size_t i);
 
-typedef struct vfc_probes vfc_probes;
+// get the key at an index of a map
+size_t get_key_at(size_t *items, size_t i);
 
-// Iniialize an empty vfc_probes instance
-vfc_probes vfc_init_probes();
+// set the value at an index of a map
+void set_value_at(size_t *items, size_t value, size_t i);
 
-// Free all probes
-void vfc_free_probes(vfc_probes *probes);
+// set the key at an index of a map
+void set_key_at(size_t *items, size_t key, size_t i);
 
-// Helper function to generate the key from test and variable name
-char *gen_probe_key(char *testName, char *varName);
+// free the map
+void vfc_hashmap_destroy(vfc_hashmap_t map);
 
-// Helper function to detect forbidden character ',' in the keys
-void validate_probe_key(char *str);
+// insert an element in the map
+void vfc_hashmap_insert(vfc_hashmap_t map, size_t key, void *item);
 
-// Add a new probe. If an issue with the key is detected (forbidden characters
-// or a duplicate key), an error will be thrown.
-int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+// remove an element of the map
+void vfc_hashmap_remove(vfc_hashmap_t map, size_t key);
 
-// Remove (free) an element from the hash table
-int vfc_remove_probe(vfc_probes *probes, char *testName, char *varName);
+// test if an element is in the map
+char vfc_hashmap_have(vfc_hashmap_t map, size_t key);
 
-// Return the number of probes stored in the hashmap
-unsigned int vfc_num_probes(vfc_probes *probes);
+// get an element of the map
+void *vfc_hashmap_get(vfc_hashmap_t map, size_t key);
 
-// Dump probes in a .csv file (the double values are converted to hex), then
-// free it.
-int vfc_dump_probes(vfc_probes *probes);
+// get the number of elements in the map
+size_t vfc_hashmap_num_items(vfc_hashmap_t map);
+
+// Hash function for strings
+size_t vfc_hashmap_str_function(const char *id);
+
+// Free the hashmap
+void vfc_hashmap_free(vfc_hashmap_t map);
 
 #endif

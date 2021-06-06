@@ -104,12 +104,10 @@ for f in run_files:
     # We have to read the metadata again to get back the timestamp. If
     # it is most recent than min_timestamp, the data is loaded.
     path = os.path.normpath(directory + "/" + f)
-    print(path)
     current_metadata = pd.read_hdf(path, "metadata")
     current_timestamp = current_metadata.iloc[0].name
 
     if current_timestamp <= min_timestamp:
-        print("(accepted)")
         data.append(pd.read_hdf(directory + "/" + f, "data"))
 
 data = pd.concat(data).sort_index()

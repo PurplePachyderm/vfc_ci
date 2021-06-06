@@ -3,6 +3,7 @@
 
 import pandas as pd
 import os
+import subprocess
 import sys
 import json
 import tempfile
@@ -154,7 +155,8 @@ def run_tests(config):
 
         for backend in executable["vfc_backends"]:
 
-            export_backend = "VFC_BACKENDS=\"" + backend["name"] + "\" "
+            os.putenv("VFC_BACKENDS", backend["name"])
+
             command = "./" + executable["executable"] + parameters
 
             repetitions = 1
@@ -164,13 +166,15 @@ def run_tests(config):
             # Run test repetitions and save results
             for i in range(repetitions):
                 temp = tempfile.NamedTemporaryFile()
-                export_output = "VFC_PROBES_OUTPUT=\"%s\" " % temp.name
+                os.putenv("VFC_PROBES_OUTPUT", temp.name)
 
-                try :
-                    full_command = export_backend + export_output + command
-                    os.system(full_command)
-                except subprocess.TimeoutExpired as e:
-                    print(e)
+                print(command)
+                p = subprocess.Popen(command)
+                try:
+                    p.wait(timeout)
+                except subprocess.TimeoutExpired:
+                    print("Warning [vfc_ci]: execution was timed out", file=sys.stderr)
+                    p.kill()
 
 
                 # This will only be used if we need to append this exec to the
@@ -216,7 +220,7 @@ def show_warnings(warnings):
         )
 
         for i in range(0, len(warnings)):
-            print("- Warning %s:" % i)
+            print("- Warning %s:" % i, file=sys.stderr)
 
             print("  Executable: %s" % warnings[i]["executable"], file=sys.stderr)
             print("  Backend: %s" % warnings[i]["backend"], file=sys.stderr)
