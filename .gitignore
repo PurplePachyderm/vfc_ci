@@ -6,5 +6,5 @@ fortran_test
 *.h5
 __pycache__
 ci/__pycache__
-set_install_paths.sh
+copy_source.sh
 *.mod
