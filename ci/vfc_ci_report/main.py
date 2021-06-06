@@ -86,9 +86,17 @@ if len(metadata) == 0:
 
 
 # Sort and filter metadata
-metadata.sort_index(ascending=False)
+
+metadata.sort_index()
+
+# max_files will equal the actual dataframe size if its smaller than the original
+# value
+max_files = min(max_files, len(metadata))
+
 metadata = metadata.head(max_files)
-min_timestamp = metadata.iloc[-1].name
+
+# Minimum acceptable timestamp
+min_timestamp = metadata.iloc[max_files - 1].name
 
 # Second run for data (now that we know which files to load entirely)
 for f in run_files:
@@ -96,10 +104,12 @@ for f in run_files:
     # We have to read the metadata again to get back the timestamp. If
     # it is most recent than min_timestamp, the data is loaded.
     path = os.path.normpath(directory + "/" + f)
+    print(path)
     current_metadata = pd.read_hdf(path, "metadata")
     current_timestamp = current_metadata.iloc[0].name
 
-    if current_timestamp >= min_timestamp:
+    if current_timestamp <= min_timestamp:
+        print("(accepted)")
         data.append(pd.read_hdf(directory + "/" + f, "data"))
 
 data = pd.concat(data).sort_index()
