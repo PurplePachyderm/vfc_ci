@@ -25,6 +25,7 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
 # It will also generate a ... .vfcrunh5 file with the results of the run
 
+from .test_data_processing import data_processing
 import pandas as pd
 import os
 import subprocess
@@ -39,7 +40,6 @@ import time
 import pickle
 pickle.HIGHEST_PROTOCOL = 4
 
-from .test_data_processing import data_processing
 
 # Magic numbers
 timeout = 600   # For commands execution
@@ -55,7 +55,6 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     try:
 
         results = pd.read_csv(filepath)
-
 
     except FileNotFoundError:
         print(
@@ -197,9 +196,10 @@ def run_tests(config):
                 try:
                     p.wait(timeout)
                 except subprocess.TimeoutExpired:
-                    print("Warning [vfc_ci]: execution was timed out", file=sys.stderr)
+                    print(
+                        "Warning [vfc_ci]: execution was timed out",
+                        file=sys.stderr)
                     p.kill()
-
 
                 # This will only be used if we need to append this exec to the
                 # warnings list
@@ -246,9 +246,15 @@ def show_warnings(warnings):
         for i in range(0, len(warnings)):
             print("- Warning %s:" % i, file=sys.stderr)
 
-            print("  Executable: %s" % warnings[i]["executable"], file=sys.stderr)
+            print(
+                "  Executable: %s" %
+                warnings[i]["executable"],
+                file=sys.stderr)
             print("  Backend: %s" % warnings[i]["backend"], file=sys.stderr)
-            print("  Repetition: %s" % warnings[i]["repetition"], file=sys.stderr)
+            print(
+                "  Repetition: %s" %
+                warnings[i]["repetition"],
+                file=sys.stderr)
 
 
 ##########################################################################

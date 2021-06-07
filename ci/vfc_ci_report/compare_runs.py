@@ -577,7 +577,6 @@ class CompareRuns:
         # Constructor
 
     def __init__(self, master, doc, data, metadata):
-
         '''
         Here are the most important attributes of the CompareRuns class
 

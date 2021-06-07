@@ -29,8 +29,8 @@ import numpy as np
 # Magic numbers
 # For the normality test :
 min_pvalue = 0.05
-probability=0.9
-confidence=0.95
+probability = 0.9
+confidence = 0.95
 
 
 ##########################################################################
@@ -96,8 +96,7 @@ def significant_digits_lower_bound(x):
         return s[0]
 
 
-def apply_data_pocessing(data) :
-
+def apply_data_pocessing(data):
     '''
     This function computes most test metrics (mu, sigma, quantiles, ...).
     Doesn't include significant digits.
@@ -117,8 +116,8 @@ def apply_data_pocessing(data) :
 
     return data
 
-def data_processing(data):
 
+def data_processing(data):
     '''
     Computes all metrics on the dataframe
     '''

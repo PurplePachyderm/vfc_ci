@@ -104,9 +104,7 @@ if len(metadata) == 0:
         "Warning [vfc_ci]: No run files matched the specified timeframe. "
         "This will result in server errors and prevent you from viewing the report."
         "If you did not expect this, make sure that you have correctly "
-        "specified the directory containing the run files.",
-        file=sys.stderr
-        )
+        "specified the directory containing the run files.", file=sys.stderr)
 
 
 # Sort and filter metadata
