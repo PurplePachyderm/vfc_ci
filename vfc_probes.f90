@@ -10,13 +10,13 @@ module vfc_probes_f
 
 
     type, bind(C) :: vfc_hashmap_t
-        integer(C_SIZE_T) :: nbits
-        integer(C_SIZE_T) :: mask
+        integer(kind=C_SIZE_T) :: nbits
+        integer(kind=C_SIZE_T) :: mask
 
-        integer(C_SIZE_T) :: capacity
+        integer(kind=C_SIZE_T) :: capacity
         type(C_PTR) :: items
-        integer(C_SIZE_T) :: nitems
-        integer(C_SIZE_T) :: n_deleted_items
+        integer(kind=C_SIZE_T) :: nitems
+        integer(kind=C_SIZE_T) :: n_deleted_items
     end type vfc_hashmap_t
 
 
@@ -28,10 +28,6 @@ module vfc_probes_f
     ! Functions
 
     interface
-
-		type(C_PTR) function test_interface() bind(C, name = "test_interface")
-
-		end function test_interface
 
         type(vfc_probes) function vfc_init_probes() bind(C, name = "vfc_init_probes")
 
@@ -81,3 +77,26 @@ module vfc_probes_f
     end interface
 
 end module vfc_probes_f
+
+
+! program vfc_probes_test
+!     use iso_c_binding
+! 	use vfc_probes_f
+!     implicit none
+!
+!     type(vfc_probes), pointer :: probes
+! 	integer(C_INT) :: err
+!     real(kind=C_FLOAT) val
+!     CHARACTER(len=10) :: test_name = 'test'//C_NULL_CHAR
+!     CHARACTER(len=10) :: var_name = 'var'//C_NULL_CHAR
+!
+!     print *, "Testing Fortran interface"
+!
+!     val = 0.0
+!
+!     allocate(probes)
+!     probes = vfc_init_probes()
+!     ! err = vfc_probe(probes, test_name, var_name, val)
+!     err = vfc_dump_probes(probes)
+!
+! end program vfc_probes_test

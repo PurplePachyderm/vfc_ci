@@ -4,12 +4,11 @@ program vfc_probes_test
     implicit none
 
     type(vfc_probes) :: probes
-	type(C_PTR) :: a
+    integer(C_INT) :: err
+    integer(C_SIZE_T) n_probes
 
-    ! probes = vfc_init_probes
-
-	a = test_interface()
-
-
+    print *, "Testing Fortran interface"
+    probes = vfc_init_probes()
+    ! err = vfc_dump_probes(probes)
 
 end program vfc_probes_test

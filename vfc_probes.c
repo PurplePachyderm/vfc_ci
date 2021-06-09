@@ -62,6 +62,8 @@ typedef struct vfc_probes vfc_probes;
 
 // Iniialize an empty vfc_probes instance
 vfc_probes vfc_init_probes() {
+  printf("Calling vfc_init_probes\n");
+
   vfc_probes probes;
   probes.map = vfc_hashmap_create();
 
@@ -173,6 +175,8 @@ unsigned int vfc_num_probes(vfc_probes *probes) {
 // Dump probes in a .csv file (the double values are converted to hex), then
 // free it.
 int vfc_dump_probes(vfc_probes *probes) {
+
+  printf("Calling vfc_dump_probes\n");
 
   if (probes == NULL) {
     return 1;
