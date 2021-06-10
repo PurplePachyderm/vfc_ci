@@ -5,22 +5,20 @@
 
 int main(void) {
 
-    vfc_probes probes = vfc_init_probes();
-    double res = 11;
-    float varf = 42.4242f;
+  vfc_probes probes = vfc_init_probes();
+  double res = 11;
+  float varf = 42.4242f;
 
-    for(int i=0; i<10; i++) {
-        res = res + 1.0;
+  for (int i = 0; i < 10; i++) {
+    res = res + 1.0;
 
-        varf = varf + 0.01;
-        varf = varf - 0.01;
-    }
+    varf = varf + 0.01;
+    varf = varf - 0.01;
+  }
 
+  vfc_probe(&probes, "test", VAR_NAME(res), res);
+  vfc_probe(&probes, "test", VAR_NAME(varf), varf);
+  vfc_dump_probes(&probes);
 
-    vfc_probe(&probes, "test", VAR_NAME(res), res);
-    vfc_probe(&probes, "test", VAR_NAME(varf), varf);
-
-    vfc_dump_probes(&probes);
-
-    return 0;
+  return 0;
 }

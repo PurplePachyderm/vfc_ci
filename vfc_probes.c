@@ -33,12 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <vfc_hashmap.h>
-
-#ifndef __VFC_PROBES_H__
-#define __VFC_PROBES_H__
-
-#define __VFC_PROBES_HEADER__
+#include "vfc_hashmap.h"
 
 #ifndef VAR_NAME
 #define VAR_NAME(var) #var // Simply returns the name of var into a string
@@ -60,10 +55,36 @@ struct vfc_probes {
 
 typedef struct vfc_probes vfc_probes;
 
-// Iniialize an empty vfc_probes instance
-vfc_probes vfc_init_probes() {
-  printf("Calling vfc_init_probes\n");
+// Initialize an empty vfc_probes instance
+vfc_probes vfc_init_probes();
 
+// Free all probes
+void vfc_free_probes(vfc_probes *probes);
+
+// Helper function to generate the key from test and variable name
+char *gen_probe_key(char *testName, char *varName);
+
+// Helper function to detect forbidden character ',' in the keys
+void validate_probe_key(char *str);
+
+// Add a new probe. If an issue with the key is detected (forbidden characters
+// or a duplicate key), an error will be thrown.
+int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+
+// Return the number of probes stored in the hashmap
+unsigned int vfc_num_probes(vfc_probes *probes);
+
+// Dump probes in a .csv file (the double values are converted to hex), then
+// free it.
+int vfc_dump_probes(vfc_probes *probes);
+
+// Fortran wrapper
+int vfc_probe_f(vfc_probes *probes, char *testName, char *varName, double *val);
+
+/******************************************************************************/
+
+// Initialize an empty vfc_probes instance
+vfc_probes vfc_init_probes() {
   vfc_probes probes;
   probes.map = vfc_hashmap_create();
 
@@ -77,7 +98,10 @@ void vfc_free_probes(vfc_probes *probes) {
   vfc_probe_node *probe = NULL;
   for (int i = 0; i < probes->map->capacity; i++) {
     probe = (vfc_probe_node *)get_value_at(probes->map->items, i);
-    if (probe != NULL) {
+
+    // Comparing with 1 is also necessary since it will be the value of deleted
+    // nodes
+    if (probe != NULL && probe != (vfc_probe_node *)1) {
       if (probe->key != NULL) {
         free(probe->key);
       }
@@ -136,7 +160,7 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
     if (strcmp(key, oldProbe->key) == 0) {
       fprintf(stderr,
               "Error [verificarlo]: you have a duplicate error with one of \
-                your probes (\"%s\"). Please make sure to use different names.\n",
+              your probes (\"%s\"). Please make sure to use different names.\n",
               key);
       exit(1);
     }
@@ -152,21 +176,6 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
   return 0;
 }
 
-// Remove (free) an element from the hash table
-int vfc_remove_probe(vfc_probes *probes, char *testName, char *varName) {
-
-  if (probes == NULL) {
-    return 1;
-  }
-
-  // Get the key, which is : testName + "," + varName
-  char *key = gen_probe_key(testName, varName);
-
-  vfc_hashmap_remove(probes->map, vfc_hashmap_str_function(key));
-
-  return 0;
-}
-
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes) {
   return vfc_hashmap_num_items(probes->map);
@@ -175,8 +184,6 @@ unsigned int vfc_num_probes(vfc_probes *probes) {
 // Dump probes in a .csv file (the double values are converted to hex), then
 // free it.
 int vfc_dump_probes(vfc_probes *probes) {
-
-  printf("Calling vfc_dump_probes\n");
 
   if (probes == NULL) {
     return 1;
@@ -220,4 +227,14 @@ int vfc_dump_probes(vfc_probes *probes) {
   return 0;
 }
 
-#endif
+/*
+ * Fortran wrappers : since Fortran arguments are all passed by address, these
+ * versions only take pointers as arguments and only call the base fuctions.
+ * (as of now, only the vfc_probe function needs its own wrapper, since other
+ * functions already use pointers as their arguments).
+ */
+
+int vfc_probe_f(vfc_probes *probes, char *testName, char *varName,
+                double *val) {
+  return vfc_probe(probes, testName, varName, *val);
+}

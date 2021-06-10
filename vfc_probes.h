@@ -29,59 +29,56 @@
  * Verificarlo test report.
  */
 
-#ifndef __VFC_HASHMAP_H__
-#define __VFC_HASHMAP_H__
+#pragma once
 
-#define __VFC_HASHMAP_HEADER__
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-struct vfc_hashmap_st {
-  size_t nbits;
-  size_t mask;
+#include <vfc_hashmap.h>
 
-  size_t capacity;
-  size_t *items;
-  size_t nitems;
-  size_t n_deleted_items;
-};
-typedef struct vfc_hashmap_st *vfc_hashmap_t;
-
-// allocate and initialize the map
-vfc_hashmap_t vfc_hashmap_create();
-
-// get the value at an index of a map
-size_t get_value_at(size_t *items, size_t i);
-
-// get the key at an index of a map
-size_t get_key_at(size_t *items, size_t i);
-
-// set the value at an index of a map
-void set_value_at(size_t *items, size_t value, size_t i);
-
-// set the key at an index of a map
-void set_key_at(size_t *items, size_t key, size_t i);
-
-// free the map
-void vfc_hashmap_destroy(vfc_hashmap_t map);
-
-// insert an element in the map
-void vfc_hashmap_insert(vfc_hashmap_t map, size_t key, void *item);
-
-// remove an element of the map
-void vfc_hashmap_remove(vfc_hashmap_t map, size_t key);
-
-// test if an element is in the map
-char vfc_hashmap_have(vfc_hashmap_t map, size_t key);
-
-// get an element of the map
-void *vfc_hashmap_get(vfc_hashmap_t map, size_t key);
-
-// get the number of elements in the map
-size_t vfc_hashmap_num_items(vfc_hashmap_t map);
-
-// Hash function for strings
-size_t vfc_hashmap_str_function(const char *id);
-
-// Free the hashmap
-void vfc_hashmap_free(vfc_hashmap_t map);
-
+#ifndef VAR_NAME
+#define VAR_NAME(var) #var // Simply returns the name of var into a string
 #endif
+
+// A probe containing a double value as well as its key, which is needed when
+// dumping the probes
+struct vfc_probe_node {
+  char *key;
+  double value;
+};
+
+typedef struct vfc_probe_node vfc_probe_node;
+
+// The probes structure. It simply acts as a wrapper for a Verificarlo hashmap.
+struct vfc_probes {
+  vfc_hashmap_t map;
+};
+
+typedef struct vfc_probes vfc_probes;
+
+// Initialize an empty vfc_probes instance
+vfc_probes vfc_init_probes();
+
+// Free all probes
+void vfc_free_probes(vfc_probes *probes);
+
+// Helper function to generate the key from test and variable name
+char *gen_probe_key(char *testName, char *varName);
+
+// Helper function to detect forbidden character ',' in the keys
+void validate_probe_key(char *str);
+
+// Add a new probe. If an issue with the key is detected (forbidden characters
+// or a duplicate key), an error will be thrown.
+int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+
+// Return the number of probes stored in the hashmap
+unsigned int vfc_num_probes(vfc_probes *probes);
+
+// Dump probes in a .csv file (the double values are converted to hex), then
+// free it.
+int vfc_dump_probes(vfc_probes *probes);
+
+// Fortran wrapper
+int vfc_probe_f(vfc_probes *probes, char *testName, char *varName, double *val);
