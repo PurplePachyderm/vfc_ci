@@ -37,6 +37,12 @@ jobs:
           cp sigdigits/sigdigits.py /usr/local/lib/python3.8/site-packages/verificarlo
           cp vfc_ci /usr/local/bin
 
+          clang -c -fPIC vfc_hashmap.c vfc_probes.c
+          clang vfc_probes.o vfc_hashmap.o -shared -o libvfc_probes.so
+          cp *.so /usr/local/lib
+          ldconfig
+
+
       - name: Run tests
         run: vfc_ci test -g -r
 

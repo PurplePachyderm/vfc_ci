@@ -1,6 +1,6 @@
-CC = clang -ggdb3
+CC = clang
 FC=flang
-VFC = verificarlo-c -ggdb3
+VFC = verificarlo-c
 VFC_LIB_PATH=/usr/local/lib
 
 tests:
@@ -16,7 +16,7 @@ install:
 
 	$(CC) -c -fPIC vfc_hashmap.c vfc_probes.c
 	$(CC) vfc_probes.o vfc_hashmap.o -shared -o libvfc_probes.so
-	
+
 	bash copy_source.sh
 	ldconfig
 
