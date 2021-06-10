@@ -1,4 +1,4 @@
-CC = clang
+CC = clang-7
 FC=flang
 VFC = verificarlo-c
 VFC_LIB_PATH=/usr/local/lib
