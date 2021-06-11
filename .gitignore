@@ -9,3 +9,4 @@ ci/__pycache__
 copy_source.sh
 *.mod
 *.so
+*.a

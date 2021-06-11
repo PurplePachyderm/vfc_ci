@@ -30,6 +30,7 @@ VFC_LIB_PATH=/usr/local/lib
 
 cp vfc_hashmap.h $VFC_INCLUDE_PATH/vfc_hashmap.h
 cp vfc_probes.h $VFC_INCLUDE_PATH/vfc_probes.h
+cp *.mod $VFC_INCLUDE_PATH
 
 cp vfc_ci $VFC_BIN_PATH
 cp vfc_ci $VFC_PYTHON_PATH
@@ -37,6 +38,8 @@ cp -r ci $VFC_PYTHON_PATH
 cp sigdigits/sigdigits.py $VFC_PYTHON_PATH
 
 cp *.so $VFC_LIB_PATH
+cp *.a $VFC_LIB_PATH
+
 ldconfig
 ```
 
