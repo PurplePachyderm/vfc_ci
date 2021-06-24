@@ -56,6 +56,16 @@ def is_directory(string):
     return string
 
 
+def is_file(string):
+    import os
+
+    isfile = os.path.isdir(string)
+    if not isfile:
+        raise argparse.ArgumentTypeError("File does not exist")
+
+    return string
+
+
 def is_strictly_positive(string):
     value = int(string)
     if value <= 0:
@@ -210,6 +220,16 @@ def test(args):
             select any chronological range of files. Defaults to 0.
             """,
             type=is_strictly_positive
+        ),
+        argument(
+            "-t", "--tolerance-config",
+            help="""
+            Path to a file containing tolerance thresholds on the s and sigma
+            values of probes variables. For the expected structure of this file,
+            please refer to the online documentation. If a threshold is
+            exceeded, a visual warning will appear on the report.
+            """,
+            type=is_file
         )
     ]
 )
@@ -222,7 +242,8 @@ def serve(args):
         args.allow_origin,
         args.logo,
         args.max_files,
-        args.ignore_recent
+        args.ignore_recent,
+        args.tolerance_config
     )
 
 

@@ -576,7 +576,7 @@ class CompareRuns:
 
         # Constructor
 
-    def __init__(self, master, doc, data, metadata):
+    def __init__(self, master, doc, data, metadata, tolerance_config):
         '''
         Here are the most important attributes of the CompareRuns class
 
@@ -596,6 +596,8 @@ class CompareRuns:
         self.doc = doc
         self.data = data
         self.metadata = metadata
+
+        self.tolerance_config = tolerance_config
 
         self.sources = {
             "boxplot_source": ColumnDataSource(data={}),

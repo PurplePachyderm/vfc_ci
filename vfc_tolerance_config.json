@@ -1,0 +1,8 @@
+{
+    "test": {
+        "varf": {
+            "s_min": 6,
+            "sigma_max": 1e-4
+        }
+    }
+}
