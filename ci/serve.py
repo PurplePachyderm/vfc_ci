@@ -38,8 +38,7 @@ def run(
         allow_origin,
         logo_url,
         max_files,
-        ignore_recent,
-        tolerance_config):
+        ignore_recent):
     '''Entry point of vfc_ci serve'''
 
     # Prepare arguments
@@ -48,7 +47,6 @@ def run(
     logo = "logo %s" % logo_url if logo_url else ""
     max_files = "max_files %s" % max_files if max_files else ""
     ignore_recent = "ignore_recent %s" % ignore_recent if ignore_recent else ""
-    tolerance_config = "ignore_recent %s" % tolerance_config if tolerance_config else ""
 
     dirname = os.path.dirname(__file__)
 
@@ -59,8 +57,8 @@ def run(
     # generating the Jinja template, etc... => This is an option for a future
     # commit.
 
-    command = "bokeh serve %s/vfc_ci_report %s --allow-websocket-origin=%s:%s --port %s --args %s %s %s %s %s" \
-        % (dirname, show, allow_origin, port, port, directory, logo, max_files, ignore_recent, tolerance_config)
+    command = "bokeh serve %s/vfc_ci_report %s --allow-websocket-origin=%s:%s --port %s --args %s %s %s %s" \
+        % (dirname, show, allow_origin, port, port, directory, logo, max_files, ignore_recent)
     command = os.path.normpath(command)
 
     os.system(command)

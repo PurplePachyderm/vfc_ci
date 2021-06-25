@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <vfc_hashmap.h>
 
@@ -42,10 +43,12 @@
 #endif
 
 // A probe containing a double value as well as its key, which is needed when
-// dumping the probes
+// dumping the probes. Optionally, an accuracy threshold can be defined : it
+// will be re-used in the preprocessing to know if it is reached.
 struct vfc_probe_node {
   char *key;
   double value;
+  double accuracy_threshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;

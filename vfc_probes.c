@@ -40,10 +40,12 @@
 #endif
 
 // A probe containing a double value as well as its key, which is needed when
-// dumping the probes
+// dumping the probes. Optionally, an accuracy threshold can be defined : it
+// will be re-used in the preprocessing to know if it is reached.
 struct vfc_probe_node {
   char *key;
   double value;
+  double accuracy_threshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -170,6 +172,7 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
   vfc_probe_node *newProbe = (vfc_probe_node *)malloc(sizeof(vfc_probe_node));
   newProbe->key = key;
   newProbe->value = val;
+  newProbe->accuracy_threshold = 0;
 
   vfc_hashmap_insert(probes->map, vfc_hashmap_str_function(key), newProbe);
 

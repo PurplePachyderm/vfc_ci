@@ -57,9 +57,6 @@ directory = "."
 max_files = 100
 ignore_recent = 0
 
-tolerance_config = ""
-
-
 for i in range(1, len(sys.argv)):
 
     # Look for a logo URL
@@ -79,10 +76,6 @@ for i in range(1, len(sys.argv)):
     # By default, the n latest files are selected, but this can be modified
     if sys.argv[i] == "ignore_recent":
         ignore_recent = int(sys.argv[i + 1])
-
-    # No tolerance restriction on any probe by default
-    if sys.argv[i] == "tolerance_config":
-        tolerance_config = int(sys.argv[i + 1])
 
 
 curdoc().template_variables["has_logo"] = has_logo
@@ -165,12 +158,6 @@ helper.reset_run_strings()
 metadata["date"] = metadata.index.to_series().map(
     lambda x: time.ctime(x)
 )
-
-# If needed, read the tolerance threshold configuration file into a dict
-if tolerance_config != "":
-    tolerance_config = json.load(tolerance_config)
-else:
-    tolerance_config = {}
 
 ##########################################################################
 
@@ -271,8 +258,7 @@ class ViewsMaster:
             master=self,
             doc=curdoc(),
             data=filtered_data,
-            metadata=filtered_metadata,
-            tolerance_config=tolerance_config
+            metadata=filtered_metadata
         )
 
         # Initialize runs inspection

@@ -35,7 +35,8 @@ def fill_dotplot(
     tooltips=None, tooltips_formatters=None,
     js_tap_callback=None, server_tap_callback=None,
     lines=False,
-    lower_bound=False
+    lower_bound=False,
+    show_errors=False
 ):
     '''
     General function for filling dotplots.
@@ -76,6 +77,16 @@ def fill_dotplot(
         name="circle",
         x="%s_x" % data_field, y=data_field, source=source, size=12
     )
+
+    # (Optional) Add another circle glyph to represent errors (values not in
+    # the tolerance thresold)
+    if show_errors:
+        circle_errors = plot.circle(
+            name="circle_errors",
+            x="%s_x_errors" % data_field, y=data_field_errors, source=source,
+            size=12
+        )
+
 
     # (Optional) Draw lines between dots
     if lines:
