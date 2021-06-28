@@ -41,11 +41,11 @@
 
 // A probe containing a double value as well as its key, which is needed when
 // dumping the probes. Optionally, an accuracy threshold can be defined : it
-// will be re-used in the preprocessing to know if it is reached.
+// will be re-used in the preprocessing to know if it is respected.
 struct vfc_probe_node {
   char *key;
   double value;
-  double accuracy_threshold;
+  double accuracyTreshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -72,6 +72,9 @@ void validate_probe_key(char *str);
 // Add a new probe. If an issue with the key is detected (forbidden characters
 // or a duplicate key), an error will be thrown.
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+
+// Similar to vfc_probe, but with an optional accuracy threshold.
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
@@ -172,7 +175,47 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
   vfc_probe_node *newProbe = (vfc_probe_node *)malloc(sizeof(vfc_probe_node));
   newProbe->key = key;
   newProbe->value = val;
-  newProbe->accuracy_threshold = 0;
+  newProbe->accuracyTreshold = 0;
+
+  vfc_hashmap_insert(probes->map, vfc_hashmap_str_function(key), newProbe);
+
+  return 0;
+}
+
+// Similar to vfc_probe, but with an optional accuracy threshold.
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold) {
+
+  if (probes == NULL) {
+    return 1;
+  }
+
+  // Make sure testName and varName don't contain any ',', which would
+  // interfere with the key/CSV encoding
+  validate_probe_key(testName);
+  validate_probe_key(varName);
+
+  // Get the key, which is : testName + "," + varName
+  char *key = gen_probe_key(testName, varName);
+
+  // Look for a duplicate key
+  vfc_probe_node *oldProbe = (vfc_probe_node *)vfc_hashmap_get(
+      probes->map, vfc_hashmap_str_function(key));
+
+  if (oldProbe != NULL) {
+    if (strcmp(key, oldProbe->key) == 0) {
+      fprintf(stderr,
+              "Error [verificarlo]: you have a duplicate error with one of \
+              your probes (\"%s\"). Please make sure to use different names.\n",
+              key);
+      exit(1);
+    }
+  }
+
+  // Insert the element in the hashmap
+  vfc_probe_node *newProbe = (vfc_probe_node *)malloc(sizeof(vfc_probe_node));
+  newProbe->key = key;
+  newProbe->value = val;
+  newProbe->accuracyTreshold = accuracyTreshold;
 
   vfc_hashmap_insert(probes->map, vfc_hashmap_str_function(key), newProbe);
 
@@ -212,14 +255,14 @@ int vfc_dump_probes(vfc_probes *probes) {
   }
 
   // First line gives the column names
-  fprintf(fp, "test,variable,value\n");
+  fprintf(fp, "test,variable,value,accuracy_threshold\n");
 
   // Iterate over all table elements
   vfc_probe_node *probe = NULL;
   for (int i = 0; i < probes->map->capacity; i++) {
     probe = (vfc_probe_node *)get_value_at(probes->map->items, i);
     if (probe != NULL) {
-      fprintf(fp, "%s,%a\n", probe->key, probe->value);
+      fprintf(fp, "%s,%a, %a\n", probe->key, probe->value, probe->accuracyTreshold);
     }
   }
 

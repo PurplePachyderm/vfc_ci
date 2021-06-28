@@ -44,11 +44,11 @@
 
 // A probe containing a double value as well as its key, which is needed when
 // dumping the probes. Optionally, an accuracy threshold can be defined : it
-// will be re-used in the preprocessing to know if it is reached.
+// will be re-used in the preprocessing to know if it is respected.
 struct vfc_probe_node {
   char *key;
   double value;
-  double accuracy_threshold;
+  double accuracyTreshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -75,6 +75,9 @@ void validate_probe_key(char *str);
 // Add a new probe. If an issue with the key is detected (forbidden characters
 // or a duplicate key), an error will be thrown.
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+
+// Similar to vfc_probe, but with an optional accuracy threshold.
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
