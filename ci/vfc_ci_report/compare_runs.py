@@ -120,6 +120,11 @@ class CompareRuns:
         n = self.current_n_runs
         main_dict = {key: value[-n:] for key, value in main_dict.items()}
 
+        # Generate color series for display of failed asserts
+        custom_colors = [True] * len(main_dict["assert"])
+        for i in range(len(main_dict["assert"])):
+            custom_colors[i] = "#1f77b4" if main_dict["assert"][i] else "#cc2b2b"
+
         # Generate ColumnDataSources for the 3 dotplots
         for stat in ["sigma", "s10", "s2"]:
             dict = {
@@ -134,6 +139,8 @@ class CompareRuns:
                 stat: main_dict[stat],
 
                 "nsamples": main_dict["nsamples"],
+
+                "custom_colors": custom_colors
             }
 
             if stat == "s10" or stat == "s2":
@@ -168,7 +175,9 @@ class CompareRuns:
             "mu": main_dict["mu"],
             "pvalue": main_dict["pvalue"],
 
-            "nsamples": main_dict["nsamples"]
+            "nsamples": main_dict["nsamples"],
+
+            "custom_colors": custom_colors
         }
 
         self.sources["boxplot_source"].data = dict
@@ -322,6 +331,7 @@ class CompareRuns:
             tooltips_formatters=box_tooltips_formatters,
             js_tap_callback=js_tap_callback,
             server_tap_callback=self.inspect_run_callback_boxplot,
+            custom_colors=True
         )
         self.doc.add_root(self.plots["boxplot"])
 
@@ -347,7 +357,8 @@ class CompareRuns:
             tooltips=sigma_tooltips,
             js_tap_callback=js_tap_callback,
             server_tap_callback=self.inspect_run_callback_sigma,
-            lines=True
+            lines=True,
+            custom_colors=True
         )
         self.doc.add_root(self.plots["sigma_plot"])
 
@@ -375,7 +386,8 @@ class CompareRuns:
             js_tap_callback=js_tap_callback,
             server_tap_callback=self.inspect_run_callback_s10,
             lines=True,
-            lower_bound=True
+            lower_bound=True,
+            custom_colors=True
         )
         s10_tab = Panel(child=self.plots["s10_plot"], title="Base 10")
 
@@ -402,7 +414,8 @@ class CompareRuns:
             js_tap_callback=js_tap_callback,
             server_tap_callback=self.inspect_run_callback_s2,
             lines=True,
-            lower_bound=True
+            lower_bound=True,
+            custom_colors=True
         )
         s2_tab = Panel(child=self.plots["s2_plot"], title="Base 2")
 

@@ -102,7 +102,7 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
 
     # Extract accuracy thresholds data
     accuracy_thresholds = results[["test", "variable",
-                               "vfc_backend", "accuracy_threshold"]].copy()
+                                   "vfc_backend", "accuracy_threshold"]].copy()
 
     del results["accuracy_threshold"]
 

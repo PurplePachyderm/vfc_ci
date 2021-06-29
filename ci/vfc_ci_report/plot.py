@@ -26,6 +26,7 @@
 
 from bokeh.plotting import figure
 from bokeh.models import HoverTool, TapTool, CustomJS
+from bokeh.colors import color
 
 from math import pi
 
@@ -36,7 +37,7 @@ def fill_dotplot(
     js_tap_callback=None, server_tap_callback=None,
     lines=False,
     lower_bound=False,
-    show_errors=False
+    custom_colors=False
 ):
     '''
     General function for filling dotplots.
@@ -72,24 +73,24 @@ def fill_dotplot(
             source=source, line_color="black"
         )
 
-    # Draw dots (actually Bokeh circles)
-    circle = plot.circle(
-        name="circle",
-        x="%s_x" % data_field, y=data_field, source=source, size=12
-    )
-
-    # (Optional) Add another circle glyph to represent errors (values not in
-    # the tolerance thresold)
-    if show_errors:
-        circle_errors = plot.circle(
-            name="circle_errors",
-            x="%s_x_errors" % data_field, y=data_field_errors, source=source,
-            size=12
-        )
-
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="%s_x" % data_field, y=data_field, source=source)
+
+    # Draw dots (actually Bokeh circles)
+    if not custom_colors:
+        circle = plot.circle(
+            name="circle",
+            x="%s_x" % data_field, y=data_field, source=source, size=12
+        )
+
+    # (Optional) Custom color palette (to display assert errors, for instance)
+    else:
+        circle = plot.circle(
+            name="circle",
+            x="%s_x" % data_field, y=data_field, source=source, size=12,
+            fill_color="custom_colors", line_color="custom_colors"
+        )
 
     # (Optional) Add server tap callback
     if server_tap_callback is not None:
@@ -110,7 +111,8 @@ def fill_boxplot(
     plot, source,
     prefix="",
     tooltips=None, tooltips_formatters=None,
-    js_tap_callback=None, server_tap_callback=None
+    js_tap_callback=None, server_tap_callback=None,
+    custom_colors=False
 ):
     '''
     General function for filling boxplots.
@@ -156,17 +158,33 @@ def fill_boxplot(
     )
 
     # Boxes
-    full_box = plot.vbar(
-        name="full_box",
-        x="%sx" % prefix, width=0.5,
-        top="%squantile75" % prefix, bottom="%squantile25" % prefix,
-        source=source, line_color="black"
-    )
-    bottom_box = plot.vbar(
-        x="%sx" % prefix, width=0.5,
-        top="%squantile50" % prefix, bottom="%squantile25" % prefix,
-        source=source, line_color="black"
-    )
+
+    if not custom_colors:
+        full_box = plot.vbar(
+            name="full_box",
+            x="%sx" % prefix, width=0.5,
+            top="%squantile75" % prefix, bottom="%squantile25" % prefix,
+            source=source, line_color="black"
+        )
+        bottom_box = plot.vbar(
+            x="%sx" % prefix, width=0.5,
+            top="%squantile50" % prefix, bottom="%squantile25" % prefix,
+            source=source, line_color="black"
+        )
+
+    # (Optional) Custom color palette (to display assert errors, for instance)
+    else:
+        full_box = plot.vbar(
+            name="full_box",
+            x="%sx" % prefix, width=0.5,
+            top="%squantile75" % prefix, bottom="%squantile25" % prefix,
+            source=source, line_color="black", fill_color="custom_colors"
+        )
+        bottom_box = plot.vbar(
+            x="%sx" % prefix, width=0.5,
+            top="%squantile50" % prefix, bottom="%squantile25" % prefix,
+            source=source, line_color="black", fill_color="custom_colors"
+        )
 
     # Mu dot
     mu_dot = plot.dot(
