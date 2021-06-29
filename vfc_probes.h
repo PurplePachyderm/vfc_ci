@@ -31,10 +31,10 @@
 
 #pragma once
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include <vfc_hashmap.h>
 
@@ -77,7 +77,8 @@ void validate_probe_key(char *str);
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
-int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold);
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
+                     double val, double accuracyTreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);

@@ -114,6 +114,12 @@ def apply_data_pocessing(data):
     data["quantile75"] = np.quantile(data["values"], 0.75)
     data["max"] = np.max(data["values"])
 
+    # Accuracy assert
+    if data.accuracy_threshold == 0 or data.sigma > data.accuracy_threshold:
+        data["assert"] = True
+    else:
+        data["assert"] = False
+
     return data
 
 
@@ -138,5 +144,6 @@ def data_processing(data):
         lambda x: sd.change_base(x, 10))
 
     data["nsamples"] = data["values"].apply(len)
+
 
     return data

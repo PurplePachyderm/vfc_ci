@@ -222,8 +222,7 @@ def serve(args):
         args.allow_origin,
         args.logo,
         args.max_files,
-        args.ignore_recent,
-        args.tolerance_config
+        args.ignore_recent
     )
 
 

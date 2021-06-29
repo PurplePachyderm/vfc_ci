@@ -6,9 +6,10 @@ VFC_LIB_PATH=/usr/local/lib
 tests:
 	$(VFC) test.c -lvfc_probes -o test
 
-autopep:
+format:
 	autopep8 --in-place --aggressive --aggressive vfc_ci
 	autopep8 --in-place --aggressive --aggressive --recursive ci
+	clang-format -i vfc_probes.h vfc_probes.c
 
 install:
 	git submodule init

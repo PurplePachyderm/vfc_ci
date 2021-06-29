@@ -87,7 +87,6 @@ def fill_dotplot(
             size=12
         )
 
-
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="%s_x" % data_field, y=data_field, source=source)

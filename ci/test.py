@@ -63,8 +63,12 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
         )
         warnings.append(execution_data)
         return pd.DataFrame(
-            columns=["test", "variable", "values", "vfc_backend"]
-        )
+            columns=[
+                "test",
+                "variable",
+                "values",
+                "accuracy_threshold",
+                "vfc_backend"])
 
     except Exception:
         print(
@@ -73,8 +77,12 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
         )
         warnings.append(execution_data)
         return pd.DataFrame(
-            columns=["test", "variable", "values", "vfc_backend"]
-        )
+            columns=[
+                "test",
+                "variable",
+                "values",
+                "accuracy_threshold",
+                "vfc_backend"])
 
     if len(results) == 0:
         print(
@@ -87,9 +95,18 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
     results["value"] = results["value"].apply(lambda x: float.fromhex(x))
     results.rename(columns={"value": "values"}, inplace=True)
 
+    results["accuracy_threshold"] = results["accuracy_threshold"].apply(
+        lambda x: float.fromhex(x))
+
     results["vfc_backend"] = backend
 
-    return results
+    # Extract accuracy thresholds data
+    accuracy_thresholds = results[["test", "variable",
+                               "vfc_backend", "accuracy_threshold"]].copy()
+
+    del results["accuracy_threshold"]
+
+    return results, accuracy_thresholds
 
 
 ##########################################################################
@@ -159,8 +176,9 @@ def run_tests(config):
     print("Info [vfc_ci]: Building tests...")
     os.system(config["make_command"])
 
-    # This is an array of Pandas dataframes for now
+    # These are arrays of Pandas dataframes for now
     data = []
+    accuracy_thresholds = []
 
     # This will contain all executables/repetition numbers from which we could
     # not get any data
@@ -191,7 +209,6 @@ def run_tests(config):
                 temp = tempfile.NamedTemporaryFile()
                 os.putenv("VFC_PROBES_OUTPUT", temp.name)
 
-                print(command)
                 p = subprocess.Popen(command.split())
                 try:
                     p.wait(timeout)
@@ -209,23 +226,37 @@ def run_tests(config):
                     "repetition": i + 1
                 }
 
-                data.append(read_probes_csv(
+                run_data, run_accuracy_thresholds = read_probes_csv(
                     temp.name,
                     backend["name"],
                     warnings,
                     execution_data
-                ))
+                )
+
+                data.append(run_data)
+                accuracy_thresholds.append(run_accuracy_thresholds)
 
                 temp.close()
 
     # Combine all separate executions in one dataframe
     data = pd.concat(data, sort=False, ignore_index=True)
-    data = data.groupby(["test", "vfc_backend", "variable"])\
-        .values.apply(list).reset_index()
+    data = data.groupby(["test", "vfc_backend", "variable"]
+                        ).values.apply(list).reset_index()
+
+    accuracy_thresholds = pd.concat(
+        accuracy_thresholds,
+        sort=False,
+        ignore_index=True)
+    accuracy_thresholds = accuracy_thresholds.drop_duplicates()
+    accuracy_thresholds = accuracy_thresholds.reset_index()
+    del accuracy_thresholds["index"]
 
     # Make sure we have some data to work on
     assert(len(data) != 0), "Error [vfc_ci]: No data have been generated " \
         "by your tests executions, aborting run without writing results file"
+
+    # Copy informations about accuracy thresholds to the main dataframe
+    data["accuracy_threshold"] = accuracy_thresholds["accuracy_threshold"]
 
     return data, warnings
 

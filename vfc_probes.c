@@ -74,7 +74,8 @@ void validate_probe_key(char *str);
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
-int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold);
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
+                     double val, double accuracyTreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
@@ -183,7 +184,8 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
 }
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
-int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName, double val, double accuracyTreshold) {
+int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
+                     double val, double accuracyTreshold) {
 
   if (probes == NULL) {
     return 1;
@@ -262,7 +264,8 @@ int vfc_dump_probes(vfc_probes *probes) {
   for (int i = 0; i < probes->map->capacity; i++) {
     probe = (vfc_probe_node *)get_value_at(probes->map->items, i);
     if (probe != NULL) {
-      fprintf(fp, "%s,%a, %a\n", probe->key, probe->value, probe->accuracyTreshold);
+      fprintf(fp, "%s,%a, %a\n", probe->key, probe->value,
+              probe->accuracyTreshold);
     }
   }
 
