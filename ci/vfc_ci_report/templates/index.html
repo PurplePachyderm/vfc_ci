@@ -107,15 +107,28 @@
             <!-- MENU (content) -->
             <div id="navbar-content" class="navbar-menu">
 
-                <div id="buttons-container" class="navbar-start">
+                <div id="buttons-container" class="navbar-menu">
 
                     <div id="select-repo" style="margin-top: 15px;">
                         {{ embed(roots.select_repo) }}
                     </div>
 
-                    <a class="navbar-item is-active" id="compare-runs-button">
-                        Compare runs
-                    </a>
+                    <div class="navbar-item has-dropdown is-hoverable">
+
+                        <a class="navbar-link">
+                            Compare runs
+                        </a>
+
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" id="compare-runs-button">
+                            Non-deterministic backends
+                            </a>
+                            <a class="navbar-item" id="deterministic-button">
+                            Deterministic backends
+                            </a>
+                        </div>
+
+                    </div>
 
                     <a class="navbar-item" id="inspect-runs-button">
                         Inspect runs
@@ -143,7 +156,7 @@
             </div>
         </nav>
 
-        <!-- CONTENT : COMPARE RUNS -->
+        <!-- CONTENT : COMPARE RUNS (NON DETERMINISTIC)-->
         <main class="container" id="compare-runs-container">
             <div class="columns">
 
@@ -187,6 +200,26 @@
                             {{ embed(roots.boxplot) }}
                         </div>
                     </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- CONTENT : COMPARE RUNS (DETERMINISTIC)-->
+        <main class="container" id="deterministic-container">
+
+            <div class="columns">
+
+                <!-- SELECTORS -->
+                <div class="column">
+                    <h4 class="title is-4">Selectors</h4>
+                </div>
+
+                <div class="is-divider-vertical"></div>
+
+                <!-- PLOTS -->
+                <div class="column is-9">
+                    <h3 class="title is-3">Plots</h3>
                 </div>
 
             </div>
