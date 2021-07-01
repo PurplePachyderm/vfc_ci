@@ -537,8 +537,11 @@ class InspectRuns:
         ]
         filterby = self.factors_dict[filterby]
 
-        options = self.run_data.index\
-            .get_level_values(filterby).drop_duplicates().tolist()
+        if not self.run_data.empty:
+            options = self.run_data.index\
+                .get_level_values(filterby).drop_duplicates().tolist()
+        else:
+            options = ["None"]
 
         self.widgets["select_filter"] = Select(
             # We need a different name to avoid collision in the template with

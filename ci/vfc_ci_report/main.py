@@ -38,6 +38,7 @@ from bokeh.models import Select, CustomJS
 
 # Local imports from vfc_ci_server
 import compare_runs
+import deterministic_compare
 import inspect_runs
 import helper
 
@@ -144,6 +145,15 @@ for f in run_files:
 
 data = pd.concat(data).sort_index()
 
+if data.empty:
+    data = pd.DataFrame(columns=[
+        "test", "variable", "backend",
+        "sigma", "s10", "s2", "s10_lower_bound", "s2_lower_bound",
+        "mu", "quantile25", "quantile50", "quantile75",
+        "accuracy_threshold", "assert",
+        "timestamp"
+    ])
+
 # Generate the display strings for runs (runs ticks)
 # By doing this in master, we ensure the homogeneity of display strings
 # across all plots
@@ -194,11 +204,12 @@ class ViewsMaster:
 
         # Constructor
 
-    def __init__(self, data, metadata):
+    def __init__(self, data, deterministic_data, metadata):
 
         curdoc().title = "Verificarlo Report"
 
         self.data = data
+        self.deterministic_data = deterministic_data
         self.metadata = metadata
 
         # Initialize repository selection
@@ -242,14 +253,19 @@ class ViewsMaster:
         repo_name = list(repo_names_dict.keys())[0]
 
         # Filter data and metadata by repository
-        filtered_data = self.data[
-            helper.filterby_repo(
-                self.metadata, repo_name, self.data["timestamp"]
-            )
-        ]
-        filtered_metadata = self.metadata[
-            self.metadata["repo_name"] == repo_name
-        ]
+        if not data.empty:
+            filtered_data = self.data[
+                helper.filterby_repo(
+                    self.metadata, repo_name, self.data["timestamp"]
+                )
+            ]
+            filtered_metadata = self.metadata[
+                self.metadata["repo_name"] == repo_name
+            ]
+        else:
+            # TODO Filter using deterministic data in this case
+            filtered_data = data
+            filtered_metadata = metadata
 
         # Initialize views
 
@@ -259,6 +275,14 @@ class ViewsMaster:
             doc=curdoc(),
             data=filtered_data,
             metadata=filtered_metadata
+        )
+
+        # Initialize deterministic runs comparison
+        self.inspect = deterministic_compare.DeterministicCompare(
+            master=self,
+            doc=curdoc(),
+            data=deterministic_data,  # TODO
+            metadata=filtered_metadata,
         )
 
         # Initialize runs inspection
@@ -272,5 +296,6 @@ class ViewsMaster:
 
 views_master = ViewsMaster(
     data=data,
+    deterministic_data={},
     metadata=metadata
 )

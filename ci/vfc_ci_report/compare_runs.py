@@ -99,6 +99,9 @@ class CompareRuns:
 
     def update_plots(self):
 
+        if self.data.empty:
+            return
+
         # Select all data matching current test/var/backend
 
         runs = self.data.loc[[self.widgets["select_test"].value],
@@ -432,14 +435,20 @@ class CompareRuns:
         # Initial selections
 
         # Test/var/backend combination (we select all first elements at init)
-        self.tests = self.data\
-            .index.get_level_values("test").drop_duplicates().tolist()
+        if not self.data.empty:
+            self.tests = self.data\
+                .index.get_level_values("test").drop_duplicates().tolist()
 
-        self.vars = self.data.loc[self.tests[0]]\
-            .index.get_level_values("variable").drop_duplicates().tolist()
+            self.vars = self.data.loc[self.tests[0]]\
+                .index.get_level_values("variable").drop_duplicates().tolist()
 
-        self.backends = self.data.loc[self.tests[0], self.vars[0]]\
-            .index.get_level_values("vfc_backend").drop_duplicates().tolist()
+            self.backends = self.data.loc[self.tests[0], self.vars[0]]\
+                .index.get_level_values("vfc_backend").drop_duplicates().tolist()
+
+        else:
+            self.tests = ["None"]
+            self.vars = ["None"]
+            self.backends = ["None"]
 
         # Custom JS callback that will be used client side to filter selections
         filter_callback_js = """
