@@ -72,13 +72,13 @@ char *gen_probe_key(char *testName, char *varName);
 // Helper function to detect forbidden character ',' in the keys
 void validate_probe_key(char *str);
 
-// Add a new probe. If an issue with the key is detected (forbidden characters
-// or a duplicate key), an error will be thrown.
-int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
-
 // Similar to vfc_probe, but with an optional accuracy threshold.
 int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
                      double val, double accuracyTreshold);
+
+// Add a new probe. If an issue with the key is detected (forbidden characters
+// or a duplicate key), an error will be thrown.
+int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
