@@ -120,12 +120,12 @@
 
                     <div class="navbar-item has-dropdown is-hoverable">
 
-                        <a class="navbar-link">
+                        <a class="navbar-link compare-runs-button">
                             Compare runs
                         </a>
 
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" id="compare-runs-button">
+                            <a class="navbar-item compare-runs-button">
                             Non-deterministic backends
                             </a>
                             <a class="navbar-item" id="deterministic-button">
@@ -187,7 +187,13 @@
 
                 <!-- PLOTS -->
                 <div class="column is-9">
-                    <h3 class="title is-3">Plots</h3>
+                    <div style="display: flex; margin-bottom: 24px;">
+                        <h3 class="title is-3" style="margin: 0;">Plots</h3>
+                        <span style="align-self: flex-end; margin-left: 10px;">
+                            (non-deterministic backends)
+                        </span>
+                    </div>
+
                     <div class="container">
                         <div class="card plot-card">
                             {{ embed(roots.s_tabs) }}
@@ -218,13 +224,37 @@
                 <!-- SELECTORS -->
                 <div class="column">
                     <h4 class="title is-4">Selectors</h4>
+                    <div id="compare-widgets">
+                        {{ embed(roots.deterministic_test_filter) }} {{ embed(roots.select_deterministic_test) }}
+                        <br> {{ embed(roots.select_deterministic_var) }}
+                        <br> {{ embed(roots.select_deterministic_backend) }}
+                        <br> {{ embed(roots.outliers_filtering_deterministic) }}
+                        <br>
+                        <br> {{ embed(roots.select_n_deterministic_runs) }}
+
+                        <br>
+                        <br>
+                    </div>
                 </div>
 
                 <div class="is-divider-vertical"></div>
 
                 <!-- PLOTS -->
                 <div class="column is-9">
-                    <h3 class="title is-3">Plots</h3>
+                    <div style="display: flex; margin-bottom: 24px;">
+                        <h3 class="title is-3" style="margin: 0;">Plots</h3>
+                        <span style="align-self: flex-end; margin-left: 10px;">
+                            (deterministic backends)
+                        </span>
+                    </div>
+
+                    <div class="container">
+                        <div class="card plot-card">
+                            {{ embed(roots.comparison_plot) }}
+                        </div>
+
+                        <br>
+                    </div>
                 </div>
 
             </div>
@@ -289,7 +319,13 @@
 
                 <!-- PLOTS -->
                 <div class="column is-9">
-                    <h3 class="title is-3">Plots</h3>
+                    <div style="display: flex; margin-bottom: 24px;">
+                        <h3 class="title is-3" style="margin: 0;">Plots</h3>
+                        <span style="align-self: flex-end; margin-left: 10px;">
+                            (runs inspection)
+                        </span>
+                    </div>
+
                     <div class="card plot-card" style="z-index: 3;">
                         {{ embed(roots.s_tabs_inspect) }}
                     </div>

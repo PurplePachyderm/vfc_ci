@@ -49,53 +49,7 @@ import plot
 
 class CompareRuns:
 
-    # Helper functions related to CompareRuns
-
-    def gen_x_series(self, timestamps):
-        '''
-        From an array of timestamps, returns the array of runs names (for the x
-        axis ticks), as well as the metadata (in a dict of arrays) associated
-        to this array (will be used in tooltips)
-        '''
-
-        # Initialize the objects to return
-        x_series = []
-        x_metadata = dict(
-            date=[],
-            is_git_commit=[],
-            hash=[],
-            author=[],
-            message=[]
-        )
-
-        # n == 0 means we want all runs, we also make sure not to go out of
-        # bound if asked for more runs than we have
-        n = self.current_n_runs
-        if n == 0 or n > len(timestamps):
-            n = len(timestamps)
-
-        for i in range(0, n):
-            # Get metadata associated to this run
-            row_metadata = helper.get_metadata(
-                self.metadata, timestamps[-i - 1])
-            date = time.ctime(timestamps[-i - 1])
-
-            # Fill the x series
-            str = row_metadata["name"]
-            x_series.insert(0, helper.get_metadata(
-                self.metadata, timestamps[-i - 1])["name"])
-
-            # Fill the metadata lists
-            x_metadata["date"].insert(0, date)
-            x_metadata["is_git_commit"].insert(
-                0, row_metadata["is_git_commit"])
-            x_metadata["hash"].insert(0, row_metadata["hash"])
-            x_metadata["author"].insert(0, row_metadata["author"])
-            x_metadata["message"].insert(0, row_metadata["message"])
-
-        return x_series, x_metadata
-
-        # Plots update function
+    # Plots update function
 
     def update_plots(self):
 
@@ -109,7 +63,11 @@ class CompareRuns:
                              self.widgets["select_backend"].value]
 
         timestamps = runs["timestamp"]
-        x_series, x_metadata = self.gen_x_series(timestamps.sort_values())
+        x_series, x_metadata = helper.gen_x_series(
+            self.metadata,
+            timestamps.sort_values(),
+            self.current_n_runs
+        )
 
         # Update source
 

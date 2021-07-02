@@ -58,8 +58,6 @@ document.getElementById("navbar-burger")
 function changeView(classPrefix) {
     window.scrollTo(0, 0);
 
-    console.log("Change view for prefix : " + classPrefix);
-
     // Enable/disable the active class on buttons
     let buttons = document.getElementById("buttons-container").childNodes;
     let toggledButtonId = classPrefix + "-button";
@@ -88,16 +86,16 @@ function changeView(classPrefix) {
 }
 
 // Listen to clicks on "Compare runs" non-deterministic button
-document.getElementById("compare-runs-button").addEventListener("click", () => {
-    console.log("Compare runs callback");
-    // Nothing else to do for this button
-    changeView("compare-runs");
-});
+let compareButtons = document.getElementsByClassName("compare-runs-button");
+
+for (let i=0; i<compareButtons.length; i++) {
+  compareButtons[i].addEventListener("click", () => {
+      changeView("compare-runs");
+  });
+}
 
 // Listen to clicks on "Compare runs" deterministic button
 document.getElementById("deterministic-button").addEventListener("click", () => {
-    console.log("Deterministic callback");
-    // Nothing else to do for this button
     changeView("deterministic");
 });
 

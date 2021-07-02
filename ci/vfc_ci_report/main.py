@@ -97,6 +97,7 @@ if len(run_files) == 0:
 # These are arrays of Pandas dataframes for now
 metadata = []
 data = []
+deterministic_data = []
 
 # First pass for metadata
 for f in run_files:
@@ -142,8 +143,14 @@ for f in run_files:
 
     if current_timestamp <= max_timestamp:
         data.append(pd.read_hdf(directory + "/" + f, "data"))
+        deterministic_data.append(
+            pd.read_hdf(
+                directory + "/" + f,
+                "deterministic_data"))
 
-data = pd.concat(data).sort_index()
+data = pd.concat(data).sort_values(by=["timestamp"])
+deterministic_data = pd.concat(
+    deterministic_data).sort_values(by=["timestamp"])
 
 if data.empty:
     data = pd.DataFrame(columns=[
@@ -185,16 +192,31 @@ class ViewsMaster:
     # Callbacks
 
     def change_repo(self, attrname, old, new):
-        filtered_data = self.data[
-            helper.filterby_repo(
-                self.metadata, new, self.data["timestamp"]
-            )
-        ]
+        # Filter metadata by repository
         filtered_metadata = self.metadata[
             self.metadata["repo_name"] == new
         ]
 
+        # Filter data and deterministic_data by repository
+        if not data.empty:
+            filtered_data = self.data[
+                helper.filterby_repo(
+                    self.metadata, new, self.data["timestamp"]
+                )
+            ]
+        else:
+            filtered_data = data
+
+        if not deterministic_data.empty:
+            filtered_deterministic_data = self.deterministic_data[
+                helper.filterby_repo(
+                    self.metadata, new, self.deterministic_data["timestamp"]
+                )
+            ]
+
         self.compare.change_repo(filtered_data, filtered_metadata)
+        self.deterministic.change_repo(
+            filtered_deterministic_data, filtered_metadata)
         self.inspect.change_repo(filtered_data, filtered_metadata)
 
         # Communication functions
@@ -250,22 +272,32 @@ class ViewsMaster:
         curdoc().template_variables["metadata"] = self.metadata.to_json(
             orient="index")
 
+        # Show the first repository by default
         repo_name = list(repo_names_dict.keys())[0]
 
-        # Filter data and metadata by repository
+        # Filter metadata by repository
+        filtered_metadata = self.metadata[
+            self.metadata["repo_name"] == repo_name
+        ]
+
+        # Filter data and deterministic_data by repository
         if not data.empty:
             filtered_data = self.data[
                 helper.filterby_repo(
                     self.metadata, repo_name, self.data["timestamp"]
                 )
             ]
-            filtered_metadata = self.metadata[
-                self.metadata["repo_name"] == repo_name
+        else:
+            filtered_data = data
+
+        if not deterministic_data.empty:
+            filtered_deterministic_data = self.deterministic_data[
+                helper.filterby_repo(
+                    self.metadata, repo_name, self.deterministic_data["timestamp"]
+                )
             ]
         else:
-            # TODO Filter using deterministic data in this case
-            filtered_data = data
-            filtered_metadata = metadata
+            filtered_deterministic_data = deterministic_data
 
         # Initialize views
 
@@ -278,11 +310,11 @@ class ViewsMaster:
         )
 
         # Initialize deterministic runs comparison
-        self.inspect = deterministic_compare.DeterministicCompare(
+        self.deterministic = deterministic_compare.DeterministicCompare(
             master=self,
             doc=curdoc(),
-            data=deterministic_data,  # TODO
-            metadata=filtered_metadata,
+            data=filtered_deterministic_data,
+            metadata=filtered_metadata
         )
 
         # Initialize runs inspection
@@ -290,12 +322,12 @@ class ViewsMaster:
             master=self,
             doc=curdoc(),
             data=filtered_data,
-            metadata=filtered_metadata,
+            metadata=filtered_metadata
         )
 
 
 views_master = ViewsMaster(
     data=data,
-    deterministic_data={},
+    deterministic_data=deterministic_data,
     metadata=metadata
 )

@@ -145,9 +145,9 @@ void validate_probe_key(char *str) {
 // Add a new probe. If an issue with the key is detected (forbidden characters
 // or a duplicate key), an error will be thrown.
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
-    // Creating a probe without assert is equivalent to setting the accuracy
-    // threshold to 0.
-    return vfc_probe_assert(probes, testName, varName, val, 0);
+  // Creating a probe without assert is equivalent to setting the accuracy
+  // threshold to 0.
+  return vfc_probe_assert(probes, testName, varName, val, 0);
 }
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
