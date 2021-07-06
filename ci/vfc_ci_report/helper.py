@@ -28,6 +28,7 @@ from urllib.parse import urlparse
 import calendar
 import time
 from itertools import compress
+from bokeh.models import Range1d
 
 import numpy as np
 

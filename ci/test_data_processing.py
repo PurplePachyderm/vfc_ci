@@ -64,7 +64,7 @@ def significant_digits(x):
 
     # Else, manually compute sMCA (Stott-Parker formula)
     else:
-        return -np.log2(np.absolute(x.sigma / x.mu))
+        return min(-np.log2(np.absolute(x.sigma / x.mu)), 53)
 
 
 def significant_digits_lower_bound(x):

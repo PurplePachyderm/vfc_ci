@@ -221,7 +221,8 @@ class DeterministicCompare:
             ("Author", "@author"),
             ("Message", "@message"),
             ("Backend value", "@value{%0.18e}"),
-            ("Reference value", "@reference_value{%0.18e}")
+            ("Reference value", "@reference_value{%0.18e}"),
+            ("Accuracy target", "@accuracy_threshold")
         ]
         comparison_tooltips_formatters = {
             "@value": "printf",

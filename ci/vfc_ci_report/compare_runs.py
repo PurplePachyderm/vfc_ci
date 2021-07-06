@@ -100,6 +100,7 @@ class CompareRuns:
                 stat: main_dict[stat],
 
                 "nsamples": main_dict["nsamples"],
+                "accuracy_threshold": main_dict["accuracy_threshold"],
 
                 "custom_colors": custom_colors
             }
@@ -310,7 +311,8 @@ class CompareRuns:
             ("Author", "@author"),
             ("Message", "@message"),
             ("σ", "@sigma"),
-            ("Number of samples", "@nsamples")
+            ("Number of samples", "@nsamples"),
+            ("Accuracy target", "@accuracy_threshold")
         ]
 
         plot.fill_dotplot(
@@ -338,7 +340,8 @@ class CompareRuns:
             ("Message", "@message"),
             ("s", "@s10"),
             ("s lower bound", "@s10_lower_bound"),
-            ("Number of samples", "@nsamples")
+            ("Number of samples", "@nsamples"),
+            ("Assert target", "@accuracy_threshold")
         ]
 
         plot.fill_dotplot(
