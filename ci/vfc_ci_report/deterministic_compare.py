@@ -68,42 +68,36 @@ class DeterministicCompare:
         # Update source
 
         dict = runs.to_dict("series")
-        dict["x"] = x_series
+        dict["value_x"] = x_series
 
         # Add metadata (for tooltip)
         dict.update(x_metadata)
 
         # Select the last n runs only
         n = self.current_n_runs
+        dict = {key: value[-n:] for key, value in dict.items()}
 
         # Generate color series for display of failed asserts
-        custom_colors = [True] * len(dict["assert"])
+        dict["custom_colors"] = [True] * len(dict["assert"])
         for i in range(len(dict["assert"])):
-            custom_colors[i] = "#1f77b4" if dict["assert"][i] else "#cc2b2b"
-
-        # Generate ColumnDataSource for the comparison plot
-        source_dict = {key: value[-n:] for key, value in dict.items()}
+            dict["custom_colors"][i] = "#1f77b4" if dict["assert"][i] else "#cc2b2b"
 
         # Filter outliers if the box is checked
         if len(self.widgets["outliers_filtering_deterministic"].active) > 0:
-            outliers = helper.detect_outliers(dict[stat])
-            dict[stat] = helper.remove_outliers(dict[stat], outliers)
-            dict["%s_x" % stat] = helper.remove_outliers(
-                dict["%s_x" % stat], outliers)
+            outliers = helper.detect_outliers(dict["value"])
+            dict["value"] = helper.remove_outliers(dict["value"], outliers)
+            dict["value_x"] = helper.remove_outliers(
+                dict["%value_x"], outliers)
 
-        # Create separate data series for non-asserted values, asserted values
-        # and reference values. This will allow for a better plot in the report.
-        # If a value must not be plotted for an index, NaN will be used.
-        dict["non_assert_display"] = [float('nan')] * len(dict["value"])
-        dict["assert_display"] = [float('nan')] * len(dict["value"])
-        dict["reference_display"] = [float('nan')] * len(dict["value"])
+        # Even though the series is called lower bound because it will be used
+        # in the plot function, it will be used to store IEEE reference results
+        dict["value_lower_bound"] = [0] * len(dict["value"])
 
         for i in range(len(dict["value"])):
-            if dict["accuracy_threshold"][i]:
-                dict["assert_display"][i] = dict["value"][i]
-                dict["reference_display"][i] = dict["reference_value"][i]
+            if dict["assert"][i]:
+                dict["value_lower_bound"][i] = dict["value"][i]
             else:
-                dict["non_assert_display"][i] = dict["value"][i]
+                dict["value_lower_bound"][i] = dict["reference_value"][i]
 
         self.source.data = dict
 
@@ -111,7 +105,7 @@ class DeterministicCompare:
 
         helper.reset_x_range(
             self.plots["comparison_plot"],
-            self.source.data["x"]
+            self.source.data["value_x"]
         )
 
         # Widgets' callback functions
@@ -207,7 +201,7 @@ class DeterministicCompare:
         # Backend Vs Reference comparison plot
         self.plots["comparison_plot"] = figure(
             name="comparison_plot",
-            title="Backend Vs Standard IEEE comparison",
+            title="Variable with deterministic backend over runs",
             plot_width=900,
             plot_height=400,
             x_range=[""],
@@ -229,12 +223,22 @@ class DeterministicCompare:
             "@reference_value": "printf"
         }
 
-        plot.fill_barplot(
+        # plot.fill_barplot(
+        #     self.plots["comparison_plot"], self.source,
+        #     single_series="non_assert_display",
+        #     double_series=["assert_display", "reference_display"],
+        #     tooltips=comparison_tooltips,
+        #     tooltips_formatters=comparison_tooltips_formatters
+        # )
+
+        plot.fill_dotplot(
             self.plots["comparison_plot"], self.source,
-            single_series="non_assert_display",
-            double_series=["assert_display", "reference_display"],
+            data_field="value",
             tooltips=comparison_tooltips,
-            tooltips_formatters=comparison_tooltips_formatters
+            tooltips_formatters=comparison_tooltips_formatters,
+            lines=True,
+            lower_bound=True,   # Here, lower bound will be used to display the IEEE references
+            custom_colors=True
         )
 
         self.doc.add_root(self.plots["comparison_plot"])

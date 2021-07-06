@@ -286,7 +286,7 @@ def run_deterministic(
         run_data["assert"] = run_data.apply(
             lambda x: True if abs(
                 x.value -
-                x.reference_value) else False,
+                x.reference_value) < x.accuracy_threshold or x.accuracy_threshold == 0 else False,
             axis=1)
 
     else:

@@ -51,7 +51,7 @@ def fill_dotplot(
     lines: Specify if lines should be drawn to connect the dots
     lower_bound: Specify if a lower bound interval should be displayed
     custom_colors: Will plot additional glyphs with a custom color (to display
-    assert errors for instance)
+    assert errors for instance). Series of colors.
     '''
 
     # (Optional) Tooltip and tooltip formatters
@@ -127,7 +127,7 @@ def fill_boxplot(
     js_tap_callback: CustomJS object for client side click callback
     server_tap_callback: Callback object for server side click callback
     custom_colors: Will plot additional glyphs with a custom color (to display
-    assert errors for instance)
+    assert errors for instance). Series of colors.
     '''
 
     # (Optional) Tooltip and tooltip formatters

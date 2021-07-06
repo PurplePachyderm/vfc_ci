@@ -312,7 +312,7 @@ class CompareRuns:
             ("Message", "@message"),
             ("σ", "@sigma"),
             ("Number of samples", "@nsamples"),
-            ("Accuracy target", "@accuracy_threshold")
+            ("Assert target accuracy", "@accuracy_threshold")
         ]
 
         plot.fill_dotplot(
@@ -341,7 +341,7 @@ class CompareRuns:
             ("s", "@s10"),
             ("s lower bound", "@s10_lower_bound"),
             ("Number of samples", "@nsamples"),
-            ("Assert target", "@accuracy_threshold")
+            ("Assert target accuracy ", "@accuracy_threshold")
         ]
 
         plot.fill_dotplot(
