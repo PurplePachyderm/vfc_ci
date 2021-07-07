@@ -38,7 +38,8 @@ def fill_dotplot(
     js_tap_callback=None, server_tap_callback=None,
     lines=False,
     lower_bound=False,
-    custom_colors=False
+    second_series=None,
+    custom_colors=None
 ):
     '''
     General function for filling dotplots.
@@ -50,6 +51,8 @@ def fill_dotplot(
     server_tap_callback: Callback object for server side click callback
     lines: Specify if lines should be drawn to connect the dots
     lower_bound: Specify if a lower bound interval should be displayed
+    second_series: Name of a second data series to plot on the same figure. It
+    should also have its own x series with the "_x" prefix.
     custom_colors: Will plot additional glyphs with a custom color (to display
     assert errors for instance). Series of colors.
     '''
@@ -76,12 +79,26 @@ def fill_dotplot(
             source=source, line_color="black"
         )
 
+    # (Optional) Draw a second data series
+    if second_series is not None:
+        second_circle = plot.circle(
+            name="second_circle",
+            x="%s_x" % data_field, y=second_series, source=source, size=12,
+            fill_color="grey", line_color="grey"
+        )
+
+        if lines:
+            second_line = plot.line(
+                x="%s_x" % data_field, y=second_series, source=source,
+                color="grey", line_dash="dashed"
+            )
+            
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="%s_x" % data_field, y=data_field, source=source)
 
     # Draw dots (actually Bokeh circles)
-    if not custom_colors:
+    if custom_colors is None:
         circle = plot.circle(
             name="circle",
             x="%s_x" % data_field, y=data_field, source=source, size=12

@@ -89,15 +89,16 @@ class DeterministicCompare:
             dict["value_x"] = helper.remove_outliers(
                 dict["%value_x"], outliers)
 
-        # Even though the series is called lower bound because it will be used
-        # in the plot function, it will be used to store IEEE reference results
-        dict["value_lower_bound"] = [0] * len(dict["value"])
+        # Series to display IEEE results. This is different than reference_value,
+        # because the latter has to be 0 when no reference run has been done
+        # (because the value will be shown in the tooltip)
+        dict["ieee"] = [0] * len(dict["value"])
 
         for i in range(len(dict["value"])):
             if dict["assert"][i]:
-                dict["value_lower_bound"][i] = dict["value"][i]
+                dict["ieee"][i] = dict["value"][i]
             else:
-                dict["value_lower_bound"][i] = dict["reference_value"][i]
+                dict["ieee"][i] = dict["reference_value"][i]
 
         self.source.data = dict
 
@@ -237,7 +238,7 @@ class DeterministicCompare:
             tooltips=comparison_tooltips,
             tooltips_formatters=comparison_tooltips_formatters,
             lines=True,
-            lower_bound=True,   # Here, lower bound will be used to display the IEEE references
+            second_series="ieee",   # Will be used to display the IEEE results
             custom_colors=True
         )
 
