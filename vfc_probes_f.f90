@@ -51,6 +51,18 @@ module vfc_probes_f
             real(kind=C_DOUBLE) :: val
         end function vfc_probe
 
+        integer(C_INT) function vfc_probe_assert(probes, testName, varName, val, accuracyThreshold) bind(C, name = "vfc_probe_assert_f")
+            use, intrinsic :: iso_c_binding
+            use ISO_C_BINDING
+            import :: vfc_probes
+
+            type(vfc_probes) :: probes
+            character(kind=C_CHAR),dimension(*) :: testName
+            character(kind=C_CHAR),dimension(*) :: varName
+            real(kind=C_DOUBLE) :: val
+            real(kind=C_DOUBLE) :: accuracyThreshold
+        end function vfc_probe_assert
+
         integer(C_SIZE_T) function vfc_num_probes(probes) bind(C, name = "vfc_num_probes")
             use, intrinsic :: iso_c_binding
             import :: vfc_probes

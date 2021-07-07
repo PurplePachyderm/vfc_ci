@@ -48,7 +48,7 @@
 struct vfc_probe_node {
   char *key;
   double value;
-  double accuracyTreshold;
+  double accuracyThreshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -74,7 +74,7 @@ void validate_probe_key(char *str);
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
 int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
-                     double val, double accuracyTreshold);
+                     double val, double accuracyThreshold);
 
 // Add a new probe. If an issue with the key is detected (forbidden characters
 // or a duplicate key), an error will be thrown.
@@ -87,5 +87,9 @@ unsigned int vfc_num_probes(vfc_probes *probes);
 // free it.
 int vfc_dump_probes(vfc_probes *probes);
 
-// Fortran wrapper
+// Fortran wrappers
+
 int vfc_probe_f(vfc_probes *probes, char *testName, char *varName, double *val);
+
+int vfc_probe_assert_f(vfc_probes *probes, char *testName, char *varName,
+                       double *val, double *accuracyThreshold);

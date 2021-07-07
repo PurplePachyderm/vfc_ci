@@ -45,7 +45,7 @@
 struct vfc_probe_node {
   char *key;
   double value;
-  double accuracyTreshold;
+  double accuracyThreshold;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -75,7 +75,7 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
 int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
-                     double val, double accuracyTreshold);
+                     double val, double accuracyThreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
@@ -152,7 +152,7 @@ int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
 
 // Similar to vfc_probe, but with an optional accuracy threshold.
 int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
-                     double val, double accuracyTreshold) {
+                     double val, double accuracyThreshold) {
 
   if (probes == NULL) {
     return 1;
@@ -184,7 +184,7 @@ int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
   vfc_probe_node *newProbe = (vfc_probe_node *)malloc(sizeof(vfc_probe_node));
   newProbe->key = key;
   newProbe->value = val;
-  newProbe->accuracyTreshold = accuracyTreshold;
+  newProbe->accuracyThreshold = accuracyThreshold;
 
   vfc_hashmap_insert(probes->map, vfc_hashmap_str_function(key), newProbe);
 
@@ -232,7 +232,7 @@ int vfc_dump_probes(vfc_probes *probes) {
     probe = (vfc_probe_node *)get_value_at(probes->map->items, i);
     if (probe != NULL) {
       fprintf(fp, "%s,%a, %a\n", probe->key, probe->value,
-              probe->accuracyTreshold);
+              probe->accuracyThreshold);
     }
   }
 
@@ -246,11 +246,14 @@ int vfc_dump_probes(vfc_probes *probes) {
 /*
  * Fortran wrappers : since Fortran arguments are all passed by address, these
  * versions only take pointers as arguments and only call the base fuctions.
- * (as of now, only the vfc_probe function needs its own wrapper, since other
- * functions already use pointers as their arguments).
  */
 
 int vfc_probe_f(vfc_probes *probes, char *testName, char *varName,
                 double *val) {
   return vfc_probe(probes, testName, varName, *val);
+}
+
+int vfc_probe_assert_f(vfc_probes *probes, char *testName, char *varName,
+                       double *val, double *accuracyThreshold) {
+  return vfc_probe_assert(probes, testName, varName, *val, *accuracyThreshold);
 }
