@@ -285,3 +285,23 @@ def remove_boxplot_outliers(dict, outliers, prefix):
     dict["%s_mu" % prefix] = remove_outliers(dict["%s_mu" % prefix], outliers)
 
     dict["nsamples"] = remove_outliers(dict["nsamples"], outliers)
+
+
+def gen_runs_selection(metadata):
+    '''
+    Returns a dictionary mapping user-readable strings to all run timestamps
+    '''
+
+    runs_dict = {}
+
+    # Iterate over timestamp rows (runs) and fill dict
+    for row in metadata.iloc:
+        # The syntax used by pandas makes this part a bit tricky :
+        # row.name is the index of metadata (so it refers to the
+        # timestamp), whereas row["name"] is the column called "name"
+        # (which is the display string used for the run)
+
+        # runs_dict[run's name] = run's timestamp
+        runs_dict[row["name"]] = row.name
+
+    return runs_dict

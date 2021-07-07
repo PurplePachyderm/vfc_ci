@@ -45,6 +45,11 @@
                 display : none; /* Hidden by default */
             }
 
+            #asserts-container {
+                margin-top: 1em;
+                display : none; /* Hidden by default */
+            }
+
             .plot-card {
                 width: 900px;
             }
@@ -137,6 +142,10 @@
 
                     <a class="navbar-item" id="inspect-runs-button">
                         Inspect runs
+                    </a>
+
+                    <a class="navbar-item" id="asserts-button">
+                        Asserts
                     </a>
                 </div>
 
@@ -346,6 +355,24 @@
             </div>
         </main>
 
+        <!-- CONTENT : ASSERTS -->
+        <main class="container" id="asserts-container">
+            <div class="columns">
+
+                <!-- SELECTORS -->
+                <div class="column">
+                    <h4 class="title is-4">Selectors</h4>
+                    {{ embed(roots.select_assert_run) }}
+
+                </div>
+
+                <!-- PLOTS -->
+                <div class="column is-9">
+                    <h3 class="title is-3">Asserts table</h3>
+
+                </div>
+            </div>
+        </main>
     </div>
 
     <!--- LOADER -->

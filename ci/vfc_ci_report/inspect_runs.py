@@ -53,25 +53,6 @@ class InspectRuns:
 
     # Helper functions related to InspectRun
 
-    def gen_runs_selection(self):
-        '''
-        Returns a dictionary mapping user-readable strings to all run timestamps
-        '''
-
-        runs_dict = {}
-
-        # Iterate over timestamp rows (runs) and fill dict
-        for row in self.metadata.iloc:
-            # The syntax used by pandas makes this part a bit tricky :
-            # row.name is the index of metadata (so it refers to the
-            # timestamp), whereas row["name"] is the column called "name"
-            # (which is the display string used for the run)
-
-            # runs_dict[run's name] = run's timestamp
-            runs_dict[row["name"]] = row.name
-
-        return runs_dict
-
     def gen_boxplot_tooltips(self, prefix):
         return [
             ("Name", "@%s_x" % prefix),
@@ -460,7 +441,7 @@ class InspectRuns:
         # Dict contains all inspectable runs (maps display strings to timestamps)
         # The dict structure allows to get the timestamp from the display string
         # in O(1)
-        self.runs_dict = self.gen_runs_selection()
+        self.runs_dict = helper.gen_runs_selection(self.metadata)
 
         # Dict maps display strings to column names for the different factors
         # (var, backend, test)
@@ -575,7 +556,7 @@ class InspectRuns:
         self.data = new_data
         self.metadata = new_metadata
 
-        self.runs_dict = self.gen_runs_selection()
+        self.runs_dict = helper.gen_runs_selection(self.metadata)
 
         runs_display = list(self.runs_dict.keys())
         current_run_display = runs_display[-1]

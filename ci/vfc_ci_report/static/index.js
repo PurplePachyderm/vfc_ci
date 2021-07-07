@@ -108,6 +108,11 @@ function goToInspectRuns() {
 document.getElementById("inspect-runs-button")
 .addEventListener("click", goToInspectRuns);
 
+// Listen to clicks on "Assert" button
+document.getElementById("asserts-button")
+.addEventListener("click", () => {
+    changeView("asserts");
+});
 
 
 // Toggle the display properties of the loader/report
@@ -150,7 +155,7 @@ function updateRunMetadata(runId) {
     if(!run) {
         for(let [key, value] of Object.entries(metadata)) {
 
-            if (!metadata.hasOwnProperty(key)) continue;
+            if(!metadata.hasOwnProperty(key)) continue;
             if(value.name == runId) {
                 run = value;
                 break;

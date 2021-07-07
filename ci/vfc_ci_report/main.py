@@ -40,6 +40,8 @@ from bokeh.models import Select, CustomJS
 import compare_runs
 import deterministic_compare
 import inspect_runs
+import asserts
+
 import helper
 
 ##########################################################################
@@ -322,6 +324,15 @@ class ViewsMaster:
             master=self,
             doc=curdoc(),
             data=filtered_data,
+            metadata=filtered_metadata
+        )
+
+        # Initialize asserts table view
+        self.asserts = asserts.Asserts(
+            master=self,
+            doc=curdoc(),
+            data=filtered_data,
+            deterministic_data=filtered_deterministic_data,
             metadata=filtered_metadata
         )
 
