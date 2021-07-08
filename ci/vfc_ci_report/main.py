@@ -150,10 +150,11 @@ for f in run_files:
                 directory + "/" + f,
                 "deterministic_data"))
 
-data = pd.concat(data).sort_values(by=["timestamp"])
-deterministic_data = pd.concat(
-    deterministic_data).sort_values(by=["timestamp"])
+data = pd.concat(data).sort_index()
+deterministic_data = pd.concat(deterministic_data).sort_index()
 
+# If no data/deterministic_data has been found, create an empty dataframe anyway
+# (with column names) to avoid crashes
 if data.empty:
     data = pd.DataFrame(columns=[
         "test", "variable", "backend",
@@ -161,6 +162,12 @@ if data.empty:
         "mu", "quantile25", "quantile50", "quantile75",
         "accuracy_threshold", "assert",
         "timestamp"
+    ])
+
+if deterministic_data.empty:
+    deterministic_data = pd.DataFrame(columns=[
+        "test", "variable", "backend",
+        "value", "accuracy_threshold", "reference_value", "assert", "timestamp"
     ])
 
 # Generate the display strings for runs (runs ticks)

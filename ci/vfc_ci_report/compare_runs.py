@@ -62,6 +62,8 @@ class CompareRuns:
                              self.widgets["select_var"].value,
                              self.widgets["select_backend"].value]
 
+        runs = runs.sort_values(by=["timestamp"])
+
         timestamps = runs["timestamp"]
         x_series, x_metadata = helper.gen_x_series(
             self.metadata,
