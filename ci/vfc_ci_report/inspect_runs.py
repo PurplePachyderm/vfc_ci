@@ -462,7 +462,7 @@ class InspectRuns:
         # This contains only entries matching the run
         self.run_data = self.data[self.data["timestamp"] == self.current_run]
 
-        change_run_callback_js = "updateRunMetadata(cb_obj.value);"
+        change_run_callback_js = "updateRunMetadata(cb_obj.value, \"\");"
 
         self.widgets["select_run"] = Select(
             name="select_run", title="Run :",

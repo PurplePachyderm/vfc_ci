@@ -227,11 +227,16 @@ class ViewsMaster:
         self.deterministic.change_repo(
             filtered_deterministic_data, filtered_metadata)
         self.inspect.change_repo(filtered_data, filtered_metadata)
+        self.asserts.change_repo(
+            filtered_data, filtered_deterministic_data, filtered_metadata)
 
         # Communication functions
 
     def go_to_inspect(self, run_name):
         self.inspect.switch_view(run_name)
+
+    def go_to_asserts(self, run_name):
+        self.asserts.switch_view(run_name)
 
         # Constructor
 

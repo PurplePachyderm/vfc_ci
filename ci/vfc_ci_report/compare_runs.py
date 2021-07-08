@@ -255,8 +255,7 @@ class CompareRuns:
 
         # Custom JS callback that will be used when tapping on a run
         # Only switches the view, a server callback is required to update plots
-        # (defined inside template to avoid bloating server w/ too much JS code)
-        js_tap_callback = "goToInspectRuns();"
+        js_tap_callback = "changeView(\"inspect-runs\");"
 
         # Box plot
         self.plots["boxplot"] = figure(
@@ -499,9 +498,10 @@ class CompareRuns:
         # Communication methods
         # (to send/receive messages to/from master)
 
-    # Callback to change view to "Inspect runs" when plot element is clicked
-
     def inspect_run_callback(self, new, source_name, x_name):
+        '''
+        Callback to change view to "Inspect runs" when plot element is clicked
+        '''
 
         # In case we just unselected everything on the plot, then do nothing
         if not new:

@@ -99,14 +99,10 @@ document.getElementById("deterministic-button").addEventListener("click", () => 
     changeView("deterministic");
 });
 
-// Listen to clicks on "Inspect runs" button
-// (dedicated function as this needs to be called in a CustomJS callback)
-function goToInspectRuns() {
-    changeView("inspect-runs");
-}
-
 document.getElementById("inspect-runs-button")
-.addEventListener("click", goToInspectRuns);
+.addEventListener("click", () => {
+    changeView("inspect-runs")
+});
 
 // Listen to clicks on "Assert" button
 document.getElementById("asserts-button")
@@ -145,7 +141,8 @@ setTimeout(pollBokehLoading, 100);
 
 
 // Update the run metadata (in inspect run mode)
-function updateRunMetadata(runId) {
+// Prefix will be appended to all DOM elements' ids
+function updateRunMetadata(runId, prefix) {
 
     // Assume runId is the run's timestamp
     let run = metadata[runId];
@@ -179,27 +176,27 @@ function updateRunMetadata(runId) {
 
 
     // Edit innerHTML with new metadata
-    document.getElementById("run-date").innerHTML = run.date;
+    document.getElementById(prefix + "run-date").innerHTML = run.date;
 
     if(run.is_git_commit) {
-        document.getElementById("is-git-commit").style.display = "";
-        document.getElementById("not-git-commit").style.display = "none";
+        document.getElementById(prefix + "is-git-commit").style.display = "";
+        document.getElementById(prefix + "not-git-commit").style.display = "none";
 
-        document.getElementById("run-hash").innerHTML = run.hash;
-        document.getElementById("run-author").innerHTML = run.author;
-        document.getElementById("run-message").innerHTML = run.message;
+        document.getElementById(prefix + "run-hash").innerHTML = run.hash;
+        document.getElementById(prefix + "run-author").innerHTML = run.author;
+        document.getElementById(prefix + "run-message").innerHTML = run.message;
 
-        document.getElementById("git-commit-link")
+        document.getElementById(prefix + "git-commit-link")
         .setAttribute("href", commit_link);
-        document.getElementById("git-commit-link")
+        document.getElementById(prefix + "git-commit-link")
         .innerHTML = "View this commit on " + gitHost;
 
     } else {
-        document.getElementById("is-git-commit").style.display = "none";
-        document.getElementById("not-git-commit").style.display = "";
+        document.getElementById(prefix + "is-git-commit").style.display = "none";
+        document.getElementById(prefix + "not-git-commit").style.display = "";
 
-        document.getElementById("run-hash").innerHTML = "";
-        document.getElementById("run-author").innerHTML = "";
-        document.getElementById("run-message").innerHTML = "";
+        document.getElementById(prefix + "run-hash").innerHTML = "";
+        document.getElementById(prefix + "run-author").innerHTML = "";
+        document.getElementById(prefix + "run-message").innerHTML = "";
     }
 }

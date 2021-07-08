@@ -364,11 +364,55 @@
                     <h4 class="title is-4">Selectors</h4>
                     {{ embed(roots.select_assert_run) }}
 
+                    <br>
+                    <br>
+
+                    <h4 class="title is-4">Run metadata</h4>
+
+                    <b>Date :</b>
+                    <div id="asserts-run-date" style="display: inline;">
+                    </div>
+
+                    <br>
+
+                    <div id="asserts-is-git-commit">
+
+                        <b>Hash :</b>
+                        <div id="asserts-run-hash" style="display: inline;">
+                        </div>
+                        <br>
+                        <b>Author :</b>
+                        <div id="asserts-run-author" style="display: inline;">
+                        </div>
+                        <br>
+                        <b>Message :</b>
+                        <div id="asserts-run-message" style="display: inline;">
+                        </div>
+
+                        <br>
+                        <br>
+
+                        <a id="asserts-git-commit-link" href="" target="_blank">
+                            View this commit on
+                        </a>
+
+                    </div>
+
+                    <div id="asserts-not-git-commit">
+
+                        This run is not linked to a Git commit.
+
+                    </div>
+
                 </div>
 
                 <!-- PLOTS -->
                 <div class="column is-9">
                     <h3 class="title is-3">Asserts table</h3>
+
+                    <div class="card plot-card">
+                        {{ embed(roots.asserts_table) }}
+                    </div>
 
                 </div>
             </div>
@@ -397,7 +441,8 @@
         }
 
         changeRepository("{{initial_repo}}");
-        updateRunMetadata({{initial_timestamp}});
+        updateRunMetadata({{initial_timestamp}}, "");
+        updateRunMetadata({{initial_timestamp}}, "asserts-");
     </script>
 
     {% endblock %}

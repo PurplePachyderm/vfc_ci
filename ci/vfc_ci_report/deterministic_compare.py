@@ -31,6 +31,7 @@
 # data.
 
 import pandas as pd
+from math import nan
 
 from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
@@ -98,7 +99,7 @@ class DeterministicCompare:
 
         for i in range(len(dict["value"])):
             if dict["assert"][i]:
-                dict["ieee"][i] = dict["value"][i]
+                dict["ieee"][i] = nan
             else:
                 dict["ieee"][i] = dict["reference_value"][i]
 
@@ -226,19 +227,15 @@ class DeterministicCompare:
             "@reference_value": "printf"
         }
 
-        # plot.fill_barplot(
-        #     self.plots["comparison_plot"], self.source,
-        #     single_series="non_assert_display",
-        #     double_series=["assert_display", "reference_display"],
-        #     tooltips=comparison_tooltips,
-        #     tooltips_formatters=comparison_tooltips_formatters
-        # )
+        js_tap_callback = "changeView(\"asserts\");"
 
         plot.fill_dotplot(
             self.plots["comparison_plot"], self.source,
             data_field="value",
             tooltips=comparison_tooltips,
             tooltips_formatters=comparison_tooltips_formatters,
+            js_tap_callback=js_tap_callback,
+            server_tap_callback=self.asserts_callback,
             lines=True,
             second_series="ieee",   # Will be used to display the IEEE results
             custom_colors=True
@@ -358,6 +355,22 @@ class DeterministicCompare:
 
         # Communication methods
         # (to send/receive messages to/from master)
+
+    def asserts_callback(self, attrname, old, new):
+        '''
+        Callback to change view to "Asserts" view when plot element is clicked
+        '''
+
+        # In case we just unselected everything on the plot, then do nothing
+        if not new:
+            return
+
+        # But if an element has been selected, go to the corresponding run
+        index = new[-1]
+        run_name = self.source.data["value_x"][index]
+
+        self.master.go_to_asserts(run_name)
+
 
     def change_repo(self, new_data, new_metadata):
         '''
