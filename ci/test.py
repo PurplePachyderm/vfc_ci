@@ -368,9 +368,11 @@ def run_tests(config):
     # Combine all separate executions in one dataframe
     if len(data) > 0:
         data = pd.concat(data, sort=False, ignore_index=True)
-        data = data.groupby(["test", "vfc_backend", "variable"]
+        data = data.groupby(["test", "variable", "vfc_backend"]
                             ).values.apply(list).reset_index()
 
+        data = data.set_index(
+            ["test", "variable", "vfc_backend"]).sort_index()
         accuracy_thresholds = pd.concat(
             accuracy_thresholds,
             sort=False,
@@ -378,6 +380,8 @@ def run_tests(config):
         accuracy_thresholds = accuracy_thresholds.drop_duplicates()
         accuracy_thresholds = accuracy_thresholds.reset_index()
         del accuracy_thresholds["index"]
+        accuracy_thresholds = accuracy_thresholds.set_index(
+            ["test", "variable", "vfc_backend"]).sort_index()
 
         # Copy informations about accuracy thresholds to the main dataframe
         data["accuracy_threshold"] = accuracy_thresholds["accuracy_threshold"]
@@ -444,9 +448,7 @@ def run(is_git_commit, export_raw_values, dry_run):
     if not data.empty:
         data = data_processing(data)
 
-        # Prepare data for export (by creating a proper index and linking run
-        # timestamp)
-        data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
+        # Link run timestamp
         data["timestamp"] = metadata["timestamp"]
 
     if not deterministic_data.empty:

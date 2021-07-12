@@ -43,7 +43,7 @@ def significant_digits(x):
     if x.pvalue < min_pvalue:
         # In a pandas DF, "values" actually refers to the array of columns, and
         # not the column named "values"
-        distribution = x.values[3]
+        distribution = x.values[0]
         distribution = distribution.reshape(len(distribution), 1)
 
         # The distribution's empirical average will be used as the reference
@@ -79,7 +79,7 @@ def significant_digits_lower_bound(x):
 
     # Else, the lower bound will be computed with p= .9 alpha-1=.95
     else:
-        distribution = x.values[3]
+        distribution = x.values[0]
         distribution = distribution.reshape(len(distribution), 1)
 
         mu = np.array([x.mu])
