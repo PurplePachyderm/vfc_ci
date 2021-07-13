@@ -55,6 +55,7 @@ def read_probes_csv(filepath, warnings, execution_data):
     try:
 
         results = pd.read_csv(filepath)
+        print(results)
 
     except FileNotFoundError:
         print(

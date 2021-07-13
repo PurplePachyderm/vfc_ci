@@ -371,7 +371,6 @@ class DeterministicCompare:
 
         self.master.go_to_asserts(run_name)
 
-
     def change_repo(self, new_data, new_metadata):
         '''
         When received, update data and metadata with the new repo, and update

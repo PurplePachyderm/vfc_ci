@@ -44,7 +44,7 @@ import helper
 
 class Asserts:
 
-        # Asserts related helper
+    # Asserts related helper
 
     def gen_source(self):
 
@@ -79,7 +79,7 @@ class Asserts:
 
         # Only keep probes that have an assert
         self.run_data = self.run_data[self.run_data.accuracy_threshold != 0]
-        self.deterministic_run_data=self.deterministic_run_data[
+        self.deterministic_run_data = self.deterministic_run_data[
             self.deterministic_run_data.accuracy_threshold != 0
         ]
 
@@ -94,18 +94,18 @@ class Asserts:
         # Dict contains all inspectable runs (maps display strings to timestamps)
         # The dict structure allows to get the timestamp from the display string
         # in O(1)
-        self.runs_dict= helper.gen_runs_selection(self.metadata)
+        self.runs_dict = helper.gen_runs_selection(self.metadata)
 
         # Contains all options strings
-        runs_display= list(self.runs_dict.keys())
+        runs_display = list(self.runs_dict.keys())
         # Will be used when updating plots (contains actual number)
-        self.current_run= self.runs_dict[runs_display[-1]]
+        self.current_run = self.runs_dict[runs_display[-1]]
 
         # Contains the selected option string, used to update current_n_runs
-        current_run_display= runs_display[-1]
+        current_run_display = runs_display[-1]
 
         # This contains only entries matching the run
-        self.run_data= self.data[self.data["timestamp"] == self.current_run]
+        self.run_data = self.data[self.data["timestamp"] == self.current_run]
         self.deterministic_run_data = self.deterministic_data[
             self.deterministic_data["timestamp"] == self.current_run
         ]
@@ -123,16 +123,15 @@ class Asserts:
 
         # Only keep probes that have an assert
         self.run_data = self.run_data[self.run_data.accuracy_threshold != 0]
-        self.deterministic_run_data=self.deterministic_run_data[
+        self.deterministic_run_data = self.deterministic_run_data[
             self.deterministic_run_data.accuracy_threshold != 0
         ]
 
-
-        change_run_callback_js= "updateRunMetadata(cb_obj.value, \"asserts-\");"
+        change_run_callback_js = "updateRunMetadata(cb_obj.value, \"asserts-\");"
 
         self.widgets["select_assert_run"] = Select(
-            name = "select_assert_run", title = "Run :",
-            value = current_run_display, options = runs_display
+            name="select_assert_run", title="Run :",
+            value=current_run_display, options=runs_display
         )
         self.doc.add_root(self.widgets["select_assert_run"])
         self.widgets["select_assert_run"].on_change("value", self.update_run)
@@ -147,7 +146,7 @@ class Asserts:
 
         # Main asserts table:
 
-        columns=[
+        columns = [
             TableColumn(field="test", title="Test"),
             TableColumn(field="variable", title="Variable"),
             TableColumn(field="vfc_backend", title="Backend"),
@@ -159,12 +158,11 @@ class Asserts:
             TableColumn(field="assert", title="Passed"),
         ]
 
-        self.widgets["asserts_table"]= DataTable(
-            name = "asserts_table", source =self.source, columns=columns,
+        self.widgets["asserts_table"] = DataTable(
+            name="asserts_table", source=self.source, columns=columns,
             width=895
         )
         self.doc.add_root(self.widgets["asserts_table"])
-
 
         # Communication methods
         # (to send/receive messages to/from master)
@@ -175,20 +173,20 @@ class Asserts:
         everything
         '''
 
-        self.data=new_data
-        self.deterministic_data=new_deterministic_data
-        self.metadata=new_metadata
+        self.data = new_data
+        self.deterministic_data = new_deterministic_data
+        self.metadata = new_metadata
 
-        self.runs_dict=helper.gen_runs_selection(self.metadata)
+        self.runs_dict = helper.gen_runs_selection(self.metadata)
 
         # Contains all options strings
-        runs_display=list(self.runs_dict.keys())
+        runs_display = list(self.runs_dict.keys())
         # Will be used when updating plots (contains actual number)
-        self.current_run=self.runs_dict[runs_display[-1]]
+        self.current_run = self.runs_dict[runs_display[-1]]
 
         # Update run selection (this will automatically trigger the callback)
 
-        self.widgets["select_assert_run"].options=runs_display
+        self.widgets["select_assert_run"].options = runs_display
 
         # If the run name happens to be the same, the callback has to be
         # triggered manually
@@ -198,15 +196,13 @@ class Asserts:
         # In any other case, updating the value is enough to trigger the
         # callback
         else:
-            self.widgets["select_assert_run"].value=runs_display[-1]
-
+            self.widgets["select_assert_run"].value = runs_display[-1]
 
     def switch_view(self, run_name):
         '''When received, switch selected run to run_name'''
 
         # This will trigger the widget's callback
         self.widgets["select_assert_run"].value = run_name
-
 
         # Constructor
 
@@ -227,16 +223,16 @@ class Asserts:
         widgets : dictionary of Bokeh widgets (no plots for this view)
         '''
 
-        self.master=master
+        self.master = master
 
-        self.doc=doc
-        self.data=data
-        self.deterministic_data=deterministic_data
-        self.metadata=metadata
+        self.doc = doc
+        self.data = data
+        self.deterministic_data = deterministic_data
+        self.metadata = metadata
 
-        self.source=ColumnDataSource({})
+        self.source = ColumnDataSource({})
 
-        self.widgets={}
+        self.widgets = {}
 
         # Setup Bokeh objects
         self.setup_widgets()

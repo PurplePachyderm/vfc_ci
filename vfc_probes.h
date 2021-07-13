@@ -44,11 +44,13 @@
 
 // A probe containing a double value as well as its key, which is needed when
 // dumping the probes. Optionally, an accuracy threshold can be defined : it
-// will be re-used in the preprocessing to know if it is respected.
+// will be re-used in the preprocessing to (un)validate the probe.
 struct vfc_probe_node {
   char *key;
   double value;
+
   double accuracyThreshold;
+  char *mode;
 };
 
 typedef struct vfc_probe_node vfc_probe_node;
@@ -72,13 +74,24 @@ char *gen_probe_key(char *testName, char *varName);
 // Helper function to detect forbidden character ',' in the keys
 void validate_probe_key(char *str);
 
-// Similar to vfc_probe, but with an optional accuracy threshold.
+// Probe kernel function that supports asserts and use any mode (relative /
+// absolute). This probably won't be called directly by the user.
+int vfc_probe_kernel(vfc_probes *probes, char *testName, char *varName,
+                     double val, double accuracyThreshold, char *mode);
+
+// Add a new probe. If an issue with the key is detected (forbidden characters
+// or a duplicate key), an error will be thrown. (no assert)
+int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+
+// Similar to vfc_probe, but with an optional accuracy threshold (absolute
+// assert).
 int vfc_probe_assert(vfc_probes *probes, char *testName, char *varName,
                      double val, double accuracyThreshold);
 
-// Add a new probe. If an issue with the key is detected (forbidden characters
-// or a duplicate key), an error will be thrown.
-int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val);
+// Similar to vfc_probe, but with an optional accuracy threshold (absolute
+// assert).
+int vfc_probe_assert_relative(vfc_probes *probes, char *testName, char *varName,
+                              double val, double accuracyThreshold);
 
 // Return the number of probes stored in the hashmap
 unsigned int vfc_num_probes(vfc_probes *probes);
