@@ -280,7 +280,8 @@ int vfc_probe_assert_f(vfc_probes *probes, char *testName, char *varName,
   return vfc_probe_assert(probes, testName, varName, *val, *accuracyThreshold);
 }
 
-int vfc_probe_assert_relative_f(vfc_probes *probes, char *testName, char *varName,
-                       double *val, double *accuracyThreshold) {
+int vfc_probe_assert_relative_f(vfc_probes *probes, char *testName,
+                                char *varName, double *val,
+                                double *accuracyThreshold) {
   return vfc_probe_assert(probes, testName, varName, *val, *accuracyThreshold);
 }

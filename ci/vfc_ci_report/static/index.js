@@ -89,9 +89,9 @@ function changeView(classPrefix) {
 let compareButtons = document.getElementsByClassName("compare-runs-button");
 
 for (let i=0; i<compareButtons.length; i++) {
-  compareButtons[i].addEventListener("click", () => {
-      changeView("compare-runs");
-  });
+    compareButtons[i].addEventListener("click", () => {
+        changeView("compare-runs");
+    });
 }
 
 // Listen to clicks on "Compare runs" deterministic button
@@ -104,11 +104,21 @@ document.getElementById("inspect-runs-button")
     changeView("inspect-runs")
 });
 
-// Listen to clicks on "Assert" button
-document.getElementById("asserts-button")
+
+// Listen to clicks on "Asserts" non-deterministic button
+let assertsButtons = document.getElementsByClassName("asserts-button");
+
+for (let i=0; i<assertsButtons.length; i++) {
+    assertsButtons[i].addEventListener("click", () => {
+        changeView("non-deterministic-asserts");
+    });
+}
+
+document.getElementById("asserts-deterministic-button")
 .addEventListener("click", () => {
-    changeView("asserts");
+    changeView("deterministic-asserts");
 });
+
 
 
 // Toggle the display properties of the loader/report
@@ -176,6 +186,7 @@ function updateRunMetadata(runId, prefix) {
 
 
     // Edit innerHTML with new metadata
+    console.debug("Computed ID: " + prefix + "run-date");
     document.getElementById(prefix + "run-date").innerHTML = run.date;
 
     if(run.is_git_commit) {

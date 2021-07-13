@@ -55,7 +55,6 @@ def read_probes_csv(filepath, warnings, execution_data):
     try:
 
         results = pd.read_csv(filepath)
-        print(results)
 
     except FileNotFoundError:
         print(
@@ -102,12 +101,13 @@ def read_probes_csv(filepath, warnings, execution_data):
     results["vfc_backend"] = execution_data["backend"]
 
     # Extract accuracy thresholds data
-    accuracy_thresholds = results[["test", "variable",
-                                   "vfc_backend", "accuracy_threshold"]].copy()
+    asserts_data = results[["test", "variable",
+                            "vfc_backend", "accuracy_threshold", "mode"]].copy()
 
     del results["accuracy_threshold"]
+    del results["mode"]
 
-    return results, accuracy_thresholds
+    return results, asserts_data
 
 
 ##########################################################################
@@ -174,7 +174,7 @@ def run_non_deterministic(
         executable,
         backend,
         data,
-        accuracy_thresholds,
+        asserts_data,
         warnings):
     '''
     Loop execution for non-deterministic backends. This will also export asserts
@@ -202,14 +202,14 @@ def run_non_deterministic(
             "repetition": i + 1
         }
 
-        run_data, run_accuracy_thresholds = read_probes_csv(
+        run_data, run_assert_data = read_probes_csv(
             temp.name,
             warnings,
             execution_data
         )
 
         data.append(run_data)
-        accuracy_thresholds.append(run_accuracy_thresholds)
+        asserts_data.append(run_assert_data)
 
         temp.close()
 
@@ -244,14 +244,15 @@ def run_deterministic(
         "repetition": 1
     }
 
-    run_data, run_accuracy_thresholds = read_probes_csv(
+    run_data, run_asserts_data = read_probes_csv(
         temp.name,
         warnings,
         execution_data
     )
 
     run_data.rename(columns={"values": "value"}, inplace=True)
-    run_data["accuracy_threshold"] = run_accuracy_thresholds["accuracy_threshold"]
+    run_data["accuracy_threshold"] = run_asserts_data["accuracy_threshold"]
+    run_data["mode"] = run_asserts_data["mode"]
 
     # If asserts are detected, do a reference run (with IEEE backend)
     if run_data["accuracy_threshold"].sum() != 0:
@@ -314,7 +315,7 @@ def run_tests(config):
 
     # Only for non-deterministic data. Stored separately for now since it is
     # easier to add this to data after the groupby.
-    accuracy_thresholds = []
+    asserts_data = []
 
     # This will contain all executables/repetition numbers from which we could
     # not get any data
@@ -347,7 +348,7 @@ def run_tests(config):
                     executable["executable"],
                     backend["name"],
                     data,
-                    accuracy_thresholds,
+                    asserts_data,
                     warnings)
 
             # However, if it is not specified, we'll assume a deterministic
@@ -374,18 +375,19 @@ def run_tests(config):
 
         data = data.set_index(
             ["test", "variable", "vfc_backend"]).sort_index()
-        accuracy_thresholds = pd.concat(
-            accuracy_thresholds,
+        asserts_data = pd.concat(
+            asserts_data,
             sort=False,
             ignore_index=True)
-        accuracy_thresholds = accuracy_thresholds.drop_duplicates()
-        accuracy_thresholds = accuracy_thresholds.reset_index()
-        del accuracy_thresholds["index"]
-        accuracy_thresholds = accuracy_thresholds.set_index(
+        asserts_data = asserts_data.drop_duplicates()
+        asserts_data = asserts_data.reset_index()
+        del asserts_data["index"]
+        asserts_data = asserts_data.set_index(
             ["test", "variable", "vfc_backend"]).sort_index()
 
         # Copy informations about accuracy thresholds to the main dataframe
-        data["accuracy_threshold"] = accuracy_thresholds["accuracy_threshold"]
+        data["accuracy_threshold"] = asserts_data["accuracy_threshold"]
+        data["mode"] = asserts_data["mode"]
 
     else:
         data = pd.DataFrame()

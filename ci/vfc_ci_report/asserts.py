@@ -28,6 +28,7 @@
 # initialize widgets selection, and from this selection generate the first plots.
 # Then, when callback functions are triggered, widgets selections are updated,
 # and re-generated with the newly selected data.
+# This manages both deterministic and non-deterministic views in the report !
 
 from math import nan
 
@@ -44,49 +45,65 @@ import helper
 
 class Asserts:
 
-    # Asserts related helper
+    # Widgets' callback functions
 
-    def gen_source(self):
-
-        # Combine data and deterministic data in a single source dataframe
-        source_df = pd.concat([self.run_data, self.deterministic_run_data])
-        source_df.reset_index(inplace=True)
-        self.source.data = source_df
-
-        # Widgets' callback functions
-
-    def update_run(self, attrname, old, new):
+    def update_non_deterministic_run(self, attrname, old, new):
 
         # Update run selection (by using dict mapping)
-        self.current_run = self.runs_dict[new]
+        self.current_non_deterministic_run = self.runs_dict[new]
 
         # Update run data
-        self.run_data = self.data[self.data["timestamp"] == self.current_run]
-        self.deterministic_run_data = self.deterministic_data[
-            self.deterministic_data["timestamp"] == self.current_run
-        ]
+        self.run_data = self.data[self.data["timestamp"]
+                                  == self.current_non_deterministic_run]
 
-        # Only keep interesting columns for both data and deterministic_data
+        # Only keep interesting columns
         self.run_data = self.run_data[[
             "assert", "accuracy_threshold",
             "mu", "sigma",
         ]]
 
+        # Only keep probes that have an assert
+        self.run_data = self.run_data[self.run_data.accuracy_threshold != 0]
+
+        # Uppercase first letter of "mode" for display
+        self.run_data["mode"] = self.run_data["mode"].apply(
+            lambda x: x.capitalize())
+
+        # Generate the data source object
+        self.run_data.reset_index(inplace=True)
+        self.sources["non_deterministic"].data = self.run_data
+
+    def update_deterministic_run(self, attrname, old, new):
+
+        # Update run selection (by using dict mapping)
+        self.current_deterministic_run = self.runs_dict[new]
+
+        # Update run data
+        self.deterministic_run_data = self.deterministic_data[
+            self.deterministic_data["timestamp"] == self.current_run
+        ]
+
+        # Only keep interesting columns
         self.deterministic_run_data = self.deterministic_run_data[[
             "assert", "accuracy_threshold",
             "value", "reference_value",
         ]]
 
-        # Only keep probes that have an assert
-        self.run_data = self.run_data[self.run_data.accuracy_threshold != 0]
+        # Only keep probes that have an assert*
         self.deterministic_run_data = self.deterministic_run_data[
             self.deterministic_run_data.accuracy_threshold != 0
         ]
 
-        # Generate the main data source from the 2 filtered dataframes
-        self.gen_source()
+        # Uppercase first letter of "mode" for display
+        self.deterministic_run_data["mode"] = self.deterministic_run_data["mode"].apply(
+            lambda x: x.capitalize())
+
+        # Generate the data source object
+        self.deterministic_run_data.reset_index(inplace=True)
+        self.sources["deterministic"].data = self.deterministic_run_data
 
         # Bokeh setup functions
+
     def setup_widgets(self):
 
         # Run selection
@@ -100,6 +117,7 @@ class Asserts:
         runs_display = list(self.runs_dict.keys())
         # Will be used when updating plots (contains actual number)
         self.current_run = self.runs_dict[runs_display[-1]]
+        self.current_deterministic_run = self.runs_dict[runs_display[-1]]
 
         # Contains the selected option string, used to update current_n_runs
         current_run_display = runs_display[-1]
@@ -107,62 +125,111 @@ class Asserts:
         # This contains only entries matching the run
         self.run_data = self.data[self.data["timestamp"] == self.current_run]
         self.deterministic_run_data = self.deterministic_data[
-            self.deterministic_data["timestamp"] == self.current_run
-        ]
+            self.deterministic_data["timestamp"] == self.current_deterministic_run]
 
-        # Only keep interesting columns for both data and deterministic_data
+        # Only keep interesting columns
         self.run_data = self.run_data[[
-            "assert", "accuracy_threshold",
+            "assert", "accuracy_threshold", "mode",
             "mu", "sigma",
         ]]
 
         self.deterministic_run_data = self.deterministic_run_data[[
-            "assert", "accuracy_threshold",
+            "assert", "accuracy_threshold", "mode",
             "value", "reference_value",
         ]]
 
         # Only keep probes that have an assert
         self.run_data = self.run_data[self.run_data.accuracy_threshold != 0]
+
         self.deterministic_run_data = self.deterministic_run_data[
             self.deterministic_run_data.accuracy_threshold != 0
         ]
 
-        change_run_callback_js = "updateRunMetadata(cb_obj.value, \"asserts-\");"
+        # Uppercase first letter of "mode" for display
+        self.run_data["mode"] = self.run_data["mode"].apply(
+            lambda x: x.capitalize())
+        self.deterministic_run_data["mode"] = self.deterministic_run_data["mode"].apply(
+            lambda x: x.capitalize())
 
-        self.widgets["select_assert_run"] = Select(
-            name="select_assert_run", title="Run :",
+        # Generate the data source object
+        self.sources["non_deterministic"].data = self.run_data
+        self.sources["deterministic"].data = self.deterministic_run_data
+
+        # Non-deterministic run selector
+        change_run_callback_js = "updateRunMetadata(cb_obj.value, \"non-deterministic-asserts-\");"
+
+        self.widgets["select_assert_run_non_deterministic"] = Select(
+            name="select_assert_run_non_deterministic", title="Run :",
             value=current_run_display, options=runs_display
         )
-        self.doc.add_root(self.widgets["select_assert_run"])
-        self.widgets["select_assert_run"].on_change("value", self.update_run)
-        self.widgets["select_assert_run"].js_on_change("value", CustomJS(
-            code=change_run_callback_js,
-            args=(dict(
-                metadata=helper.metadata_to_dict(
-                    helper.get_metadata(self.metadata, self.current_run)
-                )
-            ))
-        ))
+        self.doc.add_root(self.widgets["select_assert_run_non_deterministic"])
+        self.widgets["select_assert_run_non_deterministic"].on_change(
+            "value", self.update_non_deterministic_run)
+        self.widgets["select_assert_run_non_deterministic"].js_on_change(
+            "value", CustomJS(
+                code=change_run_callback_js, args=(
+                    dict(
+                        metadata=helper.metadata_to_dict(
+                            helper.get_metadata(
+                                self.metadata, self.current_run))))))
 
-        # Main asserts table:
+        # Deterministic run selector
+        change_run_callback_js = "updateRunMetadata(cb_obj.value, \"deterministic-asserts-\");"
 
-        columns = [
+        self.widgets["select_assert_run_deterministic"] = Select(
+            name="select_assert_run_deterministic", title="Run :",
+            value=current_run_display, options=runs_display
+        )
+        self.doc.add_root(self.widgets["select_assert_run_deterministic"])
+        self.widgets["select_assert_run_deterministic"].on_change(
+            "value", self.update_deterministic_run)
+        self.widgets["select_assert_run_deterministic"].js_on_change(
+            "value", CustomJS(
+                code=change_run_callback_js, args=(
+                    dict(
+                        metadata=helper.metadata_to_dict(
+                            helper.get_metadata(
+                                self.metadata, self.current_deterministic_run))))))
+
+        # Non-deterministic asserts table:
+
+        non_deterministic_olumns = [
             TableColumn(field="test", title="Test"),
             TableColumn(field="variable", title="Variable"),
             TableColumn(field="vfc_backend", title="Backend"),
             TableColumn(field="accuracy_threshold", title="Target precision"),
-            TableColumn(field="mu", title="μ (non-det.)"),
-            TableColumn(field="sigma", title="σ (non-det.)"),
-            TableColumn(field="value", title="Value (det.)"),
-            TableColumn(field="reference_value", title="IEEE value (det.)"),
+            TableColumn(field="mode", title="Assert mode"),
+            TableColumn(field="mu", title="μ"),
+            TableColumn(field="sigma", title="σ"),
             TableColumn(field="assert", title="Passed"),
         ]
 
-        self.widgets["asserts_table"] = DataTable(
-            name="asserts_table", source=self.source, columns=columns,
-            width=895
-        )
-        self.doc.add_root(self.widgets["asserts_table"])
+        self.widgets["non_deterministic_asserts_table"] = DataTable(
+            name="non_deterministic_asserts_table",
+            source=self.sources["non_deterministic"],
+            columns=non_deterministic_olumns,
+            width=895)
+        self.doc.add_root(self.widgets["non_deterministic_asserts_table"])
+
+        # Deterministic asserts table:
+
+        deterministic_columns = [
+            TableColumn(field="test", title="Test"),
+            TableColumn(field="variable", title="Variable"),
+            TableColumn(field="vfc_backend", title="Backend"),
+            TableColumn(field="accuracy_threshold", title="Target precision"),
+            TableColumn(field="mode", title="Assert mode"),
+            TableColumn(field="value", title="Backend value"),
+            TableColumn(field="reference_value", title="IEEE value"),
+            TableColumn(field="assert", title="Passed"),
+        ]
+
+        self.widgets["deterministic_asserts_table"] = DataTable(
+            name="deterministic_asserts_table",
+            source=self.sources["deterministic"],
+            columns=deterministic_columns,
+            width=895)
+        self.doc.add_root(self.widgets["deterministic_asserts_table"])
 
         # Communication methods
         # (to send/receive messages to/from master)
@@ -183,20 +250,28 @@ class Asserts:
         runs_display = list(self.runs_dict.keys())
         # Will be used when updating plots (contains actual number)
         self.current_run = self.runs_dict[runs_display[-1]]
+        self.current_deterministic_run = self.runs_dict[runs_display[-1]]
 
         # Update run selection (this will automatically trigger the callback)
 
-        self.widgets["select_assert_run"].options = runs_display
+        self.widgets["select_assert_run_non_deterministic"].options = runs_display
+        self.widgets["select_assert_run_deterministic"].options = runs_display
 
         # If the run name happens to be the same, the callback has to be
         # triggered manually
-        if runs_display[-1] == self.widgets["select_assert_run"].value:
-            update_run("value", runs_display[-1], runs_display[-1])
+        if runs_display[-1] == self.widgets["select_assert_run_non_deterministic"].value:
+            update_non_deterministic_run(
+                "value", runs_display[-1], runs_display[-1])
+
+        if runs_display[-1] == self.widgets["select_assert_run_deterministic"].value:
+            update_deterministic_run(
+                "value", runs_display[-1], runs_display[-1])
 
         # In any other case, updating the value is enough to trigger the
         # callback
         else:
-            self.widgets["select_assert_run"].value = runs_display[-1]
+            self.widgets["select_assert_run_non_deterministic"].value = runs_display[-1]
+            self.widgets["select_assert_run_deterministic"].value = runs_display[-1]
 
     def switch_view(self, run_name):
         '''When received, switch selected run to run_name'''
@@ -230,7 +305,10 @@ class Asserts:
         self.deterministic_data = deterministic_data
         self.metadata = metadata
 
-        self.source = ColumnDataSource({})
+        self.sources = {
+            "deterministic": ColumnDataSource({}),
+            "non_deterministic": ColumnDataSource({})
+        }
 
         self.widgets = {}
 
@@ -239,4 +317,7 @@ class Asserts:
 
         # At this point, everything should have been initialized, so we can
         # show the data for the first time
-        self.gen_source()
+        self.run_data.reset_index(inplace=True)
+        self.deterministic_run_dataw.reset_index(inplace=True)
+        self.sources["non_deterministic"].data = self.run_data
+        self.sources["deterministic"].data = self.deterministic_run_data
