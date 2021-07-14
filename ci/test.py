@@ -25,7 +25,7 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
 # It will also generate a ... .vfcrunh5 file with the results of the run
 
-from .test_data_processing import data_processing
+from .test_data_processing import data_processing, validate_deterministic_probe
 import pandas as pd
 import os
 import subprocess
@@ -286,10 +286,8 @@ def run_deterministic(
 
         run_data["reference_value"] = reference_run_data["values"]
         run_data["assert"] = run_data.apply(
-            lambda x: True if abs(
-                x.value -
-                x.reference_value) < x.accuracy_threshold or x.accuracy_threshold == 0 else False,
-            axis=1)
+            lambda x: validate_deterministic_probe(x), axis=1
+        )
 
     else:
         run_data["reference_value"] = 0

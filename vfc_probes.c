@@ -253,7 +253,7 @@ int vfc_dump_probes(vfc_probes *probes) {
   for (int i = 0; i < probes->map->capacity; i++) {
     probe = (vfc_probe_node *)get_value_at(probes->map->items, i);
     if (probe != NULL) {
-      fprintf(fp, "%s,%a, %a, %s\n", probe->key, probe->value,
+      fprintf(fp, "%s,%a, %a,%s\n", probe->key, probe->value,
               probe->accuracyThreshold, probe->mode);
     }
   }

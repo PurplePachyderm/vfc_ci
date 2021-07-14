@@ -114,11 +114,21 @@ def apply_data_pocessing(data):
     data["quantile75"] = np.quantile(data["values"], 0.75)
     data["max"] = np.max(data["values"])
 
-    # Accuracy assert
-    if data.accuracy_threshold == 0 or data.sigma < data.accuracy_threshold:
-        data["assert"] = True
+    # Assert validation
+
+
+    if data["mode"] == "absolute":
+        data["assert"] = True if data["sigma"] < data["accuracy_threshold"] else False
+
+    elif data["mode"]  == "relative":
+        data["assert"] = True if abs(
+            data["mu"] -
+            data["sigma"]) < data["mu"] else False
+
+
+
     else:
-        data["assert"] = False
+        data["assert"] = True
 
     return data
 
@@ -146,3 +156,20 @@ def data_processing(data):
     data["nsamples"] = data["values"].apply(len)
 
     return data
+
+
+def validate_deterministic_probe(x):
+    '''
+    This function will be applied to results dataframes of deterministic
+    backends to validate probes depending on if they are absolute or relative
+    '''
+
+    if x["mode"] == "absolute":
+        return True if abs(
+            x["value"] -
+            x["reference_value"]) < x["accuracy_threshold"] else False
+
+    if x["mode"] == "relative":
+        return True if abs(x["value"] - x["reference_value"]) / abs(x["reference_value"]) < x["accuracy_threshold"] else False
+
+    return True
