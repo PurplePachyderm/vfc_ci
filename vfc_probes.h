@@ -106,3 +106,7 @@ int vfc_probe_f(vfc_probes *probes, char *testName, char *varName, double *val);
 
 int vfc_probe_assert_f(vfc_probes *probes, char *testName, char *varName,
                        double *val, double *accuracyThreshold);
+
+int vfc_probe_assert_relative_f(vfc_probes *probes, char *testName,
+                                char *varName, double *val,
+                                double *accuracyThreshold);

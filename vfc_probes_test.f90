@@ -9,7 +9,7 @@ program vfc_probes_test
 
   probes = vfc_init_probes()
 
-  err = vfc_probe_assert(probes, "test", "var", var, DBLE(1e-14))
+  err = vfc_probe_assert_relative(probes, "test", "var", var, DBLE(1e-14))
   print *, "Num probes :", vfc_num_probes(probes)
 
   err = vfc_dump_probes(probes)
