@@ -116,16 +116,13 @@ def apply_data_pocessing(data):
 
     # Assert validation
 
-
     if data["mode"] == "absolute":
         data["assert"] = True if data["sigma"] < data["accuracy_threshold"] else False
 
-    elif data["mode"]  == "relative":
+    elif data["mode"] == "relative":
         data["assert"] = True if abs(
             data["mu"] -
             data["sigma"]) < data["mu"] else False
-
-
 
     else:
         data["assert"] = True
@@ -170,6 +167,7 @@ def validate_deterministic_probe(x):
             x["reference_value"]) < x["accuracy_threshold"] else False
 
     if x["mode"] == "relative":
-        return True if abs(x["value"] - x["reference_value"]) / abs(x["reference_value"]) < x["accuracy_threshold"] else False
+        return True if abs(x["value"] - x["reference_value"]) / \
+            abs(x["reference_value"]) < x["accuracy_threshold"] else False
 
     return True
