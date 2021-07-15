@@ -194,7 +194,7 @@ int vfc_probe_kernel(vfc_probes *probes, char *testName, char *varName,
 int vfc_probe(vfc_probes *probes, char *testName, char *varName, double val) {
   // Creating a probe without assert is equivalent to setting the accuracy
   // threshold to 0.
-  return vfc_probe_kernel(probes, testName, varName, val, 0, "");
+  return vfc_probe_kernel(probes, testName, varName, val, 0, "none");
 }
 
 // Similar to vfc_probe, but with an optional accuracy threshold (absolute

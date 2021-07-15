@@ -30,8 +30,6 @@
 # and re-generated with the newly selected data.
 # This manages both deterministic and non-deterministic views in the report !
 
-from math import nan
-
 import pandas as pd
 
 from bokeh.embed import components
@@ -58,7 +56,7 @@ class Asserts:
 
         # Only keep interesting columns
         self.run_data = self.run_data[[
-            "assert", "accuracy_threshold",
+            "assert", "accuracy_threshold", "mode",
             "mu", "sigma",
         ]]
 
@@ -85,7 +83,7 @@ class Asserts:
 
         # Only keep interesting columns
         self.deterministic_run_data = self.deterministic_run_data[[
-            "assert", "accuracy_threshold",
+            "assert", "accuracy_threshold", "mode",
             "value", "reference_value",
         ]]
 
@@ -151,7 +149,9 @@ class Asserts:
         self.deterministic_run_data["mode"] = self.deterministic_run_data["mode"].apply(
             lambda x: x.capitalize())
 
-        # Generate the data source object
+        # Generate the data source objects
+        self.run_data.reset_index(inplace=True)
+        self.deterministic_run_data.reset_index(inplace=True)
         self.sources["non_deterministic"].data = self.run_data
         self.sources["deterministic"].data = self.deterministic_run_data
 
@@ -199,16 +199,16 @@ class Asserts:
             TableColumn(field="vfc_backend", title="Backend"),
             TableColumn(field="accuracy_threshold", title="Target precision"),
             TableColumn(field="mode", title="Assert mode"),
-            TableColumn(field="mu", title="μ"),
-            TableColumn(field="sigma", title="σ"),
-            TableColumn(field="assert", title="Passed"),
+            TableColumn(field="mu", title="Emp. avg. μ"),
+            TableColumn(field="sigma", title="Std. dev. σ"),
+            TableColumn(field="assert", title="Passed")
         ]
 
         self.widgets["non_deterministic_asserts_table"] = DataTable(
             name="non_deterministic_asserts_table",
             source=self.sources["non_deterministic"],
             columns=non_deterministic_olumns,
-            width=895)
+            width=895, sizing_mode="scale_width")
         self.doc.add_root(self.widgets["non_deterministic_asserts_table"])
 
         # Deterministic asserts table:
@@ -221,14 +221,14 @@ class Asserts:
             TableColumn(field="mode", title="Assert mode"),
             TableColumn(field="value", title="Backend value"),
             TableColumn(field="reference_value", title="IEEE value"),
-            TableColumn(field="assert", title="Passed"),
+            TableColumn(field="assert", title="Passed")
         ]
 
         self.widgets["deterministic_asserts_table"] = DataTable(
             name="deterministic_asserts_table",
             source=self.sources["deterministic"],
             columns=deterministic_columns,
-            width=895)
+            width=895, sizing_mode="scale_width")
         self.doc.add_root(self.widgets["deterministic_asserts_table"])
 
         # Communication methods
@@ -262,15 +262,15 @@ class Asserts:
         if runs_display[-1] == self.widgets["select_assert_run_non_deterministic"].value:
             update_non_deterministic_run(
                 "value", runs_display[-1], runs_display[-1])
-
-        if runs_display[-1] == self.widgets["select_assert_run_deterministic"].value:
-            update_deterministic_run(
-                "value", runs_display[-1], runs_display[-1])
-
         # In any other case, updating the value is enough to trigger the
         # callback
         else:
             self.widgets["select_assert_run_non_deterministic"].value = runs_display[-1]
+
+        if runs_display[-1] == self.widgets["select_assert_run_deterministic"].value:
+            update_deterministic_run(
+                "value", runs_display[-1], runs_display[-1])
+        else:
             self.widgets["select_assert_run_deterministic"].value = runs_display[-1]
 
     def switch_view(self, run_name):
@@ -318,6 +318,6 @@ class Asserts:
         # At this point, everything should have been initialized, so we can
         # show the data for the first time
         self.run_data.reset_index(inplace=True)
-        self.deterministic_run_dataw.reset_index(inplace=True)
+        self.deterministic_run_data.reset_index(inplace=True)
         self.sources["non_deterministic"].data = self.run_data
         self.sources["deterministic"].data = self.deterministic_run_data

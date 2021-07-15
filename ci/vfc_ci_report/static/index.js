@@ -186,7 +186,6 @@ function updateRunMetadata(runId, prefix) {
 
 
     // Edit innerHTML with new metadata
-    console.debug("Computed ID: " + prefix + "run-date");
     document.getElementById(prefix + "run-date").innerHTML = run.date;
 
     if(run.is_git_commit) {
