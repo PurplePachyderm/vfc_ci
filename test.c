@@ -17,7 +17,7 @@ int main(void) {
   }
 
   vfc_probe_check(&probes, "test", VAR_NAME(res), res, 1e-15);
-  vfc_probe_check(&probes, "test", VAR_NAME(varf), varf, 1e-15);
+  vfc_probe(&probes, "test", VAR_NAME(varf), varf);
   vfc_dump_probes(&probes);
 
   return 0;
