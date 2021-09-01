@@ -19,8 +19,8 @@ install:
 	$(CC) vfc_probes.o vfc_hashmap.o -shared -o libvfc_probes.so
 	ar rcvf libvfc_probes.a vfc_probes.o vfc_hashmap.o
 
-	$(FC) -c vfc_probes_f.f90
-	ar rcvf libvfc_probes_f.a vfc_probes_f.o
+	# $(FC) -c vfc_probes_f.f90
+	# ar rcvf libvfc_probes_f.a vfc_probes_f.o
 
 	bash copy_source.sh
 	ldconfig
